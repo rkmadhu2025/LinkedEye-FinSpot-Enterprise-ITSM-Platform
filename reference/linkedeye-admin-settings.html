@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | LinkedEye-FinSpot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-navy: #0f1c3f;
+            --primary-blue: #2563eb;
+            --primary-blue-light: #3b82f6;
+            --purple: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --border-color: #e5e8eb;
+            --text-primary: #0f1c3f;
+            --text-secondary: #6b7785;
+            --bg-card: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--gray-100);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--primary-navy);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 200;
+        }
+        .sidebar-header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-logo { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-blue-light), var(--purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .sidebar-logo i { color: #fff; font-size: 20px; }
+        .sidebar-brand { color: #fff; }
+        .sidebar-brand h1 { font-size: 16px; font-weight: 700; }
+        .sidebar-brand span { font-size: 10px; color: rgba(255,255,255,0.6); }
+        .sidebar-nav { padding: 16px 12px; overflow-y: auto; height: calc(100vh - 140px); }
+        .nav-section { margin-bottom: 20px; }
+        .nav-section-title { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.2s; margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .nav-item.active { background: linear-gradient(135deg, var(--primary-blue), #1d4ed8); color: #fff; }
+        .nav-item i { width: 20px; text-align: center; }
+        .nav-item .nav-badge { background: var(--danger); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: auto; }
+        .nav-item .nav-badge.warning { background: var(--warning); }
+        .sidebar-footer { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .env-selector { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; color: #fff; font-size: 12px; }
+        .env-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-width);
+            right: 0;
+            height: var(--header-height);
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .search-box { position: relative; width: 320px; }
+        .search-box input { width: 100%; padding: 10px 16px 10px 40px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: #f9fafb; }
+        .search-box input:focus { outline: none; border-color: var(--primary-blue); background: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .search-box i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .notification-btn { position: relative; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border-color); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .notification-btn:hover { background: #f9fafb; }
+        .notification-badge { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 600; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
+        .user-menu { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+        .user-menu:hover { background: #f3f4f6; }
+        .user-avatar-header { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-blue), var(--purple)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 14px; }
+        .user-info-header { text-align: left; }
+        .user-name-header { font-size: 13px; font-weight: 600; }
+        .user-role-header { font-size: 11px; color: var(--text-secondary); }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 24px;
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        /* Page Header */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-title h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .page-title p { font-size: 13px; color: var(--text-secondary); }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), #1d4ed8);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: #fff;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        /* Page Content */
+        .page-content {
+            padding: 24px;
+        }
+
+        /* Settings Layout */
+        .settings-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 24px;
+        }
+
+        /* Settings Nav */
+        .settings-nav {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 8px;
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+        .settings-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .settings-nav-item:hover {
+            background: var(--gray-50);
+            color: var(--gray-900);
+        }
+
+        .settings-nav-item.active {
+            background: #eef2ff;
+            color: var(--primary-blue);
+            font-weight: 500;
+        }
+
+        .settings-nav-item i {
+            width: 18px;
+            text-align: center;
+        }
+
+        /* Settings Content */
+        .settings-content {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .settings-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .settings-card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .settings-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .settings-card-description {
+            font-size: 13px;
+            color: var(--gray-500);
+        }
+
+        .settings-card-body {
+            padding: 24px;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-input.short {
+            max-width: 300px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        /* Toggle Switch */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: var(--gray-50);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .toggle-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .toggle-info {
+            flex: 1;
+        }
+
+        .toggle-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray-900);
+            margin-bottom: 2px;
+        }
+
+        .toggle-description {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--gray-300);
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--primary-blue);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
+
+        /* SLA Configuration */
+        .sla-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .sla-card {
+            background: var(--gray-50);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .sla-priority {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            margin: 0 auto 12px;
+        }
+
+        .sla-priority.p1 { background: var(--danger); }
+        .sla-priority.p2 { background: var(--warning); }
+        .sla-priority.p3 { background: var(--info); }
+        .sla-priority.p4 { background: var(--gray-400); }
+
+        .sla-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 12px;
+        }
+
+        .sla-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sla-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sla-input-group label {
+            font-size: 11px;
+            color: var(--gray-500);
+            min-width: 55px;
+            text-align: left;
+        }
+
+        .sla-input-group input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid var(--gray-300);
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        /* Environment Config */
+        .env-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .env-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--gray-50);
+            border-radius: 8px;
+        }
+
+        .env-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .env-icon.prod {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .env-icon.dr {
+            background: #fef3c7;
+            color: var(--warning);
+        }
+
+        .env-icon.staging {
+            background: #dbeafe;
+            color: var(--info);
+        }
+
+        .env-info {
+            flex: 1;
+        }
+
+        .env-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .env-domain {
+            font-size: 12px;
+            color: var(--gray-500);
+            font-family: monospace;
+        }
+
+        .env-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .env-status.active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .env-status.inactive {
+            background: var(--gray-100);
+            color: var(--gray-500);
+        }
+
+        .env-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .env-action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--gray-200);
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-500);
+        }
+
+        .env-action-btn:hover {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        /* Email Templates */
+        .template-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .template-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--gray-50);
+            border-radius: 8px;
+        }
+
+        .template-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--info);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .template-info {
+            flex: 1;
+        }
+
+        .template-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .template-description {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .template-edit-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            background: white;
+            font-size: 13px;
+            color: var(--gray-700);
+            cursor: pointer;
+        }
+
+        .template-edit-btn:hover {
+            background: var(--gray-100);
+        }
+
+        /* API Key Section */
+        .api-key-display {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--gray-50);
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .api-key-display .key {
+            flex: 1;
+            color: var(--gray-700);
+        }
+
+        .api-key-display .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .copy-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: 4px;
+            background: white;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .copy-btn:hover {
+            background: var(--gray-100);
+        }
+
+        /* Workflow Config */
+        .workflow-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .workflow-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+        }
+
+        .workflow-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--purple));
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .workflow-info {
+            flex: 1;
+        }
+
+        .workflow-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .workflow-meta {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .workflow-stats {
+            display: flex;
+            gap: 24px;
+        }
+
+        .workflow-stat {
+            text-align: center;
+        }
+
+        .workflow-stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .workflow-stat-label {
+            font-size: 11px;
+            color: var(--gray-500);
+        }
+
+        /* Save Bar */
+        .save-bar {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--gray-900);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .save-bar.active {
+            display: flex;
+        }
+
+        .save-bar-text {
+            font-size: 14px;
+        }
+
+        .save-bar .btn {
+            padding: 8px 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fas fa-eye"></i></div>
+            <div class="sidebar-brand"><h1>LinkedEye</h1><span>FinSpot Enterprise</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="linkedeye-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+                <a href="linkedeye-incidents.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Incidents</span><span class="nav-badge">23</span></a>
+                <a href="linkedeye-change-calendar.html" class="nav-item"><i class="fas fa-code-branch"></i><span>Changes</span><span class="nav-badge warning">7</span></a>
+                <a href="linkedeye-problem-detail.html" class="nav-item"><i class="fas fa-search"></i><span>Problems</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Infrastructure</div>
+                <a href="linkedeye-assets.html" class="nav-item"><i class="fas fa-cubes"></i><span>Assets</span></a>
+                <a href="linkedeye-network-topology.html" class="nav-item"><i class="fas fa-network-wired"></i><span>Network</span></a>
+                <a href="linkedeye-network-devices.html" class="nav-item"><i class="fas fa-server"></i><span>Devices</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Analytics</div>
+                <a href="linkedeye-reports.html" class="nav-item"><i class="fas fa-file-alt"></i><span>Reports</span></a>
+                <a href="linkedeye-analytics.html" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Administration</div>
+                <a href="linkedeye-users.html" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+                <a href="linkedeye-groups.html" class="nav-item"><i class="fas fa-user-friends"></i><span>Groups</span></a>
+                <a href="linkedeye-integrations.html" class="nav-item"><i class="fas fa-plug"></i><span>Integrations</span></a>
+                <a href="linkedeye-admin-settings.html" class="nav-item active"><i class="fas fa-cog"></i><span>Settings</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="env-selector">
+                <div class="env-dot"></div>
+                <span>Production Environment</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search settings...">
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="notification-btn">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">3</span>
+            </button>
+            <div class="user-menu">
+                <div class="user-avatar-header">RK</div>
+                <div class="user-info-header">
+                    <div class="user-name-header">Rahul Kumar</div>
+                    <div class="user-role-header">Admin</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <h1>Settings</h1>
+                <p>Configure platform settings, SLAs, and system preferences</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary">
+                    <i class="fas fa-history"></i>
+                    Change History
+                </button>
+                <button class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <div class="settings-layout">
+                <!-- Settings Navigation -->
+                <div class="settings-nav">
+                    <div class="settings-nav-item active">
+                        <i class="fas fa-building"></i>
+                        Organization
+                    </div>
+                    <div class="settings-nav-item">
+                        <i class="fas fa-clock"></i>
+                        SLA Configuration
+                    </div>
+                    <div class="settings-nav-item">
+                        <i class="fas fa-server"></i>
+                        Environments
+                    </div>
+                    <div class="settings-nav-item">
+                        <i class="fas fa-envelope"></i>
+                        Email Templates
+                    </div>
+                    <div class="settings-nav-item">
+                        <i class="fas fa-bell"></i>
+                        Notifications
+                    </div>
+                    <div class="settings-nav-item">
+                        <i class="fas fa-robot"></i>
+                        Automation
+                    </div>
+                    <div class="settings-nav-item">
+                        <i class="fas fa-key"></i>
+                        API Keys
+                    </div>
+                    <div class="settings-nav-item">
+                        <i class="fas fa-shield-alt"></i>
+                        Security
+                    </div>
+                    <div class="settings-nav-item">
+                        <i class="fas fa-paint-brush"></i>
+                        Branding
+                    </div>
+                </div>
+
+                <!-- Settings Content -->
+                <div class="settings-content">
+                    <!-- Organization Settings -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">Organization Settings</h3>
+                            <p class="settings-card-description">Configure your organization's basic information</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Organization Name</label>
+                                    <input type="text" class="form-input" value="FinSpot Technologies">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Display Name</label>
+                                    <input type="text" class="form-input" value="FinSpot">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Primary Contact Email</label>
+                                <input type="email" class="form-input short" value="platform@finspot.in">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Default Timezone</label>
+                                    <select class="form-input">
+                                        <option value="Asia/Kolkata" selected>Asia/Kolkata (IST)</option>
+                                        <option value="UTC">UTC</option>
+                                        <option value="America/New_York">America/New_York (EST)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Date Format</label>
+                                    <select class="form-input">
+                                        <option value="DD/MM/YYYY" selected>DD/MM/YYYY</option>
+                                        <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                        <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SLA Configuration -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">SLA Configuration</h3>
+                            <p class="settings-card-description">Define response and resolution time targets by priority</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="sla-grid">
+                                <div class="sla-card">
+                                    <div class="sla-priority p1">P1</div>
+                                    <div class="sla-title">Critical</div>
+                                    <div class="sla-inputs">
+                                        <div class="sla-input-group">
+                                            <label>Response</label>
+                                            <input type="text" value="15 min">
+                                        </div>
+                                        <div class="sla-input-group">
+                                            <label>Resolution</label>
+                                            <input type="text" value="4 hrs">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="sla-card">
+                                    <div class="sla-priority p2">P2</div>
+                                    <div class="sla-title">High</div>
+                                    <div class="sla-inputs">
+                                        <div class="sla-input-group">
+                                            <label>Response</label>
+                                            <input type="text" value="30 min">
+                                        </div>
+                                        <div class="sla-input-group">
+                                            <label>Resolution</label>
+                                            <input type="text" value="8 hrs">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="sla-card">
+                                    <div class="sla-priority p3">P3</div>
+                                    <div class="sla-title">Medium</div>
+                                    <div class="sla-inputs">
+                                        <div class="sla-input-group">
+                                            <label>Response</label>
+                                            <input type="text" value="2 hrs">
+                                        </div>
+                                        <div class="sla-input-group">
+                                            <label>Resolution</label>
+                                            <input type="text" value="24 hrs">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="sla-card">
+                                    <div class="sla-priority p4">P4</div>
+                                    <div class="sla-title">Low</div>
+                                    <div class="sla-inputs">
+                                        <div class="sla-input-group">
+                                            <label>Response</label>
+                                            <input type="text" value="8 hrs">
+                                        </div>
+                                        <div class="sla-input-group">
+                                            <label>Resolution</label>
+                                            <input type="text" value="72 hrs">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-hint" style="margin-top: 16px;">
+                                <i class="fas fa-info-circle"></i>
+                                SLA timers pause outside business hours (Mon-Fri, 9:00 AM - 6:00 PM IST) unless marked as 24x7
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Environments -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">Environment Configuration</h3>
+                            <p class="settings-card-description">Manage production and staging environments</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="env-list">
+                                <div class="env-item">
+                                    <div class="env-icon prod">
+                                        <i class="fas fa-server"></i>
+                                    </div>
+                                    <div class="env-info">
+                                        <div class="env-name">Mumbai Production</div>
+                                        <div class="env-domain">fs-mum-indmoney-prod-le</div>
+                                    </div>
+                                    <span class="env-status active">Active</span>
+                                    <div class="env-actions">
+                                        <button class="env-action-btn"><i class="fas fa-edit"></i></button>
+                                        <button class="env-action-btn"><i class="fas fa-cog"></i></button>
+                                    </div>
+                                </div>
+                                <div class="env-item">
+                                    <div class="env-icon dr">
+                                        <i class="fas fa-server"></i>
+                                    </div>
+                                    <div class="env-info">
+                                        <div class="env-name">Bangalore DR</div>
+                                        <div class="env-domain">fs-blr-indmoney-dr-le</div>
+                                    </div>
+                                    <span class="env-status active">Active</span>
+                                    <div class="env-actions">
+                                        <button class="env-action-btn"><i class="fas fa-edit"></i></button>
+                                        <button class="env-action-btn"><i class="fas fa-cog"></i></button>
+                                    </div>
+                                </div>
+                                <div class="env-item">
+                                    <div class="env-icon prod">
+                                        <i class="fas fa-server"></i>
+                                    </div>
+                                    <div class="env-info">
+                                        <div class="env-name">Neo Production</div>
+                                        <div class="env-domain">neo-prod-le</div>
+                                    </div>
+                                    <span class="env-status active">Active</span>
+                                    <div class="env-actions">
+                                        <button class="env-action-btn"><i class="fas fa-edit"></i></button>
+                                        <button class="env-action-btn"><i class="fas fa-cog"></i></button>
+                                    </div>
+                                </div>
+                                <div class="env-item">
+                                    <div class="env-icon staging">
+                                        <i class="fas fa-flask"></i>
+                                    </div>
+                                    <div class="env-info">
+                                        <div class="env-name">FinSpot DX</div>
+                                        <div class="env-domain">fs-dx-le</div>
+                                    </div>
+                                    <span class="env-status active">Active</span>
+                                    <div class="env-actions">
+                                        <button class="env-action-btn"><i class="fas fa-edit"></i></button>
+                                        <button class="env-action-btn"><i class="fas fa-cog"></i></button>
+                                    </div>
+                                </div>
+                                <div class="env-item">
+                                    <div class="env-icon prod">
+                                        <i class="fas fa-server"></i>
+                                    </div>
+                                    <div class="env-info">
+                                        <div class="env-name">Lemonn Mumbai</div>
+                                        <div class="env-domain">lemonn-mum-le</div>
+                                    </div>
+                                    <span class="env-status active">Active</span>
+                                    <div class="env-actions">
+                                        <button class="env-action-btn"><i class="fas fa-edit"></i></button>
+                                        <button class="env-action-btn"><i class="fas fa-cog"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary" style="margin-top: 16px;">
+                                <i class="fas fa-plus"></i>
+                                Add Environment
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Notification Settings -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">Notification Settings</h3>
+                            <p class="settings-card-description">Configure how and when notifications are sent</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Email Notifications</div>
+                                    <div class="toggle-description">Send email alerts for incidents and changes</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Slack Integration</div>
+                                    <div class="toggle-description">Post alerts to configured Slack channels</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">PagerDuty Escalation</div>
+                                    <div class="toggle-description">Escalate P1/P2 incidents to PagerDuty</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">SMS Alerts</div>
+                                    <div class="toggle-description">Send SMS for critical incidents to on-call team</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Daily Digest</div>
+                                    <div class="toggle-description">Send daily summary email at 9:00 AM</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Automation / StackStorm -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">Auto-Remediation Workflows</h3>
+                            <p class="settings-card-description">StackStorm workflow configuration and statistics</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="workflow-list">
+                                <div class="workflow-item">
+                                    <div class="workflow-icon">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </div>
+                                    <div class="workflow-info">
+                                        <div class="workflow-name">Pod Restart Workflow</div>
+                                        <div class="workflow-meta">Trigger: High Memory / CPU • Target: Kubernetes</div>
+                                    </div>
+                                    <div class="workflow-stats">
+                                        <div class="workflow-stat">
+                                            <div class="workflow-stat-value">247</div>
+                                            <div class="workflow-stat-label">Executions</div>
+                                        </div>
+                                        <div class="workflow-stat">
+                                            <div class="workflow-stat-value" style="color: var(--success);">94%</div>
+                                            <div class="workflow-stat-label">Success Rate</div>
+                                        </div>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="workflow-item">
+                                    <div class="workflow-icon">
+                                        <i class="fas fa-database"></i>
+                                    </div>
+                                    <div class="workflow-info">
+                                        <div class="workflow-name">DB Connection Pool Reset</div>
+                                        <div class="workflow-meta">Trigger: Connection Exhaustion • Target: PostgreSQL</div>
+                                    </div>
+                                    <div class="workflow-stats">
+                                        <div class="workflow-stat">
+                                            <div class="workflow-stat-value">89</div>
+                                            <div class="workflow-stat-label">Executions</div>
+                                        </div>
+                                        <div class="workflow-stat">
+                                            <div class="workflow-stat-value" style="color: var(--success);">98%</div>
+                                            <div class="workflow-stat-label">Success Rate</div>
+                                        </div>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="workflow-item">
+                                    <div class="workflow-icon">
+                                        <i class="fas fa-hdd"></i>
+                                    </div>
+                                    <div class="workflow-info">
+                                        <div class="workflow-name">Disk Cleanup Workflow</div>
+                                        <div class="workflow-meta">Trigger: Disk > 85% • Target: All Nodes</div>
+                                    </div>
+                                    <div class="workflow-stats">
+                                        <div class="workflow-stat">
+                                            <div class="workflow-stat-value">156</div>
+                                            <div class="workflow-stat-label">Executions</div>
+                                        </div>
+                                        <div class="workflow-stat">
+                                            <div class="workflow-stat-value" style="color: var(--success);">91%</div>
+                                            <div class="workflow-stat-label">Success Rate</div>
+                                        </div>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary" style="margin-top: 16px;">
+                                <i class="fas fa-plus"></i>
+                                Add Workflow
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- API Keys -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">API Keys</h3>
+                            <p class="settings-card-description">Manage API keys for external integrations</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="form-group">
+                                <label class="form-label">Active API Key</label>
+                                <div class="api-key-display">
+                                    <span class="key">le_api_••••••••••••••••••••a7f3</span>
+                                    <div class="actions">
+                                        <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                                        <button class="copy-btn"><i class="fas fa-eye"></i> Show</button>
+                                    </div>
+                                </div>
+                                <div class="form-hint">Created on Dec 1, 2024 • Last used 2 hours ago</div>
+                            </div>
+                            <button class="btn btn-secondary">
+                                <i class="fas fa-sync-alt"></i>
+                                Regenerate Key
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Save Bar -->
+    <div class="save-bar" id="saveBar">
+        <span class="save-bar-text">You have unsaved changes</span>
+        <button class="btn btn-secondary">Discard</button>
+        <button class="btn btn-primary">Save Changes</button>
+    </div>
+
+    <script>
+        // Settings nav functionality
+        document.querySelectorAll('.settings-nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Show save bar on input change
+        document.querySelectorAll('input, select').forEach(input => {
+            input.addEventListener('change', function() {
+                document.getElementById('saveBar').classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

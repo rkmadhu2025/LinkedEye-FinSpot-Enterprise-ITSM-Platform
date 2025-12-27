@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrations | LinkedEye-FinSpot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-navy: #0f1c3f;
+            --primary-blue: #2563eb;
+            --primary-blue-light: #3b82f6;
+            --purple: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --border-color: #e5e8eb;
+            --text-primary: #0f1c3f;
+            --text-secondary: #6b7785;
+            --bg-card: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--gray-100);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--primary-navy);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 200;
+        }
+        .sidebar-header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-logo { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-blue-light), var(--purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .sidebar-logo i { color: #fff; font-size: 20px; }
+        .sidebar-brand { color: #fff; }
+        .sidebar-brand h1 { font-size: 16px; font-weight: 700; }
+        .sidebar-brand span { font-size: 10px; color: rgba(255,255,255,0.6); }
+        .sidebar-nav { padding: 16px 12px; overflow-y: auto; height: calc(100vh - 140px); }
+        .nav-section { margin-bottom: 20px; }
+        .nav-section-title { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.2s; margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .nav-item.active { background: linear-gradient(135deg, var(--primary-blue), #1d4ed8); color: #fff; }
+        .nav-item i { width: 20px; text-align: center; }
+        .nav-item .nav-badge { background: var(--danger); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: auto; }
+        .nav-item .nav-badge.warning { background: var(--warning); }
+        .sidebar-footer { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .env-selector { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; color: #fff; font-size: 12px; }
+        .env-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-width);
+            right: 0;
+            height: var(--header-height);
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .search-box { position: relative; width: 320px; }
+        .search-box input { width: 100%; padding: 10px 16px 10px 40px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: #f9fafb; }
+        .search-box input:focus { outline: none; border-color: var(--primary-blue); background: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .search-box i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .notification-btn { position: relative; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border-color); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .notification-btn:hover { background: #f9fafb; }
+        .notification-badge { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 600; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
+        .user-menu { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+        .user-menu:hover { background: #f3f4f6; }
+        .user-avatar-header { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-blue), var(--purple)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 14px; }
+        .user-info-header { text-align: left; }
+        .user-name-header { font-size: 13px; font-weight: 600; }
+        .user-role-header { font-size: 11px; color: var(--text-secondary); }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 24px;
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        /* Page Header */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-title h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .page-title p { font-size: 13px; color: var(--text-secondary); }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), #1d4ed8);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: #fff;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        /* Page Content */
+        .page-content {
+            padding: 24px;
+        }
+
+        /* Category Tabs */
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .category-tab {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 20px;
+            font-size: 14px;
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .category-tab:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        .category-tab.active {
+            background: var(--primary-blue);
+            border-color: var(--primary-blue);
+            color: white;
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .stat-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .stat-icon.total {
+            background: #dbeafe;
+            color: var(--info);
+        }
+
+        .stat-icon.active {
+            background: #d1fae5;
+            color: var(--success);
+        }
+
+        .stat-icon.error {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .stat-icon.pending {
+            background: #fef3c7;
+            color: var(--warning);
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+
+        /* Integration Grid */
+        .integration-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .integration-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .integration-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .integration-card-header {
+            padding: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .integration-logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .integration-logo.prometheus {
+            background: #e6522c;
+            color: white;
+        }
+
+        .integration-logo.grafana {
+            background: #f46800;
+            color: white;
+        }
+
+        .integration-logo.alertmanager {
+            background: #e6522c;
+            color: white;
+        }
+
+        .integration-logo.loki {
+            background: #f4a900;
+            color: white;
+        }
+
+        .integration-logo.stackstorm {
+            background: #22c55e;
+            color: white;
+        }
+
+        .integration-logo.keycloak {
+            background: #4d4d4d;
+            color: white;
+        }
+
+        .integration-logo.slack {
+            background: #4a154b;
+            color: white;
+        }
+
+        .integration-logo.pagerduty {
+            background: #06ac38;
+            color: white;
+        }
+
+        .integration-logo.jira {
+            background: #0052cc;
+            color: white;
+        }
+
+        .integration-logo.servicenow {
+            background: #81b5a1;
+            color: white;
+        }
+
+        .integration-logo.kubernetes {
+            background: #326ce5;
+            color: white;
+        }
+
+        .integration-logo.rabbitmq {
+            background: #ff6600;
+            color: white;
+        }
+
+        .integration-logo.redis {
+            background: #dc382d;
+            color: white;
+        }
+
+        .integration-logo.postgresql {
+            background: #336791;
+            color: white;
+        }
+
+        .integration-logo.neo4j {
+            background: #008cc1;
+            color: white;
+        }
+
+        .integration-logo.microsoft {
+            background: #00a4ef;
+            color: white;
+        }
+
+        .integration-logo.google {
+            background: #4285f4;
+            color: white;
+        }
+
+        .integration-logo.okta {
+            background: #007dc1;
+            color: white;
+        }
+
+        .integration-logo.github {
+            background: #24292e;
+            color: white;
+        }
+
+        .integration-logo.gitlab {
+            background: #fc6d26;
+            color: white;
+        }
+
+        .integration-logo.webhook {
+            background: var(--gray-700);
+            color: white;
+        }
+
+        .integration-info {
+            flex: 1;
+        }
+
+        .integration-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .integration-category {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .integration-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .integration-status.connected {
+            color: var(--success);
+        }
+
+        .integration-status.error {
+            color: var(--danger);
+        }
+
+        .integration-status.pending {
+            color: var(--warning);
+        }
+
+        .integration-status.available {
+            color: var(--gray-400);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+        }
+
+        .status-dot.error {
+            background: var(--danger);
+        }
+
+        .status-dot.pending {
+            background: var(--warning);
+        }
+
+        .status-dot.available {
+            background: var(--gray-300);
+        }
+
+        .integration-card-body {
+            padding: 0 20px 20px;
+        }
+
+        .integration-description {
+            font-size: 13px;
+            color: var(--gray-600);
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .integration-stats {
+            display: flex;
+            gap: 16px;
+            padding: 12px;
+            background: var(--gray-50);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .integration-stat {
+            flex: 1;
+            text-align: center;
+        }
+
+        .integration-stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .integration-stat-label {
+            font-size: 11px;
+            color: var(--gray-500);
+        }
+
+        .integration-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .integration-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid var(--gray-300);
+            background: white;
+            color: var(--gray-700);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .integration-btn:hover {
+            background: var(--gray-100);
+        }
+
+        .integration-btn.primary {
+            background: var(--primary-blue);
+            border-color: var(--primary-blue);
+            color: white;
+        }
+
+        .integration-btn.primary:hover {
+            background: #1d4ed8;
+        }
+
+        .integration-btn.success {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        /* Card Footer */
+        .integration-card-footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--gray-100);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .last-sync {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .health-indicator {
+            display: flex;
+            gap: 4px;
+        }
+
+        .health-bar {
+            width: 4px;
+            height: 16px;
+            border-radius: 2px;
+            background: var(--success);
+        }
+
+        .health-bar.warning {
+            background: var(--warning);
+        }
+
+        .health-bar.error {
+            background: var(--danger);
+        }
+
+        .health-bar.inactive {
+            background: var(--gray-200);
+        }
+
+        /* Available Section */
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin: 32px 0 16px;
+        }
+
+        .available-card {
+            border: 2px dashed var(--gray-300);
+            background: var(--gray-50);
+        }
+
+        .available-card:hover {
+            border-color: var(--primary-blue);
+            background: white;
+        }
+
+        .available-card .integration-btn.primary {
+            background: white;
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        .available-card .integration-btn.primary:hover {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        /* Search */
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: white;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            width: 300px;
+        }
+
+        .search-bar input {
+            border: none;
+            outline: none;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .search-bar i {
+            color: var(--gray-400);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fas fa-eye"></i></div>
+            <div class="sidebar-brand"><h1>LinkedEye</h1><span>FinSpot Enterprise</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="linkedeye-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+                <a href="linkedeye-incidents.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Incidents</span><span class="nav-badge">23</span></a>
+                <a href="linkedeye-change-calendar.html" class="nav-item"><i class="fas fa-code-branch"></i><span>Changes</span><span class="nav-badge warning">7</span></a>
+                <a href="linkedeye-problem-detail.html" class="nav-item"><i class="fas fa-search"></i><span>Problems</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Infrastructure</div>
+                <a href="linkedeye-assets.html" class="nav-item"><i class="fas fa-cubes"></i><span>Assets</span></a>
+                <a href="linkedeye-network-topology.html" class="nav-item"><i class="fas fa-network-wired"></i><span>Network</span></a>
+                <a href="linkedeye-network-devices.html" class="nav-item"><i class="fas fa-server"></i><span>Devices</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Analytics</div>
+                <a href="linkedeye-reports.html" class="nav-item"><i class="fas fa-file-alt"></i><span>Reports</span></a>
+                <a href="linkedeye-analytics.html" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Administration</div>
+                <a href="linkedeye-users.html" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+                <a href="linkedeye-groups.html" class="nav-item"><i class="fas fa-user-friends"></i><span>Groups</span></a>
+                <a href="linkedeye-integrations.html" class="nav-item active"><i class="fas fa-plug"></i><span>Integrations</span></a>
+                <a href="linkedeye-admin-settings.html" class="nav-item"><i class="fas fa-cog"></i><span>Settings</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="env-selector">
+                <div class="env-dot"></div>
+                <span>Production Environment</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search integrations...">
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="notification-btn">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">3</span>
+            </button>
+            <div class="user-menu">
+                <div class="user-avatar-header">RK</div>
+                <div class="user-info-header">
+                    <div class="user-name-header">Rahul Kumar</div>
+                    <div class="user-role-header">Admin</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <h1>Integrations</h1>
+                <p>Connect and manage third-party tools and services</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Add Integration
+                </button>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <!-- Category Tabs -->
+            <div class="category-tabs">
+                <div class="category-tab active">All</div>
+                <div class="category-tab">Monitoring</div>
+                <div class="category-tab">Alerting</div>
+                <div class="category-tab">Automation</div>
+                <div class="category-tab">Authentication</div>
+                <div class="category-tab">Ticketing</div>
+                <div class="category-tab">Communication</div>
+                <div class="category-tab">Data</div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon total">
+                            <i class="fas fa-plug"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">18</div>
+                    <div class="stat-label">Total Integrations</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon active">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">14</div>
+                    <div class="stat-label">Active Connections</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon error">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">Needs Attention</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon pending">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">Pending Setup</div>
+                </div>
+            </div>
+
+            <!-- Connected Integrations -->
+            <h3 class="section-title" style="margin-top: 0;">Connected Integrations</h3>
+            <div class="integration-grid">
+                <!-- Prometheus -->
+                <div class="integration-card">
+                    <div class="integration-card-header">
+                        <div class="integration-logo prometheus">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <div class="integration-info">
+                            <div class="integration-name">Prometheus</div>
+                            <div class="integration-category">Monitoring</div>
+                        </div>
+                        <div class="integration-status connected">
+                            <span class="status-dot connected"></span>
+                            Connected
+                        </div>
+                    </div>
+                    <div class="integration-card-body">
+                        <div class="integration-description">
+                            Time-series metrics collection and alerting. Auto-creates incidents from Prometheus alerts.
+                        </div>
+                        <div class="integration-stats">
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">1.2M</div>
+                                <div class="integration-stat-label">Metrics/min</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">847</div>
+                                <div class="integration-stat-label">Active Rules</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">23</div>
+                                <div class="integration-stat-label">Alerts Today</div>
+                            </div>
+                        </div>
+                        <div class="integration-actions">
+                            <a href="linkedeye-integration-detail.html" class="integration-btn">
+                                <i class="fas fa-cog"></i>
+                                Configure
+                            </a>
+                            <button class="integration-btn">
+                                <i class="fas fa-sync-alt"></i>
+                                Test
+                            </button>
+                        </div>
+                    </div>
+                    <div class="integration-card-footer">
+                        <span class="last-sync">Last sync: 12 sec ago</span>
+                        <div class="health-indicator">
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grafana -->
+                <div class="integration-card">
+                    <div class="integration-card-header">
+                        <div class="integration-logo grafana">
+                            <i class="fas fa-chart-area"></i>
+                        </div>
+                        <div class="integration-info">
+                            <div class="integration-name">Grafana</div>
+                            <div class="integration-category">Visualization</div>
+                        </div>
+                        <div class="integration-status connected">
+                            <span class="status-dot connected"></span>
+                            Connected
+                        </div>
+                    </div>
+                    <div class="integration-card-body">
+                        <div class="integration-description">
+                            Embedded dashboards and charts. Provides real-time metrics visualization in incident details.
+                        </div>
+                        <div class="integration-stats">
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">42</div>
+                                <div class="integration-stat-label">Dashboards</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">156</div>
+                                <div class="integration-stat-label">Panels</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">8</div>
+                                <div class="integration-stat-label">Datasources</div>
+                            </div>
+                        </div>
+                        <div class="integration-actions">
+                            <button class="integration-btn">
+                                <i class="fas fa-cog"></i>
+                                Configure
+                            </button>
+                            <button class="integration-btn">
+                                <i class="fas fa-external-link-alt"></i>
+                                Open
+                            </button>
+                        </div>
+                    </div>
+                    <div class="integration-card-footer">
+                        <span class="last-sync">Last sync: 5 min ago</span>
+                        <div class="health-indicator">
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loki -->
+                <div class="integration-card">
+                    <div class="integration-card-header">
+                        <div class="integration-logo loki">
+                            <i class="fas fa-scroll"></i>
+                        </div>
+                        <div class="integration-info">
+                            <div class="integration-name">Loki</div>
+                            <div class="integration-category">Logging</div>
+                        </div>
+                        <div class="integration-status connected">
+                            <span class="status-dot connected"></span>
+                            Connected
+                        </div>
+                    </div>
+                    <div class="integration-card-body">
+                        <div class="integration-description">
+                            Log aggregation and querying. Shows contextual logs in incident timeline view.
+                        </div>
+                        <div class="integration-stats">
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">2.4TB</div>
+                                <div class="integration-stat-label">Logs/Day</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">12</div>
+                                <div class="integration-stat-label">Streams</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">30d</div>
+                                <div class="integration-stat-label">Retention</div>
+                            </div>
+                        </div>
+                        <div class="integration-actions">
+                            <button class="integration-btn">
+                                <i class="fas fa-cog"></i>
+                                Configure
+                            </button>
+                            <button class="integration-btn">
+                                <i class="fas fa-search"></i>
+                                Query
+                            </button>
+                        </div>
+                    </div>
+                    <div class="integration-card-footer">
+                        <span class="last-sync">Last sync: 8 sec ago</span>
+                        <div class="health-indicator">
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- StackStorm -->
+                <div class="integration-card">
+                    <div class="integration-card-header">
+                        <div class="integration-logo stackstorm">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="integration-info">
+                            <div class="integration-name">StackStorm</div>
+                            <div class="integration-category">Automation</div>
+                        </div>
+                        <div class="integration-status connected">
+                            <span class="status-dot connected"></span>
+                            Connected
+                        </div>
+                    </div>
+                    <div class="integration-card-body">
+                        <div class="integration-description">
+                            Event-driven automation platform. Executes auto-remediation workflows for incidents.
+                        </div>
+                        <div class="integration-stats">
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">24</div>
+                                <div class="integration-stat-label">Workflows</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">492</div>
+                                <div class="integration-stat-label">Runs Today</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">94%</div>
+                                <div class="integration-stat-label">Success</div>
+                            </div>
+                        </div>
+                        <div class="integration-actions">
+                            <button class="integration-btn">
+                                <i class="fas fa-cog"></i>
+                                Configure
+                            </button>
+                            <button class="integration-btn">
+                                <i class="fas fa-play"></i>
+                                Workflows
+                            </button>
+                        </div>
+                    </div>
+                    <div class="integration-card-footer">
+                        <span class="last-sync">Last sync: 2 min ago</span>
+                        <div class="health-indicator">
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slack -->
+                <div class="integration-card">
+                    <div class="integration-card-header">
+                        <div class="integration-logo slack">
+                            <i class="fab fa-slack"></i>
+                        </div>
+                        <div class="integration-info">
+                            <div class="integration-name">Slack</div>
+                            <div class="integration-category">Communication</div>
+                        </div>
+                        <div class="integration-status connected">
+                            <span class="status-dot connected"></span>
+                            Connected
+                        </div>
+                    </div>
+                    <div class="integration-card-body">
+                        <div class="integration-description">
+                            Real-time notifications and incident channels. Enables ChatOps workflows.
+                        </div>
+                        <div class="integration-stats">
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">12</div>
+                                <div class="integration-stat-label">Channels</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">847</div>
+                                <div class="integration-stat-label">Messages/Week</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">5</div>
+                                <div class="integration-stat-label">Bots</div>
+                            </div>
+                        </div>
+                        <div class="integration-actions">
+                            <button class="integration-btn">
+                                <i class="fas fa-cog"></i>
+                                Configure
+                            </button>
+                            <button class="integration-btn">
+                                <i class="fas fa-bell"></i>
+                                Channels
+                            </button>
+                        </div>
+                    </div>
+                    <div class="integration-card-footer">
+                        <span class="last-sync">Last sync: 1 min ago</span>
+                        <div class="health-indicator">
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PagerDuty -->
+                <div class="integration-card">
+                    <div class="integration-card-header">
+                        <div class="integration-logo pagerduty">
+                            <i class="fas fa-pager"></i>
+                        </div>
+                        <div class="integration-info">
+                            <div class="integration-name">PagerDuty</div>
+                            <div class="integration-category">Alerting</div>
+                        </div>
+                        <div class="integration-status error">
+                            <span class="status-dot error"></span>
+                            Auth Error
+                        </div>
+                    </div>
+                    <div class="integration-card-body">
+                        <div class="integration-description">
+                            On-call scheduling and escalation. Routes critical incidents to on-call engineers.
+                        </div>
+                        <div class="integration-stats">
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">--</div>
+                                <div class="integration-stat-label">Schedules</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">--</div>
+                                <div class="integration-stat-label">Escalations</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">--</div>
+                                <div class="integration-stat-label">Alerts</div>
+                            </div>
+                        </div>
+                        <div class="integration-actions">
+                            <button class="integration-btn primary">
+                                <i class="fas fa-key"></i>
+                                Re-authenticate
+                            </button>
+                        </div>
+                    </div>
+                    <div class="integration-card-footer">
+                        <span class="last-sync" style="color: var(--danger);">Connection failed 2h ago</span>
+                        <div class="health-indicator">
+                            <div class="health-bar error"></div>
+                            <div class="health-bar error"></div>
+                            <div class="health-bar error"></div>
+                            <div class="health-bar inactive"></div>
+                            <div class="health-bar inactive"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keycloak -->
+                <div class="integration-card">
+                    <div class="integration-card-header">
+                        <div class="integration-logo keycloak">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <div class="integration-info">
+                            <div class="integration-name">Keycloak</div>
+                            <div class="integration-category">Authentication</div>
+                        </div>
+                        <div class="integration-status connected">
+                            <span class="status-dot connected"></span>
+                            Connected
+                        </div>
+                    </div>
+                    <div class="integration-card-body">
+                        <div class="integration-description">
+                            SSO and identity management. Handles user authentication and RBAC.
+                        </div>
+                        <div class="integration-stats">
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">247</div>
+                                <div class="integration-stat-label">Users</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">18</div>
+                                <div class="integration-stat-label">Roles</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">3</div>
+                                <div class="integration-stat-label">Realms</div>
+                            </div>
+                        </div>
+                        <div class="integration-actions">
+                            <button class="integration-btn">
+                                <i class="fas fa-cog"></i>
+                                Configure
+                            </button>
+                            <button class="integration-btn">
+                                <i class="fas fa-users"></i>
+                                Users
+                            </button>
+                        </div>
+                    </div>
+                    <div class="integration-card-footer">
+                        <span class="last-sync">Last sync: 30 sec ago</span>
+                        <div class="health-indicator">
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kubernetes -->
+                <div class="integration-card">
+                    <div class="integration-card-header">
+                        <div class="integration-logo kubernetes">
+                            <i class="fas fa-dharmachakra"></i>
+                        </div>
+                        <div class="integration-info">
+                            <div class="integration-name">Kubernetes</div>
+                            <div class="integration-category">Infrastructure</div>
+                        </div>
+                        <div class="integration-status connected">
+                            <span class="status-dot connected"></span>
+                            Connected
+                        </div>
+                    </div>
+                    <div class="integration-card-body">
+                        <div class="integration-description">
+                            Container orchestration integration. Syncs pod status and enables auto-remediation.
+                        </div>
+                        <div class="integration-stats">
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">6</div>
+                                <div class="integration-stat-label">Clusters</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">1,247</div>
+                                <div class="integration-stat-label">Pods</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">89</div>
+                                <div class="integration-stat-label">Services</div>
+                            </div>
+                        </div>
+                        <div class="integration-actions">
+                            <button class="integration-btn">
+                                <i class="fas fa-cog"></i>
+                                Configure
+                            </button>
+                            <button class="integration-btn">
+                                <i class="fas fa-server"></i>
+                                Clusters
+                            </button>
+                        </div>
+                    </div>
+                    <div class="integration-card-footer">
+                        <span class="last-sync">Last sync: 15 sec ago</span>
+                        <div class="health-indicator">
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PostgreSQL -->
+                <div class="integration-card">
+                    <div class="integration-card-header">
+                        <div class="integration-logo postgresql">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="integration-info">
+                            <div class="integration-name">PostgreSQL</div>
+                            <div class="integration-category">Database</div>
+                        </div>
+                        <div class="integration-status connected">
+                            <span class="status-dot connected"></span>
+                            Connected
+                        </div>
+                    </div>
+                    <div class="integration-card-body">
+                        <div class="integration-description">
+                            Primary database for CMDB and incident data. Stores all operational records.
+                        </div>
+                        <div class="integration-stats">
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">2</div>
+                                <div class="integration-stat-label">Clusters</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">45GB</div>
+                                <div class="integration-stat-label">Data Size</div>
+                            </div>
+                            <div class="integration-stat">
+                                <div class="integration-stat-value">99.9%</div>
+                                <div class="integration-stat-label">Uptime</div>
+                            </div>
+                        </div>
+                        <div class="integration-actions">
+                            <button class="integration-btn">
+                                <i class="fas fa-cog"></i>
+                                Configure
+                            </button>
+                            <button class="integration-btn">
+                                <i class="fas fa-chart-line"></i>
+                                Metrics
+                            </button>
+                        </div>
+                    </div>
+                    <div class="integration-card-footer">
+                        <span class="last-sync">Last sync: 5 sec ago</span>
+                        <div class="health-indicator">
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                            <div class="health-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available Integrations -->
+            <h3 class="section-title">Available Integrations</h3>
+            <div class="integration-grid">
+                <!-- Jira -->
+                <div class="integration-card available-card">
+                    <div class="integration-card-header">
+                        <div class="integration-logo jira">
+                            <i class="fab fa-jira"></i>
+                        </div>
+                        <div class="integration-info">
+                            <div class="integration-name">Jira</div>
+                            <div class="integration-category">Ticketing</div>
+                        </div>
+                        <div class="integration-status available">
+                            <span class="status-dot available"></span>
+                            Available
+                        </div>
+                    </div>
+                    <div class="integration-card-body">
+                        <div class="integration-description">
+                            Sync incidents with Jira issues. Bidirectional updates between LinkedEye and Jira.
+                        </div>
+                        <div class="integration-actions">
+                            <button class="integration-btn primary">
+                                <i class="fas fa-plug"></i>
+                                Connect
+                            </button>
+                            <button class="integration-btn">
+                                <i class="fas fa-info-circle"></i>
+                                Learn More
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GitHub -->
+                <div class="integration-card available-card">
+                    <div class="integration-card-header">
+                        <div class="integration-logo github">
+                            <i class="fab fa-github"></i>
+                        </div>
+                        <div class="integration-info">
+                            <div class="integration-name">GitHub</div>
+                            <div class="integration-category">Source Control</div>
+                        </div>
+                        <div class="integration-status available">
+                            <span class="status-dot available"></span>
+                            Available
+                        </div>
+                    </div>
+                    <div class="integration-card-body">
+                        <div class="integration-description">
+                            Link deployments to changes. Track commits and PRs associated with incidents.
+                        </div>
+                        <div class="integration-actions">
+                            <button class="integration-btn primary">
+                                <i class="fas fa-plug"></i>
+                                Connect
+                            </button>
+                            <button class="integration-btn">
+                                <i class="fas fa-info-circle"></i>
+                                Learn More
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ServiceNow -->
+                <div class="integration-card available-card">
+                    <div class="integration-card-header">
+                        <div class="integration-logo servicenow">
+                            <i class="fas fa-ticket-alt"></i>
+                        </div>
+                        <div class="integration-info">
+                            <div class="integration-name">ServiceNow</div>
+                            <div class="integration-category">ITSM</div>
+                        </div>
+                        <div class="integration-status available">
+                            <span class="status-dot available"></span>
+                            Available
+                        </div>
+                    </div>
+                    <div class="integration-card-body">
+                        <div class="integration-description">
+                            Bidirectional CMDB sync. Import assets and CIs from ServiceNow instance.
+                        </div>
+                        <div class="integration-actions">
+                            <button class="integration-btn primary">
+                                <i class="fas fa-plug"></i>
+                                Connect
+                            </button>
+                            <button class="integration-btn">
+                                <i class="fas fa-info-circle"></i>
+                                Learn More
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Category tab functionality
+        document.querySelectorAll('.category-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

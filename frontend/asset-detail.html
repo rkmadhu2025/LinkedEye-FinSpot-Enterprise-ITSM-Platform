@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Details | LinkedEye-FinSpot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        /* Asset Header Card */
+        .asset-header-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+        }
+        .asset-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .asset-info {
+            display: flex;
+            gap: 20px;
+        }
+        .asset-icon-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 36px;
+        }
+        .asset-icon-large.server { background: linear-gradient(135deg, var(--info), #1d4ed8); }
+        .asset-icon-large.database { background: linear-gradient(135deg, var(--purple), #6d28d9); }
+        .asset-icon-large.network { background: linear-gradient(135deg, var(--success), #047857); }
+        .asset-icon-large.cloud { background: linear-gradient(135deg, var(--warning), #d97706); }
+        .asset-details h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .asset-details .asset-type {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .asset-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        .badge-secondary { background: var(--bg-body); color: var(--text-secondary); }
+
+        .asset-status {
+            text-align: right;
+        }
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            margin-bottom: 8px;
+            justify-content: flex-end;
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .status-dot.up { background: var(--success); }
+        .status-dot.down { background: var(--danger); animation: none; }
+        .status-dot.maintenance { background: var(--warning); }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .uptime {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        /* Quick Stats Row */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+        .quick-stat {
+            text-align: center;
+        }
+        .quick-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .quick-stat-value.success { color: var(--success); }
+        .quick-stat-value.warning { color: var(--warning); }
+        .quick-stat-value.danger { color: var(--danger); }
+        .quick-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* Charts */
+        .chart-container {
+            position: relative;
+            height: 180px;
+            margin-bottom: 20px;
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .chart-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .chart-value span {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: normal;
+        }
+
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .info-item {
+            padding: 12px;
+            background: var(--bg-body);
+            border-radius: 8px;
+        }
+        .info-item-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+        .info-item-value {
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Alert Items */
+        .alert-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .alert-item:last-child { margin-bottom: 0; }
+        .alert-item.critical {
+            background: #fef2f2;
+            border-left: 3px solid var(--danger);
+        }
+        .alert-item.warning {
+            background: #fffbeb;
+            border-left: 3px solid var(--warning);
+        }
+        .alert-item.info {
+            background: #eff6ff;
+            border-left: 3px solid var(--info);
+        }
+        .alert-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .alert-item.critical .alert-icon { background: var(--danger); color: white; }
+        .alert-item.warning .alert-icon { background: var(--warning); color: white; }
+        .alert-item.info .alert-icon { background: var(--info); color: white; }
+        .alert-content { flex: 1; }
+        .alert-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+        .alert-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-body);
+        }
+        .tab {
+            padding: 12px 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: var(--text-primary); }
+        .tab.active {
+            color: var(--primary-blue);
+            border-bottom-color: var(--primary-blue);
+            background: var(--bg-card);
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        .tab-content.active { display: block; }
+
+        /* Related Items Table */
+        .related-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .related-table th,
+        .related-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+        }
+        .related-table th {
+            background: var(--bg-body);
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+        .related-table tr:hover { background: var(--bg-body); }
+        .related-table tr:last-child td { border-bottom: none; }
+
+        /* Relationship Item */
+        .relationship-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            background: var(--bg-body);
+            margin-bottom: 8px;
+        }
+        .relationship-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+        .relationship-info { flex: 1; }
+        .relationship-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-blue);
+            cursor: pointer;
+        }
+        .relationship-name:hover { text-decoration: underline; }
+        .relationship-details {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .relationship-type {
+            font-size: 11px;
+            color: var(--text-secondary);
+            background: var(--border-color);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+        }
+        .timeline-item {
+            position: relative;
+            padding-bottom: 20px;
+        }
+        .timeline-item:last-child { padding-bottom: 0; }
+        .timeline-dot {
+            position: absolute;
+            left: -26px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 2px solid var(--primary-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .timeline-dot i {
+            font-size: 8px;
+            color: var(--primary-blue);
+        }
+        .timeline-content {
+            background: var(--bg-body);
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .timeline-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .timeline-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-body);
+            border-radius: 8px;
+        }
+        .metric-name {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .metric-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 1200px) {
+            .content-grid { grid-template-columns: 1fr; }
+            .quick-stats { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .asset-header { flex-direction: column; gap: 16px; }
+            .asset-status { text-align: left; }
+            .quick-stats { grid-template-columns: repeat(2, 1fr); }
+            .info-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar"></div>
+    <header id="header"></header>
+
+    <main class="main-content">
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb" style="margin-bottom: 16px;">
+            <a href="dashboard.html">Home</a>
+            <i class="fas fa-chevron-right"></i>
+            <a href="assets.html">Assets</a>
+            <i class="fas fa-chevron-right"></i>
+            <span id="breadcrumbAsset">Loading...</span>
+        </nav>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-header-left">
+                <h1 id="pageTitle">Asset Details</h1>
+            </div>
+            <div class="page-header-right">
+                <button class="btn btn-secondary" onclick="refreshMetrics()">
+                    <i class="fas fa-sync-alt"></i> Refresh Metrics
+                </button>
+                <button class="btn btn-secondary" onclick="showHistory()">
+                    <i class="fas fa-history"></i> History
+                </button>
+                <a id="editAssetBtn" href="#" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Edit Asset
+                </a>
+            </div>
+        </div>
+
+        <!-- Asset Header Card -->
+        <div class="asset-header-card" id="assetHeaderCard">
+            <!-- Populated by JS -->
+        </div>
+
+        <!-- Content Grid -->
+        <div class="content-grid">
+            <!-- Performance Metrics -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-area"></i>
+                        Performance Metrics
+                    </h3>
+                    <select id="timeRangeSelect" onchange="updateCharts()">
+                        <option value="1h">Last 1 Hour</option>
+                        <option value="6h" selected>Last 6 Hours</option>
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                    </select>
+                </div>
+                <div class="card-body">
+                    <div class="chart-header">
+                        <div class="chart-title">CPU Utilization</div>
+                        <div class="chart-value" id="cpuValue">--% <span>avg: --%</span></div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="cpuChart"></canvas>
+                    </div>
+
+                    <div class="chart-header">
+                        <div class="chart-title">Memory Usage</div>
+                        <div class="chart-value" id="memoryValue">--% <span>of -- GB</span></div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="memoryChart"></canvas>
+                    </div>
+
+                    <div class="chart-header">
+                        <div class="chart-title">Network Traffic</div>
+                        <div class="chart-value" id="networkValue">-- Mbps <span>peak: -- Mbps</span></div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="networkChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+                <!-- Asset Information -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-info-circle"></i>
+                            Asset Information
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-grid" id="assetInfoGrid">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Alerts -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-bell"></i>
+                            Recent Alerts
+                        </h3>
+                        <a href="incidents.html" style="font-size: 13px; color: var(--primary-blue); text-decoration: none;">View All</a>
+                    </div>
+                    <div class="card-body" id="recentAlerts">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabbed Section - Full Width -->
+            <div class="card full-width">
+                <div class="tabs">
+                    <div class="tab active" data-tab="relationships">Relationships</div>
+                    <div class="tab" data-tab="incidents">Related Incidents</div>
+                    <div class="tab" data-tab="changes">Related Changes</div>
+                    <div class="tab" data-tab="timeline">Activity Timeline</div>
+                    <div class="tab" data-tab="metrics">All Metrics</div>
+                </div>
+
+                <!-- Relationships Tab -->
+                <div class="tab-content active" id="tab-relationships">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
+                        <div>
+                            <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-secondary);">
+                                <i class="fas fa-arrow-up"></i> Depends On
+                            </h4>
+                            <div id="dependsOnList">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-secondary);">
+                                <i class="fas fa-arrow-down"></i> Used By
+                            </h4>
+                            <div id="usedByList">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Related Incidents Tab -->
+                <div class="tab-content" id="tab-incidents">
+                    <table class="related-table">
+                        <thead>
+                            <tr>
+                                <th>Incident ID</th>
+                                <th>Title</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody id="relatedIncidentsBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Related Changes Tab -->
+                <div class="tab-content" id="tab-changes">
+                    <table class="related-table">
+                        <thead>
+                            <tr>
+                                <th>Change ID</th>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Scheduled</th>
+                            </tr>
+                        </thead>
+                        <tbody id="relatedChangesBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Activity Timeline Tab -->
+                <div class="tab-content" id="tab-timeline">
+                    <div class="timeline" id="activityTimeline">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- All Metrics Tab -->
+                <div class="tab-content" id="tab-metrics">
+                    <div class="metrics-grid" id="allMetricsGrid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        let asset = null;
+        let cpuChart, memoryChart, networkChart;
+
+        // Sample asset data
+        const sampleAssets = {
+            '1': {
+                id: '1',
+                hostname: 'prod-app-01',
+                ip: '10.0.1.10',
+                mac: '00:1A:2B:3C:4D:5E',
+                type: 'Application Server',
+                environment: 'fs-mum-indmoney-prod-le',
+                location: 'DC-1, Rack A3',
+                status: 'up',
+                owner: 'Infrastructure Ops',
+                ownerEmail: 'infra-ops@company.com',
+                lastSeen: new Date(Date.now() - 120000),
+                uptime: '127 days, 14:32:18',
+                model: 'Dell PowerEdge R750',
+                serialNumber: 'FXS2342Q0V8',
+                osVersion: 'Ubuntu 22.04 LTS',
+                cpuCurrent: 23,
+                cpuAvg: 18,
+                memoryCurrent: 67,
+                memoryTotal: 64,
+                networkIn: 450,
+                networkOut: 320,
+                networkPeak: 780,
+                category: 'server'
+            },
+            '2': {
+                id: '2',
+                hostname: 'prod-db-01',
+                ip: '10.0.1.20',
+                mac: '00:1A:2B:3C:4D:5F',
+                type: 'PostgreSQL Database',
+                environment: 'fs-mum-indmoney-prod-le',
+                location: 'DC-1, Rack B2',
+                status: 'up',
+                owner: 'DBA Team',
+                ownerEmail: 'dba@company.com',
+                lastSeen: new Date(Date.now() - 60000),
+                uptime: '89 days, 06:45:12',
+                model: 'Dell PowerEdge R750xs',
+                serialNumber: 'GXS3452Q1W9',
+                osVersion: 'PostgreSQL 15.2',
+                cpuCurrent: 45,
+                cpuAvg: 38,
+                memoryCurrent: 78,
+                memoryTotal: 128,
+                networkIn: 890,
+                networkOut: 650,
+                networkPeak: 1200,
+                category: 'database'
+            }
+        };
+
+        // Sample related data
+        const sampleRelationships = {
+            dependsOn: [
+                { id: '2', hostname: 'prod-db-01', type: 'PostgreSQL Database', relation: 'Database' },
+                { id: '7', hostname: 'redis-cache-01', type: 'Redis Database', relation: 'Cache' },
+                { id: '8', hostname: 'lb-frontend-01', type: 'Load Balancer', relation: 'Load Balancer' }
+            ],
+            usedBy: [
+                { id: '5', hostname: 'api-gateway', type: 'AWS EKS Cluster', relation: 'API Gateway' },
+                { id: '10', hostname: 'k8s-worker-01', type: 'AWS EC2 Instance', relation: 'Worker Node' },
+                { id: '11', hostname: 'k8s-worker-02', type: 'AWS EC2 Instance', relation: 'Worker Node' }
+            ]
+        };
+
+        const sampleIncidents = [
+            { id: 'INC-2024-0456', title: 'High CPU utilization alert', priority: 'high', status: 'resolved', created: '2024-12-20' },
+            { id: 'INC-2024-0423', title: 'Memory threshold exceeded', priority: 'medium', status: 'resolved', created: '2024-12-15' },
+            { id: 'INC-2024-0398', title: 'Service restart required', priority: 'low', status: 'closed', created: '2024-12-10' }
+        ];
+
+        const sampleChanges = [
+            { id: 'CHG-2024-0089', title: 'OS security patches', type: 'standard', status: 'completed', scheduled: '2024-12-22' },
+            { id: 'CHG-2024-0076', title: 'Application upgrade v2.5', type: 'normal', status: 'scheduled', scheduled: '2025-01-05' }
+        ];
+
+        const sampleAlerts = [
+            { type: 'warning', title: 'High Memory Utilization', detail: 'Memory exceeded 65% threshold', time: '2 min ago' },
+            { type: 'info', title: 'Backup Completed', detail: 'Daily backup successful', time: '4 hours ago' },
+            { type: 'info', title: 'Patch Applied', detail: 'Security patch KB5034441', time: '1 day ago' }
+        ];
+
+        const sampleTimeline = [
+            { icon: 'fa-check', title: 'Health check passed', time: '2 minutes ago' },
+            { icon: 'fa-sync', title: 'Metrics collected', time: '5 minutes ago' },
+            { icon: 'fa-memory', title: 'Memory usage: 67%', time: '10 minutes ago' },
+            { icon: 'fa-server', title: 'Service restarted', time: '2 hours ago' },
+            { icon: 'fa-download', title: 'Backup completed', time: '4 hours ago' },
+            { icon: 'fa-shield-alt', title: 'Security scan completed', time: '6 hours ago' }
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            Layout.init();
+            const assetId = new URLSearchParams(window.location.search).get('id') || '1';
+            await loadAsset(assetId);
+            setupTabs();
+            initCharts();
+        });
+
+        async function loadAsset(id) {
+            try {
+                const response = await API.assets.get(id);
+                if (response.success && response.data) {
+                    asset = response.data;
+                } else {
+                    asset = sampleAssets[id] || sampleAssets['1'];
+                }
+            } catch (error) {
+                console.log('Using sample data');
+                asset = sampleAssets[id] || sampleAssets['1'];
+            }
+
+            renderAsset();
+            renderRelationships();
+            renderRelatedRecords();
+            renderAlerts();
+            renderTimeline();
+            renderMetrics();
+        }
+
+        function renderAsset() {
+            document.getElementById('breadcrumbAsset').textContent = asset.hostname;
+            document.getElementById('pageTitle').textContent = asset.hostname;
+            document.getElementById('editAssetBtn').href = `asset-create.html?id=${asset.id}`;
+
+            const iconClass = getIconClass(asset.type);
+            const iconName = getIconName(asset.type);
+
+            document.getElementById('assetHeaderCard').innerHTML = `
+                <div class="asset-header">
+                    <div class="asset-info">
+                        <div class="asset-icon-large ${iconClass}">
+                            <i class="fas ${iconName}"></i>
+                        </div>
+                        <div class="asset-details">
+                            <h1>${asset.hostname}</h1>
+                            <div class="asset-type">${asset.type} ${asset.model ? '• ' + asset.model : ''}</div>
+                            <div class="asset-badges">
+                                <span class="badge badge-${asset.status === 'up' ? 'success' : asset.status === 'maintenance' ? 'warning' : 'danger'}">
+                                    ${asset.status === 'up' ? 'Online' : asset.status === 'maintenance' ? 'Maintenance' : 'Offline'}
+                                </span>
+                                <span class="badge badge-info">${asset.environment || 'Production'}</span>
+                                <span class="badge badge-secondary">${asset.location || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="asset-status">
+                        <div class="status-indicator">
+                            <span class="status-dot ${asset.status}"></span>
+                            <span style="color: var(--${asset.status === 'up' ? 'success' : asset.status === 'maintenance' ? 'warning' : 'danger'}); font-weight: 600;">
+                                ${asset.status === 'up' ? 'Operational' : asset.status === 'maintenance' ? 'Under Maintenance' : 'Not Responding'}
+                            </span>
+                        </div>
+                        <div class="uptime">
+                            <i class="fas fa-clock"></i> Uptime: ${asset.uptime || 'N/A'}
+                        </div>
+                        <div class="uptime" style="margin-top: 4px;">
+                            <i class="fas fa-sync"></i> Last polled: ${formatLastSeen(asset.lastSeen)}
+                        </div>
+                    </div>
+                </div>
+                <div class="quick-stats">
+                    <div class="quick-stat">
+                        <div class="quick-stat-value">${asset.cpuCurrent || '--'}%</div>
+                        <div class="quick-stat-label">CPU Utilization</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat-value">${asset.memoryCurrent || '--'}%</div>
+                        <div class="quick-stat-label">Memory Usage</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat-value success">${asset.networkIn || '--'}</div>
+                        <div class="quick-stat-label">Network In (Mbps)</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat-value">${asset.networkOut || '--'}</div>
+                        <div class="quick-stat-label">Network Out (Mbps)</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat-value warning">${sampleIncidents.filter(i => i.status !== 'closed').length}</div>
+                        <div class="quick-stat-label">Open Incidents</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat-value">${sampleChanges.filter(c => c.status === 'scheduled').length}</div>
+                        <div class="quick-stat-label">Pending Changes</div>
+                    </div>
+                </div>
+            `;
+
+            // Update chart values
+            document.getElementById('cpuValue').innerHTML = `${asset.cpuCurrent || '--'}% <span>avg: ${asset.cpuAvg || '--'}%</span>`;
+            document.getElementById('memoryValue').innerHTML = `${asset.memoryCurrent || '--'}% <span>of ${asset.memoryTotal || '--'} GB</span>`;
+            document.getElementById('networkValue').innerHTML = `${asset.networkIn || '--'} Mbps <span>peak: ${asset.networkPeak || '--'} Mbps</span>`;
+
+            // Asset info grid
+            document.getElementById('assetInfoGrid').innerHTML = `
+                <div class="info-item">
+                    <div class="info-item-label">IP Address</div>
+                    <div class="info-item-value">${asset.ip || '-'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-item-label">MAC Address</div>
+                    <div class="info-item-value">${asset.mac || '-'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-item-label">Serial Number</div>
+                    <div class="info-item-value">${asset.serialNumber || '-'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-item-label">Model</div>
+                    <div class="info-item-value">${asset.model || '-'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-item-label">OS / Version</div>
+                    <div class="info-item-value">${asset.osVersion || '-'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-item-label">Location</div>
+                    <div class="info-item-value">${asset.location || '-'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-item-label">Owner</div>
+                    <div class="info-item-value">${asset.owner || '-'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-item-label">Environment</div>
+                    <div class="info-item-value">${asset.environment || '-'}</div>
+                </div>
+            `;
+        }
+
+        function renderRelationships() {
+            const dependsOnHtml = sampleRelationships.dependsOn.map(rel => `
+                <div class="relationship-item">
+                    <div class="relationship-icon">
+                        <i class="fas ${getIconName(rel.type)}"></i>
+                    </div>
+                    <div class="relationship-info">
+                        <div class="relationship-name" onclick="window.location.href='asset-detail.html?id=${rel.id}'">${rel.hostname}</div>
+                        <div class="relationship-details">${rel.type}</div>
+                    </div>
+                    <div class="relationship-type">${rel.relation}</div>
+                </div>
+            `).join('');
+
+            const usedByHtml = sampleRelationships.usedBy.map(rel => `
+                <div class="relationship-item">
+                    <div class="relationship-icon">
+                        <i class="fas ${getIconName(rel.type)}"></i>
+                    </div>
+                    <div class="relationship-info">
+                        <div class="relationship-name" onclick="window.location.href='asset-detail.html?id=${rel.id}'">${rel.hostname}</div>
+                        <div class="relationship-details">${rel.type}</div>
+                    </div>
+                    <div class="relationship-type">${rel.relation}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('dependsOnList').innerHTML = dependsOnHtml || '<p style="color: var(--text-secondary); font-size: 13px;">No dependencies found</p>';
+            document.getElementById('usedByList').innerHTML = usedByHtml || '<p style="color: var(--text-secondary); font-size: 13px;">No dependents found</p>';
+        }
+
+        function renderRelatedRecords() {
+            // Incidents
+            document.getElementById('relatedIncidentsBody').innerHTML = sampleIncidents.map(inc => `
+                <tr>
+                    <td><a href="incident-detail.html?id=${inc.id}" style="color: var(--primary-blue); text-decoration: none;">${inc.id}</a></td>
+                    <td>${inc.title}</td>
+                    <td><span class="priority-badge ${inc.priority}">${inc.priority}</span></td>
+                    <td><span class="status-badge-sm ${inc.status}">${inc.status}</span></td>
+                    <td>${inc.created}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No related incidents</td></tr>';
+
+            // Changes
+            document.getElementById('relatedChangesBody').innerHTML = sampleChanges.map(chg => `
+                <tr>
+                    <td><a href="change-detail.html?id=${chg.id}" style="color: var(--primary-blue); text-decoration: none;">${chg.id}</a></td>
+                    <td>${chg.title}</td>
+                    <td><span class="badge badge-${chg.type === 'emergency' ? 'danger' : chg.type === 'normal' ? 'info' : 'secondary'}">${chg.type}</span></td>
+                    <td><span class="status-badge-sm ${chg.status}">${chg.status}</span></td>
+                    <td>${chg.scheduled}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No related changes</td></tr>';
+        }
+
+        function renderAlerts() {
+            document.getElementById('recentAlerts').innerHTML = sampleAlerts.map(alert => `
+                <div class="alert-item ${alert.type}">
+                    <div class="alert-icon">
+                        <i class="fas fa-${alert.type === 'critical' ? 'times' : alert.type === 'warning' ? 'exclamation' : 'info'}"></i>
+                    </div>
+                    <div class="alert-content">
+                        <div class="alert-title">${alert.title}</div>
+                        <div class="alert-time">${alert.detail} • ${alert.time}</div>
+                    </div>
+                </div>
+            `).join('') || '<p style="color: var(--text-secondary); font-size: 13px; text-align: center;">No recent alerts</p>';
+        }
+
+        function renderTimeline() {
+            document.getElementById('activityTimeline').innerHTML = sampleTimeline.map(item => `
+                <div class="timeline-item">
+                    <div class="timeline-dot"><i class="fas ${item.icon}"></i></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">${item.title}</div>
+                        <div class="timeline-time">${item.time}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderMetrics() {
+            const metrics = [
+                { name: 'CPU Usage', value: `${asset.cpuCurrent || '--'}%` },
+                { name: 'Memory Usage', value: `${asset.memoryCurrent || '--'}%` },
+                { name: 'Disk Usage', value: '45%' },
+                { name: 'Network In', value: `${asset.networkIn || '--'} Mbps` },
+                { name: 'Network Out', value: `${asset.networkOut || '--'} Mbps` },
+                { name: 'Active Connections', value: '1,234' },
+                { name: 'Process Count', value: '156' },
+                { name: 'Load Average (1m)', value: '2.45' },
+                { name: 'Load Average (5m)', value: '2.12' },
+                { name: 'Load Average (15m)', value: '1.89' },
+                { name: 'TCP Connections', value: '892' },
+                { name: 'UDP Connections', value: '45' }
+            ];
+
+            document.getElementById('allMetricsGrid').innerHTML = metrics.map(m => `
+                <div class="metric-item">
+                    <span class="metric-name">${m.name}</span>
+                    <span class="metric-value">${m.value}</span>
+                </div>
+            `).join('');
+        }
+
+        function initCharts() {
+            const labels = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00'];
+
+            // CPU Chart
+            const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+            cpuChart = new Chart(cpuCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'CPU %',
+                        data: [15, 18, 22, 19, 23, 21, asset.cpuCurrent || 23],
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }]
+                },
+                options: getChartOptions(100, '%')
+            });
+
+            // Memory Chart
+            const memCtx = document.getElementById('memoryChart').getContext('2d');
+            memoryChart = new Chart(memCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Memory %',
+                        data: [62, 64, 65, 66, 65, 67, asset.memoryCurrent || 67],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }]
+                },
+                options: getChartOptions(100, '%')
+            });
+
+            // Network Chart
+            const netCtx = document.getElementById('networkChart').getContext('2d');
+            networkChart = new Chart(netCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Inbound',
+                        data: [320, 380, 420, 390, 450, 410, asset.networkIn || 450],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }, {
+                        label: 'Outbound',
+                        data: [280, 310, 350, 320, 360, 340, asset.networkOut || 320],
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    ...getChartOptions(1000, ' Mbps'),
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            align: 'end'
+                        }
+                    }
+                }
+            });
+        }
+
+        function getChartOptions(max, suffix) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: max,
+                        grid: { color: '#f3f4f6' },
+                        ticks: { callback: value => value + suffix }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            };
+        }
+
+        function updateCharts() {
+            // In production, this would fetch new data based on time range
+            console.log('Updating charts for:', document.getElementById('timeRangeSelect').value);
+        }
+
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(`tab-${tabName}`).classList.add('active');
+                });
+            });
+        }
+
+        function getIconClass(type) {
+            const typeLower = (type || '').toLowerCase();
+            if (typeLower.includes('database') || typeLower.includes('postgresql') || typeLower.includes('mysql')) return 'database';
+            if (typeLower.includes('network') || typeLower.includes('router') || typeLower.includes('switch')) return 'network';
+            if (typeLower.includes('cloud') || typeLower.includes('aws') || typeLower.includes('azure')) return 'cloud';
+            return 'server';
+        }
+
+        function getIconName(type) {
+            const typeLower = (type || '').toLowerCase();
+            if (typeLower.includes('database') || typeLower.includes('postgresql') || typeLower.includes('mysql')) return 'fa-database';
+            if (typeLower.includes('network') || typeLower.includes('router')) return 'fa-network-wired';
+            if (typeLower.includes('switch')) return 'fa-random';
+            if (typeLower.includes('cloud') || typeLower.includes('aws') || typeLower.includes('azure')) return 'fa-cloud';
+            if (typeLower.includes('firewall')) return 'fa-shield-alt';
+            return 'fa-server';
+        }
+
+        function formatLastSeen(date) {
+            if (!date) return 'Never';
+            const now = new Date();
+            const seen = new Date(date);
+            const diff = Math.floor((now - seen) / 1000);
+            if (diff < 60) return `${diff} seconds ago`;
+            if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+            return `${Math.floor(diff / 86400)} days ago`;
+        }
+
+        function refreshMetrics() {
+            Layout.showNotification('Refreshing metrics...', 'info');
+            setTimeout(() => {
+                Layout.showNotification('Metrics refreshed successfully', 'success');
+            }, 1500);
+        }
+
+        function showHistory() {
+            Layout.showNotification('History feature coming soon', 'info');
+        }
+    </script>
+
+    <style>
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .breadcrumb a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            color: var(--primary-blue);
+        }
+        .breadcrumb i {
+            font-size: 10px;
+        }
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .priority-badge.critical { background: #fef2f2; color: #dc2626; }
+        .priority-badge.high { background: #fff7ed; color: #ea580c; }
+        .priority-badge.medium { background: #fefce8; color: #ca8a04; }
+        .priority-badge.low { background: #f0fdf4; color: #16a34a; }
+        .status-badge-sm {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .status-badge-sm.open, .status-badge-sm.scheduled { background: #dbeafe; color: #1d4ed8; }
+        .status-badge-sm.in-progress, .status-badge-sm.in_progress { background: #fef3c7; color: #b45309; }
+        .status-badge-sm.resolved, .status-badge-sm.completed { background: #d1fae5; color: #059669; }
+        .status-badge-sm.closed { background: #f3f4f6; color: #6b7280; }
+    </style>
+</body>
+</html>

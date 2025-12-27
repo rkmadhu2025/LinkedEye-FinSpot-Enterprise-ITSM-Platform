@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI Insights & Analytics - LinkedEye-FinSpot">
+    <title>AI Analytics | LinkedEye-FinSpot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-navy: #0f1c3f;
+            --primary-blue: #2563eb;
+            --primary-blue-light: #3b82f6;
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --border-color: #e5e8eb;
+            --text-primary: #0f1c3f;
+            --text-secondary: #6b7785;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--gray-100);
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--primary-navy);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            z-index: 200;
+        }
+
+        .sidebar-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-blue-light), var(--purple));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-logo i {
+            font-size: 20px;
+            color: #fff;
+        }
+
+        .sidebar-brand {
+            color: #fff;
+        }
+
+        .sidebar-brand h1 {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .sidebar-brand span {
+            font-size: 10px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .sidebar-nav {
+            padding: 16px 12px;
+            overflow-y: auto;
+            height: calc(100vh - 140px);
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-section-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 12px 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--primary-blue), #1d4ed8);
+            color: #fff;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-item .nav-badge {
+            background: var(--danger);
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: auto;
+        }
+
+        .nav-item .nav-badge.warning {
+            background: var(--warning);
+        }
+
+        .sidebar-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .env-selector-footer {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+            font-size: 12px;
+        }
+
+        .env-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--success);
+            border-radius: 50%;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-width);
+            right: 0;
+            height: var(--header-height);
+            background: white;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .header-left h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notification-btn {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-btn:hover {
+            background: #f9fafb;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 18px;
+            height: 18px;
+            background: var(--danger);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fff;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .user-menu:hover {
+            background: #f3f4f6;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-blue), var(--purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-info {
+            text-align: left;
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .user-role {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .ai-badge {
+            background: linear-gradient(135deg, var(--purple), var(--primary));
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .header-left p {
+            color: var(--gray-500);
+            font-size: 14px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+        }
+
+        /* Page Content */
+        .page-content {
+            padding: 24px;
+        }
+
+        /* AI Summary Banner */
+        .ai-summary-banner {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border-radius: 16px;
+            padding: 24px;
+            color: white;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-summary-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100%;
+            background: url("data:image/svg+xml,%3Csvg width='300' height='200' viewBox='0 0 300 200' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='200' cy='100' r='120' stroke='rgba(255,255,255,0.1)' stroke-width='40'/%3E%3Ccircle cx='250' cy='50' r='60' stroke='rgba(255,255,255,0.1)' stroke-width='20'/%3E%3C/svg%3E") no-repeat center;
+            opacity: 0.5;
+        }
+
+        .ai-banner-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .ai-banner-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .ai-banner-header i {
+            font-size: 24px;
+        }
+
+        .ai-banner-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .ai-banner-time {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-left: auto;
+        }
+
+        .ai-summary-text {
+            font-size: 15px;
+            line-height: 1.6;
+            opacity: 0.95;
+        }
+
+        .ai-summary-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .ai-action-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ai-action-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Insight Cards Grid */
+        .insight-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .insight-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .insight-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .insight-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .insight-icon.anomaly {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .insight-icon.prediction {
+            background: #dbeafe;
+            color: var(--info);
+        }
+
+        .insight-icon.optimization {
+            background: #d1fae5;
+            color: var(--success);
+        }
+
+        .insight-icon.pattern {
+            background: #fef3c7;
+            color: var(--warning);
+        }
+
+        .insight-badge {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .insight-badge.high {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .insight-badge.medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .insight-badge.low {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .insight-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 6px;
+        }
+
+        .insight-card p {
+            font-size: 12px;
+            color: var(--gray-500);
+            line-height: 1.5;
+        }
+
+        .insight-metric {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-top: 12px;
+        }
+
+        .insight-metric span {
+            font-size: 12px;
+            font-weight: normal;
+            color: var(--gray-500);
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Anomaly Detection List */
+        .anomaly-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .anomaly-item {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .anomaly-item.critical {
+            background: #fef2f2;
+            border-left-color: var(--danger);
+        }
+
+        .anomaly-item.warning {
+            background: #fffbeb;
+            border-left-color: var(--warning);
+        }
+
+        .anomaly-item.info {
+            background: #eff6ff;
+            border-left-color: var(--info);
+        }
+
+        .anomaly-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .anomaly-item.critical .anomaly-icon {
+            background: var(--danger);
+            color: white;
+        }
+
+        .anomaly-item.warning .anomaly-icon {
+            background: var(--warning);
+            color: white;
+        }
+
+        .anomaly-item.info .anomaly-icon {
+            background: var(--info);
+            color: white;
+        }
+
+        .anomaly-content {
+            flex: 1;
+        }
+
+        .anomaly-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .anomaly-description {
+            font-size: 13px;
+            color: var(--gray-600);
+            margin-bottom: 8px;
+        }
+
+        .anomaly-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .anomaly-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .anomaly-action {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .action-link {
+            font-size: 13px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .action-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Prediction Cards */
+        .prediction-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .prediction-card {
+            background: var(--gray-50);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .prediction-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .prediction-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .prediction-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .prediction-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .prediction-label {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .prediction-trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .prediction-trend.up {
+            color: var(--danger);
+        }
+
+        .prediction-trend.down {
+            color: var(--success);
+        }
+
+        /* Recommendations */
+        .recommendation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .recommendation-item {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            background: var(--gray-50);
+            border-radius: 8px;
+        }
+
+        .recommendation-number {
+            width: 28px;
+            height: 28px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .recommendation-content {
+            flex: 1;
+        }
+
+        .recommendation-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .recommendation-description {
+            font-size: 13px;
+            color: var(--gray-600);
+            line-height: 1.5;
+        }
+
+        .recommendation-impact {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            font-size: 12px;
+        }
+
+        .impact-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .impact-badge.high {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .impact-badge.medium {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* Correlation Matrix */
+        .correlation-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+        }
+
+        .correlation-cell {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .correlation-label {
+            font-size: 10px;
+            color: var(--gray-500);
+            text-align: center;
+            padding: 4px;
+        }
+
+        /* ML Model Status */
+        .model-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .model-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--gray-50);
+            border-radius: 8px;
+        }
+
+        .model-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--purple);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .model-info {
+            flex: 1;
+        }
+
+        .model-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .model-meta {
+            font-size: 11px;
+            color: var(--gray-500);
+        }
+
+        .model-accuracy {
+            text-align: right;
+        }
+
+        .accuracy-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        .accuracy-label {
+            font-size: 10px;
+            color: var(--gray-500);
+        }
+
+        /* Full Width */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* Root Cause Analysis */
+        .rca-tree {
+            padding: 20px;
+        }
+
+        .rca-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .rca-box {
+            background: var(--gray-100);
+            border-radius: 8px;
+            padding: 12px 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .rca-box.root {
+            background: var(--danger);
+            color: white;
+        }
+
+        .rca-box.cause {
+            background: var(--warning);
+            color: white;
+        }
+
+        .rca-children {
+            display: flex;
+            gap: 24px;
+            margin-top: 24px;
+            position: relative;
+        }
+
+        .rca-children::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            width: 2px;
+            height: 12px;
+            background: var(--gray-300);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fas fa-eye"></i></div>
+            <div class="sidebar-brand"><h1>LinkedEye</h1><span>FinSpot Enterprise</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="linkedeye-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+                <a href="linkedeye-incidents.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Incidents</span><span class="nav-badge">23</span></a>
+                <a href="linkedeye-change-calendar.html" class="nav-item"><i class="fas fa-code-branch"></i><span>Changes</span><span class="nav-badge warning">7</span></a>
+                <a href="linkedeye-problem-detail.html" class="nav-item"><i class="fas fa-search"></i><span>Problems</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Infrastructure</div>
+                <a href="linkedeye-assets.html" class="nav-item"><i class="fas fa-cubes"></i><span>Assets</span></a>
+                <a href="linkedeye-network-topology.html" class="nav-item"><i class="fas fa-network-wired"></i><span>Network</span></a>
+                <a href="linkedeye-network-devices.html" class="nav-item"><i class="fas fa-server"></i><span>Devices</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Analytics</div>
+                <a href="linkedeye-reports.html" class="nav-item"><i class="fas fa-file-alt"></i><span>Reports</span></a>
+                <a href="linkedeye-analytics.html" class="nav-item active"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Administration</div>
+                <a href="linkedeye-users.html" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+                <a href="linkedeye-groups.html" class="nav-item"><i class="fas fa-user-friends"></i><span>Groups</span></a>
+                <a href="linkedeye-integrations.html" class="nav-item"><i class="fas fa-plug"></i><span>Integrations</span></a>
+                <a href="linkedeye-admin-settings.html" class="nav-item"><i class="fas fa-cog"></i><span>Settings</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="env-selector">
+                <div class="env-dot"></div>
+                <span>Production Environment</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search insights, predictions, patterns...">
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="notification-btn">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">3</span>
+            </button>
+            <div class="user-menu">
+                <div class="user-avatar">RK</div>
+                <div class="user-info">
+                    <div class="user-name">Rahul Kumar</div>
+                    <div class="user-role">Admin</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <h1>AI Insights & Analytics <span class="ai-badge"><i class="fas fa-sparkles"></i> AI Powered</span></h1>
+                <p>Machine learning-driven operational intelligence</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary">
+                    <i class="fas fa-cog"></i>
+                    Configure Models
+                </button>
+                <button class="btn btn-primary">
+                    <i class="fas fa-sync-alt"></i>
+                    Refresh Analysis
+                </button>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <!-- AI Summary Banner -->
+            <div class="ai-summary-banner">
+                <div class="ai-banner-content">
+                    <div class="ai-banner-header">
+                        <i class="fas fa-robot"></i>
+                        <h2>AI Operations Summary</h2>
+                        <span class="ai-banner-time">Last updated: 2 minutes ago</span>
+                    </div>
+                    <div class="ai-summary-text">
+                        Based on analysis of <strong>12,847 incidents</strong> and <strong>2,341 changes</strong> over the past 90 days, I've identified <strong>3 critical patterns</strong> requiring attention. The payment gateway cluster (fs-mum-indmoney-prod-le) shows a <strong>23% increase in latency-related incidents</strong> correlating with the recent Kubernetes upgrade. Additionally, there's a <strong>predicted spike of 40+ incidents</strong> expected during the upcoming maintenance window on Dec 28th. I recommend scaling auto-remediation for pod restart workflows.
+                    </div>
+                    <div class="ai-summary-actions">
+                        <button class="ai-action-btn">
+                            <i class="fas fa-file-alt"></i>
+                            View Full Report
+                        </button>
+                        <button class="ai-action-btn">
+                            <i class="fas fa-tasks"></i>
+                            Create Action Items
+                        </button>
+                        <button class="ai-action-btn">
+                            <i class="fas fa-share-alt"></i>
+                            Share with Team
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insight Cards -->
+            <div class="insight-cards">
+                <div class="insight-card">
+                    <div class="insight-card-header">
+                        <div class="insight-icon anomaly">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <span class="insight-badge high">High Priority</span>
+                    </div>
+                    <h3>Anomalies Detected</h3>
+                    <p>Unusual patterns in incident volume and resolution time</p>
+                    <div class="insight-metric">7 <span>active anomalies</span></div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-card-header">
+                        <div class="insight-icon prediction">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <span class="insight-badge medium">Medium</span>
+                    </div>
+                    <h3>Predicted Incidents</h3>
+                    <p>Forecasted incident volume for next 7 days</p>
+                    <div class="insight-metric">~287 <span>expected incidents</span></div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-card-header">
+                        <div class="insight-icon optimization">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <span class="insight-badge low">Opportunity</span>
+                    </div>
+                    <h3>Automation Potential</h3>
+                    <p>Incidents suitable for auto-remediation</p>
+                    <div class="insight-metric">34% <span>can be automated</span></div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-card-header">
+                        <div class="insight-icon pattern">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <span class="insight-badge medium">Trending</span>
+                    </div>
+                    <h3>Pattern Clusters</h3>
+                    <p>Related incidents grouped by root cause</p>
+                    <div class="insight-metric">12 <span>active patterns</span></div>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <!-- Anomaly Detection -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-radar"></i>
+                            Anomaly Detection
+                        </h3>
+                        <select style="padding: 6px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px;">
+                            <option>All Severities</option>
+                            <option>Critical Only</option>
+                            <option>Warning</option>
+                        </select>
+                    </div>
+                    <div class="card-body">
+                        <div class="anomaly-list">
+                            <div class="anomaly-item critical">
+                                <div class="anomaly-icon">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                                <div class="anomaly-content">
+                                    <div class="anomaly-title">Latency Spike Detected</div>
+                                    <div class="anomaly-description">Payment gateway API response times increased by 340% compared to baseline. Correlates with increased pod evictions in k8s-prod-cluster.</div>
+                                    <div class="anomaly-meta">
+                                        <span><i class="fas fa-server"></i> fs-mum-indmoney-prod-le</span>
+                                        <span><i class="fas fa-clock"></i> Detected 15 min ago</span>
+                                        <span><i class="fas fa-percentage"></i> 99.7% confidence</span>
+                                    </div>
+                                </div>
+                                <div class="anomaly-action">
+                                    <a href="#" class="action-link">Investigate →</a>
+                                </div>
+                            </div>
+                            <div class="anomaly-item warning">
+                                <div class="anomaly-icon">
+                                    <i class="fas fa-database"></i>
+                                </div>
+                                <div class="anomaly-content">
+                                    <div class="anomaly-title">Database Connection Pool Exhaustion</div>
+                                    <div class="anomaly-description">PostgreSQL connection pool utilization trending upward. Predicted to hit limit within 4 hours based on current trajectory.</div>
+                                    <div class="anomaly-meta">
+                                        <span><i class="fas fa-server"></i> neo-prod-le</span>
+                                        <span><i class="fas fa-clock"></i> Detected 1 hour ago</span>
+                                        <span><i class="fas fa-percentage"></i> 94.2% confidence</span>
+                                    </div>
+                                </div>
+                                <div class="anomaly-action">
+                                    <a href="#" class="action-link">Investigate →</a>
+                                </div>
+                            </div>
+                            <div class="anomaly-item info">
+                                <div class="anomaly-icon">
+                                    <i class="fas fa-chart-bar"></i>
+                                </div>
+                                <div class="anomaly-content">
+                                    <div class="anomaly-title">Unusual Incident Volume Pattern</div>
+                                    <div class="anomaly-description">45% higher incident volume during off-peak hours compared to historical average. Investigating correlation with recent deployment.</div>
+                                    <div class="anomaly-meta">
+                                        <span><i class="fas fa-globe"></i> All Environments</span>
+                                        <span><i class="fas fa-clock"></i> Detected 3 hours ago</span>
+                                        <span><i class="fas fa-percentage"></i> 87.5% confidence</span>
+                                    </div>
+                                </div>
+                                <div class="anomaly-action">
+                                    <a href="#" class="action-link">Investigate →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Predictions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-crystal-ball"></i>
+                            Predictive Analytics
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="prediction-grid">
+                            <div class="prediction-card">
+                                <div class="prediction-header">
+                                    <div class="prediction-icon" style="background: #fee2e2; color: var(--danger);">
+                                        <i class="fas fa-fire"></i>
+                                    </div>
+                                    <span class="prediction-title">Next 24h Incidents</span>
+                                </div>
+                                <div class="prediction-value">42</div>
+                                <div class="prediction-label">Predicted P1/P2 incidents</div>
+                                <div class="prediction-trend up">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>+15% vs last week</span>
+                                </div>
+                            </div>
+                            <div class="prediction-card">
+                                <div class="prediction-header">
+                                    <div class="prediction-icon" style="background: #dbeafe; color: var(--info);">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <span class="prediction-title">Avg MTTR Forecast</span>
+                                </div>
+                                <div class="prediction-value">38m</div>
+                                <div class="prediction-label">Expected resolution time</div>
+                                <div class="prediction-trend down">
+                                    <i class="fas fa-arrow-down"></i>
+                                    <span>-8% improvement</span>
+                                </div>
+                            </div>
+                            <div class="prediction-card">
+                                <div class="prediction-header">
+                                    <div class="prediction-icon" style="background: #d1fae5; color: var(--success);">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <span class="prediction-title">SLA Compliance</span>
+                                </div>
+                                <div class="prediction-value">97.8%</div>
+                                <div class="prediction-label">Projected compliance rate</div>
+                                <div class="prediction-trend down">
+                                    <i class="fas fa-arrow-down"></i>
+                                    <span>-0.4% risk</span>
+                                </div>
+                            </div>
+                            <div class="prediction-card">
+                                <div class="prediction-header">
+                                    <div class="prediction-icon" style="background: #fef3c7; color: var(--warning);">
+                                        <i class="fas fa-robot"></i>
+                                    </div>
+                                    <span class="prediction-title">Auto-Remediation</span>
+                                </div>
+                                <div class="prediction-value">67%</div>
+                                <div class="prediction-label">Expected success rate</div>
+                                <div class="prediction-trend down">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>+5% vs baseline</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Incident Forecast Chart - Full Width -->
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-area"></i>
+                            Incident Volume Forecast
+                        </h3>
+                        <div style="display: flex; gap: 12px;">
+                            <select style="padding: 6px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px;">
+                                <option>All Environments</option>
+                                <option>fs-mum-indmoney-prod-le</option>
+                                <option>neo-prod-le</option>
+                            </select>
+                            <select style="padding: 6px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px;">
+                                <option>7 Day Forecast</option>
+                                <option>14 Day Forecast</option>
+                                <option>30 Day Forecast</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="forecastChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Recommendations -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-lightbulb"></i>
+                            AI Recommendations
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="recommendation-list">
+                            <div class="recommendation-item">
+                                <div class="recommendation-number">1</div>
+                                <div class="recommendation-content">
+                                    <div class="recommendation-title">Enable Auto-Scaling for Payment Pods</div>
+                                    <div class="recommendation-description">Based on traffic patterns, increasing HPA max replicas from 10 to 15 would reduce latency incidents by ~40%.</div>
+                                    <div class="recommendation-impact">
+                                        <span class="impact-badge high">High Impact</span>
+                                        <span style="color: var(--gray-500);">Est. 12 incidents/week prevented</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="recommendation-item">
+                                <div class="recommendation-number">2</div>
+                                <div class="recommendation-content">
+                                    <div class="recommendation-title">Add StackStorm Workflow for DB Connection Reset</div>
+                                    <div class="recommendation-description">34% of database-related incidents follow the same pattern. Creating an automated workflow could reduce MTTR by 15 minutes.</div>
+                                    <div class="recommendation-impact">
+                                        <span class="impact-badge high">High Impact</span>
+                                        <span style="color: var(--gray-500);">Est. 8 hours/week saved</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="recommendation-item">
+                                <div class="recommendation-number">3</div>
+                                <div class="recommendation-content">
+                                    <div class="recommendation-title">Adjust Prometheus Alert Thresholds</div>
+                                    <div class="recommendation-description">Current CPU threshold (80%) generates 23% false positives. Recommend adjusting to 85% based on historical analysis.</div>
+                                    <div class="recommendation-impact">
+                                        <span class="impact-badge medium">Medium Impact</span>
+                                        <span style="color: var(--gray-500);">Reduce alert fatigue by 23%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ML Model Status -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-microchip"></i>
+                            ML Model Status
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="model-list">
+                            <div class="model-item">
+                                <div class="model-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="model-info">
+                                    <div class="model-name">Incident Volume Forecaster</div>
+                                    <div class="model-meta">LSTM Neural Network • Updated 2h ago</div>
+                                </div>
+                                <div class="model-accuracy">
+                                    <div class="accuracy-value">94.2%</div>
+                                    <div class="accuracy-label">Accuracy</div>
+                                </div>
+                            </div>
+                            <div class="model-item">
+                                <div class="model-icon">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div class="model-info">
+                                    <div class="model-name">Anomaly Detector</div>
+                                    <div class="model-meta">Isolation Forest • Updated 30m ago</div>
+                                </div>
+                                <div class="model-accuracy">
+                                    <div class="accuracy-value">91.7%</div>
+                                    <div class="accuracy-label">Accuracy</div>
+                                </div>
+                            </div>
+                            <div class="model-item">
+                                <div class="model-icon">
+                                    <i class="fas fa-tags"></i>
+                                </div>
+                                <div class="model-info">
+                                    <div class="model-name">Auto-Categorizer</div>
+                                    <div class="model-meta">BERT Classifier • Updated 6h ago</div>
+                                </div>
+                                <div class="model-accuracy">
+                                    <div class="accuracy-value">89.3%</div>
+                                    <div class="accuracy-label">Accuracy</div>
+                                </div>
+                            </div>
+                            <div class="model-item">
+                                <div class="model-icon">
+                                    <i class="fas fa-sitemap"></i>
+                                </div>
+                                <div class="model-info">
+                                    <div class="model-name">Root Cause Analyzer</div>
+                                    <div class="model-meta">Graph Neural Network • Updated 1h ago</div>
+                                </div>
+                                <div class="model-accuracy">
+                                    <div class="accuracy-value">86.5%</div>
+                                    <div class="accuracy-label">Accuracy</div>
+                                </div>
+                            </div>
+                            <div class="model-item">
+                                <div class="model-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="model-info">
+                                    <div class="model-name">MTTR Predictor</div>
+                                    <div class="model-meta">Random Forest • Updated 4h ago</div>
+                                </div>
+                                <div class="model-accuracy">
+                                    <div class="accuracy-value">88.1%</div>
+                                    <div class="accuracy-label">Accuracy</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pattern Detection - Full Width -->
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-project-diagram"></i>
+                            Incident Pattern Clusters
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="clusterChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Forecast Chart
+        const forecastCtx = document.getElementById('forecastChart').getContext('2d');
+        new Chart(forecastCtx, {
+            type: 'line',
+            data: {
+                labels: ['Dec 18', 'Dec 19', 'Dec 20', 'Dec 21', 'Dec 22', 'Dec 23', 'Dec 24', 'Dec 25', 'Dec 26', 'Dec 27', 'Dec 28', 'Dec 29', 'Dec 30'],
+                datasets: [{
+                    label: 'Actual',
+                    data: [42, 38, 45, 52, 48, 41, 44, null, null, null, null, null, null],
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    fill: false,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 4
+                }, {
+                    label: 'Forecast',
+                    data: [null, null, null, null, null, null, 44, 39, 42, 47, 68, 45, 41],
+                    borderColor: '#8b5cf6',
+                    borderDash: [5, 5],
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 4
+                }, {
+                    label: 'Upper Bound',
+                    data: [null, null, null, null, null, null, 52, 48, 51, 58, 82, 56, 52],
+                    borderColor: 'rgba(139, 92, 246, 0.3)',
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.4,
+                    borderWidth: 1,
+                    pointRadius: 0
+                }, {
+                    label: 'Lower Bound',
+                    data: [null, null, null, null, null, null, 36, 30, 33, 36, 54, 34, 30],
+                    borderColor: 'rgba(139, 92, 246, 0.3)',
+                    backgroundColor: 'transparent',
+                    fill: '-1',
+                    tension: 0.4,
+                    borderWidth: 1,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            filter: (item) => item.text !== 'Upper Bound' && item.text !== 'Lower Bound'
+                        }
+                    },
+                    annotation: {
+                        annotations: {
+                            line1: {
+                                type: 'line',
+                                xMin: 'Dec 28',
+                                xMax: 'Dec 28',
+                                borderColor: 'rgba(239, 68, 68, 0.5)',
+                                borderWidth: 2,
+                                borderDash: [6, 6],
+                                label: {
+                                    display: true,
+                                    content: 'Maintenance Window',
+                                    position: 'start'
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f3f4f6' },
+                        title: {
+                            display: true,
+                            text: 'Incident Count'
+                        }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Cluster Chart
+        const clusterCtx = document.getElementById('clusterChart').getContext('2d');
+        new Chart(clusterCtx, {
+            type: 'bubble',
+            data: {
+                datasets: [{
+                    label: 'Database Issues',
+                    data: [{ x: 20, y: 30, r: 25 }],
+                    backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                    borderColor: 'rgba(239, 68, 68, 1)'
+                }, {
+                    label: 'Network Latency',
+                    data: [{ x: 40, y: 60, r: 20 }],
+                    backgroundColor: 'rgba(245, 158, 11, 0.6)',
+                    borderColor: 'rgba(245, 158, 11, 1)'
+                }, {
+                    label: 'Pod Crashes',
+                    data: [{ x: 60, y: 40, r: 30 }],
+                    backgroundColor: 'rgba(99, 102, 241, 0.6)',
+                    borderColor: 'rgba(99, 102, 241, 1)'
+                }, {
+                    label: 'Memory Issues',
+                    data: [{ x: 80, y: 70, r: 15 }],
+                    backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                    borderColor: 'rgba(16, 185, 129, 1)'
+                }, {
+                    label: 'API Timeouts',
+                    data: [{ x: 35, y: 80, r: 18 }],
+                    backgroundColor: 'rgba(139, 92, 246, 0.6)',
+                    borderColor: 'rgba(139, 92, 246, 1)'
+                }, {
+                    label: 'Certificate Expiry',
+                    data: [{ x: 70, y: 20, r: 12 }],
+                    backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                    borderColor: 'rgba(59, 130, 246, 1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.raw.r * 2} incidents`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Severity Score'
+                        },
+                        grid: { color: '#f3f4f6' }
+                    },
+                    x: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Frequency Score'
+                        },
+                        grid: { color: '#f3f4f6' }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

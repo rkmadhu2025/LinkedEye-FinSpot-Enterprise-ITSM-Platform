@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Asset | LinkedEye-FinSpot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        .form-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        .form-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        .form-section-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .form-section-header i {
+            color: var(--primary-blue);
+        }
+        .form-section-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .form-section-body {
+            padding: 20px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .form-row:last-child {
+            margin-bottom: 0;
+        }
+        .form-row.single {
+            grid-template-columns: 1fr;
+        }
+        .form-row.triple {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+        .form-group label .required {
+            color: var(--danger);
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .form-group input:disabled,
+        .form-group select:disabled {
+            background: var(--bg-body);
+            cursor: not-allowed;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .form-group .hint {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Asset Type Selector */
+        .asset-type-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .asset-type-option {
+            padding: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .asset-type-option:hover {
+            border-color: var(--primary-blue);
+            background: rgba(37, 99, 235, 0.03);
+        }
+        .asset-type-option.selected {
+            border-color: var(--primary-blue);
+            background: rgba(37, 99, 235, 0.05);
+        }
+        .asset-type-option i {
+            font-size: 28px;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .asset-type-option.server i { color: var(--info); }
+        .asset-type-option.network i { color: var(--success); }
+        .asset-type-option.database i { color: var(--purple); }
+        .asset-type-option.cloud i { color: var(--warning); }
+        .asset-type-option span {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Tag Input */
+        .tag-input-container {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            min-height: 42px;
+            cursor: text;
+        }
+        .tag-input-container:focus-within {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .tag-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--bg-body);
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .tag-chip button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 10px;
+            padding: 0;
+        }
+        .tag-chip button:hover {
+            color: var(--danger);
+        }
+        .tag-input {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 120px;
+            font-size: 13px;
+        }
+
+        /* Relationship Selector */
+        .relationship-selector {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .relationship-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .relationship-item:last-child {
+            border-bottom: none;
+        }
+        .relationship-item:hover {
+            background: var(--bg-body);
+        }
+        .relationship-item input {
+            width: 16px;
+            height: 16px;
+        }
+        .relationship-item-info {
+            flex: 1;
+        }
+        .relationship-item-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        .relationship-item-type {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* Sidebar Panel */
+        .sidebar-panel {
+            position: sticky;
+            top: 80px;
+        }
+        .sidebar-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+        .sidebar-card-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar-card-body {
+            padding: 16px;
+        }
+
+        /* Asset Preview */
+        .asset-preview {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .preview-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 28px;
+            color: white;
+        }
+        .preview-icon.server { background: linear-gradient(135deg, var(--info), #1d4ed8); }
+        .preview-icon.network { background: linear-gradient(135deg, var(--success), #047857); }
+        .preview-icon.database { background: linear-gradient(135deg, var(--purple), #6d28d9); }
+        .preview-icon.cloud { background: linear-gradient(135deg, var(--warning), #d97706); }
+        .preview-hostname {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .preview-type {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Discovery Suggestions */
+        .discovery-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: var(--bg-body);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .discovery-item:hover {
+            background: rgba(37, 99, 235, 0.05);
+        }
+        .discovery-item:last-child {
+            margin-bottom: 0;
+        }
+        .discovery-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+        }
+        .discovery-icon.server { background: var(--info); }
+        .discovery-icon.network { background: var(--success); }
+        .discovery-icon.database { background: var(--purple); }
+        .discovery-info {
+            flex: 1;
+        }
+        .discovery-name {
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .discovery-ip {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        .discovery-add {
+            font-size: 12px;
+            color: var(--primary-blue);
+        }
+
+        /* Form Actions */
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+        .form-actions-left {
+            display: flex;
+            gap: 12px;
+        }
+        .form-actions-right {
+            display: flex;
+            gap: 12px;
+        }
+
+        @media (max-width: 1200px) {
+            .form-container {
+                grid-template-columns: 1fr;
+            }
+            .sidebar-panel {
+                position: static;
+            }
+            .asset-type-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .form-row.triple {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar"></div>
+    <header id="header"></header>
+
+    <main class="main-content">
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-secondary);">
+            <a href="dashboard.html" style="color: var(--text-secondary); text-decoration: none;">Home</a>
+            <i class="fas fa-chevron-right" style="font-size: 10px;"></i>
+            <a href="assets.html" style="color: var(--text-secondary); text-decoration: none;">Assets</a>
+            <i class="fas fa-chevron-right" style="font-size: 10px;"></i>
+            <span id="breadcrumbTitle">Add New Asset</span>
+        </nav>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-header-left">
+                <h1 id="pageTitle">Add New Asset</h1>
+                <p id="pageSubtitle">Register a new configuration item in the CMDB</p>
+            </div>
+        </div>
+
+        <form id="assetForm" onsubmit="return handleSubmit(event)">
+            <div class="form-container">
+                <!-- Main Form -->
+                <div class="form-main">
+                    <!-- Asset Type Selection -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <i class="fas fa-cubes"></i>
+                            <h3>Asset Type</h3>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="asset-type-selector">
+                                <div class="asset-type-option server selected" data-type="server" onclick="selectAssetType('server')">
+                                    <i class="fas fa-server"></i>
+                                    <span>Server</span>
+                                </div>
+                                <div class="asset-type-option network" data-type="network" onclick="selectAssetType('network')">
+                                    <i class="fas fa-network-wired"></i>
+                                    <span>Network Device</span>
+                                </div>
+                                <div class="asset-type-option database" data-type="database" onclick="selectAssetType('database')">
+                                    <i class="fas fa-database"></i>
+                                    <span>Database</span>
+                                </div>
+                                <div class="asset-type-option cloud" data-type="cloud" onclick="selectAssetType('cloud')">
+                                    <i class="fas fa-cloud"></i>
+                                    <span>Cloud Resource</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Basic Information -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <i class="fas fa-info-circle"></i>
+                            <h3>Basic Information</h3>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Hostname <span class="required">*</span></label>
+                                    <input type="text" id="hostname" name="hostname" required placeholder="e.g., prod-app-01">
+                                    <span class="hint">Unique identifier for this asset</span>
+                                </div>
+                                <div class="form-group">
+                                    <label>Display Name</label>
+                                    <input type="text" id="displayName" name="displayName" placeholder="e.g., Production App Server 01">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Asset Subtype <span class="required">*</span></label>
+                                    <select id="subtype" name="subtype" required onchange="updateSubtypeFields()">
+                                        <option value="">Select subtype...</option>
+                                        <option value="application-server">Application Server</option>
+                                        <option value="web-server">Web Server</option>
+                                        <option value="backup-server">Backup Server</option>
+                                        <option value="trading-server">Trading Server</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Status</label>
+                                    <select id="status" name="status">
+                                        <option value="up">Up / Online</option>
+                                        <option value="down">Down / Offline</option>
+                                        <option value="maintenance">Under Maintenance</option>
+                                        <option value="unknown">Unknown</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row single">
+                                <div class="form-group">
+                                    <label>Description</label>
+                                    <textarea id="description" name="description" placeholder="Brief description of this asset's purpose..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Network Configuration -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <i class="fas fa-network-wired"></i>
+                            <h3>Network Configuration</h3>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>IP Address <span class="required">*</span></label>
+                                    <input type="text" id="ipAddress" name="ipAddress" required placeholder="e.g., 10.0.1.10">
+                                </div>
+                                <div class="form-group">
+                                    <label>MAC Address</label>
+                                    <input type="text" id="macAddress" name="macAddress" placeholder="e.g., 00:1A:2B:3C:4D:5E">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>FQDN</label>
+                                    <input type="text" id="fqdn" name="fqdn" placeholder="e.g., prod-app-01.internal.company.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>DNS Name</label>
+                                    <input type="text" id="dnsName" name="dnsName" placeholder="e.g., app01.prod">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hardware & Software -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <i class="fas fa-microchip"></i>
+                            <h3>Hardware & Software</h3>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Manufacturer</label>
+                                    <select id="manufacturer" name="manufacturer">
+                                        <option value="">Select manufacturer...</option>
+                                        <option value="dell">Dell</option>
+                                        <option value="hp">HP / HPE</option>
+                                        <option value="cisco">Cisco</option>
+                                        <option value="lenovo">Lenovo</option>
+                                        <option value="ibm">IBM</option>
+                                        <option value="aws">Amazon Web Services</option>
+                                        <option value="azure">Microsoft Azure</option>
+                                        <option value="gcp">Google Cloud Platform</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Model</label>
+                                    <input type="text" id="model" name="model" placeholder="e.g., PowerEdge R750">
+                                </div>
+                            </div>
+                            <div class="form-row triple">
+                                <div class="form-group">
+                                    <label>Serial Number</label>
+                                    <input type="text" id="serialNumber" name="serialNumber" placeholder="e.g., FXS2342Q0V8">
+                                </div>
+                                <div class="form-group">
+                                    <label>Asset Tag</label>
+                                    <input type="text" id="assetTag" name="assetTag" placeholder="e.g., ASSET-00123">
+                                </div>
+                                <div class="form-group">
+                                    <label>Purchase Date</label>
+                                    <input type="date" id="purchaseDate" name="purchaseDate">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Operating System</label>
+                                    <input type="text" id="operatingSystem" name="operatingSystem" placeholder="e.g., Ubuntu 22.04 LTS">
+                                </div>
+                                <div class="form-group">
+                                    <label>OS Version</label>
+                                    <input type="text" id="osVersion" name="osVersion" placeholder="e.g., 22.04.3">
+                                </div>
+                            </div>
+                            <div class="form-row triple">
+                                <div class="form-group">
+                                    <label>CPU Cores</label>
+                                    <input type="number" id="cpuCores" name="cpuCores" placeholder="e.g., 16">
+                                </div>
+                                <div class="form-group">
+                                    <label>RAM (GB)</label>
+                                    <input type="number" id="ramGb" name="ramGb" placeholder="e.g., 64">
+                                </div>
+                                <div class="form-group">
+                                    <label>Storage (GB)</label>
+                                    <input type="number" id="storageGb" name="storageGb" placeholder="e.g., 1000">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location & Environment -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <h3>Location & Environment</h3>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Environment <span class="required">*</span></label>
+                                    <select id="environment" name="environment" required>
+                                        <option value="">Select environment...</option>
+                                        <option value="fs-mum-indmoney-prod-le">fs-mum-indmoney-prod-le</option>
+                                        <option value="fs-dx-le">fs-dx-le</option>
+                                        <option value="neo-prod-le">neo-prod-le</option>
+                                        <option value="pl-prod-le">pl-prod-le</option>
+                                        <option value="fs-dr-le">fs-dr-le</option>
+                                        <option value="staging">Staging</option>
+                                        <option value="development">Development</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Data Center</label>
+                                    <select id="dataCenter" name="dataCenter">
+                                        <option value="">Select data center...</option>
+                                        <option value="dc-1">DC-1 (Primary)</option>
+                                        <option value="dc-2">DC-2 (Secondary)</option>
+                                        <option value="dr-site">DR Site</option>
+                                        <option value="aws-ap-south-1">AWS ap-south-1</option>
+                                        <option value="aws-us-east-1">AWS us-east-1</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Rack Location</label>
+                                    <input type="text" id="rackLocation" name="rackLocation" placeholder="e.g., Rack A3, Unit 12-14">
+                                </div>
+                                <div class="form-group">
+                                    <label>Room / Floor</label>
+                                    <input type="text" id="room" name="room" placeholder="e.g., Server Room 1, Floor 2">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ownership & Support -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <i class="fas fa-users"></i>
+                            <h3>Ownership & Support</h3>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Owner Group <span class="required">*</span></label>
+                                    <select id="ownerGroup" name="ownerGroup" required>
+                                        <option value="">Select owner group...</option>
+                                        <option value="infrastructure-ops">Infrastructure Ops</option>
+                                        <option value="dba-team">DBA Team</option>
+                                        <option value="network-ops">Network Ops</option>
+                                        <option value="devops-team">DevOps Team</option>
+                                        <option value="trading-ops">Trading Ops</option>
+                                        <option value="security-ops">Security Ops</option>
+                                        <option value="platform-team">Platform Team</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Support Group</label>
+                                    <select id="supportGroup" name="supportGroup">
+                                        <option value="">Select support group...</option>
+                                        <option value="infrastructure-ops">Infrastructure Ops</option>
+                                        <option value="dba-team">DBA Team</option>
+                                        <option value="network-ops">Network Ops</option>
+                                        <option value="devops-team">DevOps Team</option>
+                                        <option value="l1-support">L1 Support</option>
+                                        <option value="l2-support">L2 Support</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Primary Contact</label>
+                                    <input type="text" id="primaryContact" name="primaryContact" placeholder="e.g., John Doe">
+                                </div>
+                                <div class="form-group">
+                                    <label>Contact Email</label>
+                                    <input type="email" id="contactEmail" name="contactEmail" placeholder="e.g., john.doe@company.com">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tags & Labels -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <i class="fas fa-tags"></i>
+                            <h3>Tags & Labels</h3>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="form-group">
+                                <label>Tags</label>
+                                <div class="tag-input-container" id="tagsContainer" onclick="document.getElementById('tagInput').focus()">
+                                    <input type="text" class="tag-input" id="tagInput" placeholder="Type and press Enter to add tags...">
+                                </div>
+                                <span class="hint">Press Enter to add a tag</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Relationships -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <i class="fas fa-sitemap"></i>
+                            <h3>Relationships</h3>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Depends On (Upstream)</label>
+                                    <div class="relationship-selector" id="dependsOnSelector">
+                                        <div class="relationship-item">
+                                            <input type="checkbox" name="dependsOn" value="2">
+                                            <div class="relationship-item-info">
+                                                <div class="relationship-item-name">prod-db-01</div>
+                                                <div class="relationship-item-type">PostgreSQL Database</div>
+                                            </div>
+                                        </div>
+                                        <div class="relationship-item">
+                                            <input type="checkbox" name="dependsOn" value="7">
+                                            <div class="relationship-item-info">
+                                                <div class="relationship-item-name">redis-cache-01</div>
+                                                <div class="relationship-item-type">Redis Cache</div>
+                                            </div>
+                                        </div>
+                                        <div class="relationship-item">
+                                            <input type="checkbox" name="dependsOn" value="8">
+                                            <div class="relationship-item-info">
+                                                <div class="relationship-item-name">lb-frontend-01</div>
+                                                <div class="relationship-item-type">Load Balancer</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Used By (Downstream)</label>
+                                    <div class="relationship-selector" id="usedBySelector">
+                                        <div class="relationship-item">
+                                            <input type="checkbox" name="usedBy" value="5">
+                                            <div class="relationship-item-info">
+                                                <div class="relationship-item-name">api-gateway</div>
+                                                <div class="relationship-item-type">AWS EKS Cluster</div>
+                                            </div>
+                                        </div>
+                                        <div class="relationship-item">
+                                            <input type="checkbox" name="usedBy" value="10">
+                                            <div class="relationship-item-info">
+                                                <div class="relationship-item-name">k8s-worker-01</div>
+                                                <div class="relationship-item-type">AWS EC2 Instance</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="sidebar-panel">
+                    <!-- Asset Preview -->
+                    <div class="sidebar-card">
+                        <div class="sidebar-card-header">
+                            <i class="fas fa-eye"></i>
+                            Preview
+                        </div>
+                        <div class="sidebar-card-body">
+                            <div class="asset-preview">
+                                <div class="preview-icon server" id="previewIcon">
+                                    <i class="fas fa-server" id="previewIconI"></i>
+                                </div>
+                                <div class="preview-hostname" id="previewHostname">-</div>
+                                <div class="preview-type" id="previewType">Server</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Discovery Suggestions -->
+                    <div class="sidebar-card">
+                        <div class="sidebar-card-header">
+                            <i class="fas fa-magic"></i>
+                            Discovered Assets
+                        </div>
+                        <div class="sidebar-card-body">
+                            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+                                Recently discovered assets waiting to be added:
+                            </p>
+                            <div class="discovery-item" onclick="populateFromDiscovery('new-server-01', '10.0.5.15', 'server')">
+                                <div class="discovery-icon server">
+                                    <i class="fas fa-server"></i>
+                                </div>
+                                <div class="discovery-info">
+                                    <div class="discovery-name">new-server-01</div>
+                                    <div class="discovery-ip">10.0.5.15</div>
+                                </div>
+                                <span class="discovery-add"><i class="fas fa-plus"></i></span>
+                            </div>
+                            <div class="discovery-item" onclick="populateFromDiscovery('sw-access-05', '10.0.1.25', 'network')">
+                                <div class="discovery-icon network">
+                                    <i class="fas fa-network-wired"></i>
+                                </div>
+                                <div class="discovery-info">
+                                    <div class="discovery-name">sw-access-05</div>
+                                    <div class="discovery-ip">10.0.1.25</div>
+                                </div>
+                                <span class="discovery-add"><i class="fas fa-plus"></i></span>
+                            </div>
+                            <div class="discovery-item" onclick="populateFromDiscovery('mongodb-replica-01', '10.0.2.30', 'database')">
+                                <div class="discovery-icon database">
+                                    <i class="fas fa-database"></i>
+                                </div>
+                                <div class="discovery-info">
+                                    <div class="discovery-name">mongodb-replica-01</div>
+                                    <div class="discovery-ip">10.0.2.30</div>
+                                </div>
+                                <span class="discovery-add"><i class="fas fa-plus"></i></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Tips -->
+                    <div class="sidebar-card">
+                        <div class="sidebar-card-header">
+                            <i class="fas fa-lightbulb"></i>
+                            Quick Tips
+                        </div>
+                        <div class="sidebar-card-body">
+                            <ul style="font-size: 12px; color: var(--text-secondary); padding-left: 16px; margin: 0;">
+                                <li style="margin-bottom: 8px;">Use consistent naming conventions for hostnames</li>
+                                <li style="margin-bottom: 8px;">Define relationships to enable impact analysis</li>
+                                <li style="margin-bottom: 8px;">Add tags for better searchability</li>
+                                <li>Keep hardware specs up to date</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <div class="form-actions-left">
+                    <button type="button" class="btn btn-secondary" onclick="saveDraft()">
+                        <i class="fas fa-save"></i> Save Draft
+                    </button>
+                </div>
+                <div class="form-actions-right">
+                    <a href="assets.html" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-plus"></i> Create Asset
+                    </button>
+                </div>
+            </div>
+        </form>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        let selectedType = 'server';
+        let tags = [];
+        let isEditMode = false;
+        let assetId = null;
+
+        // Subtype options by type
+        const subtypeOptions = {
+            server: [
+                { value: 'application-server', label: 'Application Server' },
+                { value: 'web-server', label: 'Web Server' },
+                { value: 'backup-server', label: 'Backup Server' },
+                { value: 'trading-server', label: 'Trading Server' },
+                { value: 'file-server', label: 'File Server' },
+                { value: 'mail-server', label: 'Mail Server' }
+            ],
+            network: [
+                { value: 'router', label: 'Router' },
+                { value: 'switch', label: 'Switch' },
+                { value: 'firewall', label: 'Firewall' },
+                { value: 'load-balancer', label: 'Load Balancer' },
+                { value: 'access-point', label: 'Access Point' }
+            ],
+            database: [
+                { value: 'postgresql', label: 'PostgreSQL' },
+                { value: 'mysql', label: 'MySQL' },
+                { value: 'mongodb', label: 'MongoDB' },
+                { value: 'redis', label: 'Redis' },
+                { value: 'oracle', label: 'Oracle' },
+                { value: 'sql-server', label: 'SQL Server' }
+            ],
+            cloud: [
+                { value: 'ec2', label: 'AWS EC2' },
+                { value: 'eks', label: 'AWS EKS' },
+                { value: 'rds', label: 'AWS RDS' },
+                { value: 'lambda', label: 'AWS Lambda' },
+                { value: 'azure-vm', label: 'Azure VM' },
+                { value: 'gce', label: 'Google Compute Engine' }
+            ]
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            Layout.init();
+
+            // Check for edit mode
+            assetId = new URLSearchParams(window.location.search).get('id');
+            if (assetId) {
+                isEditMode = true;
+                document.getElementById('pageTitle').textContent = 'Edit Asset';
+                document.getElementById('pageSubtitle').textContent = 'Update configuration item details';
+                document.getElementById('breadcrumbTitle').textContent = 'Edit Asset';
+                document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                await loadAsset(assetId);
+            }
+
+            setupTagInput();
+            updatePreview();
+        });
+
+        async function loadAsset(id) {
+            try {
+                const response = await API.assets.get(id);
+                if (response.success && response.data) {
+                    populateForm(response.data);
+                }
+            } catch (error) {
+                console.log('Could not load asset');
+            }
+        }
+
+        function populateForm(asset) {
+            document.getElementById('hostname').value = asset.hostname || '';
+            document.getElementById('displayName').value = asset.displayName || '';
+            document.getElementById('ipAddress').value = asset.ip || '';
+            document.getElementById('macAddress').value = asset.mac || '';
+            document.getElementById('status').value = asset.status || 'up';
+            document.getElementById('description').value = asset.description || '';
+            document.getElementById('model').value = asset.model || '';
+            document.getElementById('serialNumber').value = asset.serialNumber || '';
+            document.getElementById('operatingSystem').value = asset.osVersion || '';
+
+            // Select type
+            const type = guessAssetType(asset.type);
+            selectAssetType(type);
+
+            updatePreview();
+        }
+
+        function guessAssetType(type) {
+            const typeLower = (type || '').toLowerCase();
+            if (typeLower.includes('database') || typeLower.includes('postgresql') || typeLower.includes('mysql')) return 'database';
+            if (typeLower.includes('network') || typeLower.includes('router') || typeLower.includes('switch')) return 'network';
+            if (typeLower.includes('cloud') || typeLower.includes('aws') || typeLower.includes('azure')) return 'cloud';
+            return 'server';
+        }
+
+        function selectAssetType(type) {
+            selectedType = type;
+
+            // Update UI
+            document.querySelectorAll('.asset-type-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.type === type);
+            });
+
+            // Update subtype options
+            const subtypeSelect = document.getElementById('subtype');
+            subtypeSelect.innerHTML = '<option value="">Select subtype...</option>';
+            subtypeOptions[type].forEach(opt => {
+                subtypeSelect.innerHTML += `<option value="${opt.value}">${opt.label}</option>`;
+            });
+
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const hostname = document.getElementById('hostname').value || '-';
+            const subtype = document.getElementById('subtype');
+            const subtypeText = subtype.options[subtype.selectedIndex]?.text || 'Asset';
+
+            document.getElementById('previewHostname').textContent = hostname;
+            document.getElementById('previewType').textContent = subtypeText;
+
+            const previewIcon = document.getElementById('previewIcon');
+            const iconI = document.getElementById('previewIconI');
+
+            previewIcon.className = 'preview-icon ' + selectedType;
+
+            const iconMap = {
+                server: 'fa-server',
+                network: 'fa-network-wired',
+                database: 'fa-database',
+                cloud: 'fa-cloud'
+            };
+            iconI.className = 'fas ' + iconMap[selectedType];
+        }
+
+        function setupTagInput() {
+            const input = document.getElementById('tagInput');
+            const container = document.getElementById('tagsContainer');
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const value = input.value.trim();
+                    if (value && !tags.includes(value)) {
+                        tags.push(value);
+                        renderTags();
+                    }
+                    input.value = '';
+                }
+            });
+        }
+
+        function renderTags() {
+            const container = document.getElementById('tagsContainer');
+            const input = document.getElementById('tagInput');
+
+            // Remove existing chips
+            container.querySelectorAll('.tag-chip').forEach(chip => chip.remove());
+
+            // Add new chips
+            tags.forEach(tag => {
+                const chip = document.createElement('span');
+                chip.className = 'tag-chip';
+                chip.innerHTML = `${tag} <button type="button" onclick="removeTag('${tag}')">&times;</button>`;
+                container.insertBefore(chip, input);
+            });
+        }
+
+        function removeTag(tag) {
+            tags = tags.filter(t => t !== tag);
+            renderTags();
+        }
+
+        function populateFromDiscovery(hostname, ip, type) {
+            document.getElementById('hostname').value = hostname;
+            document.getElementById('ipAddress').value = ip;
+            selectAssetType(type);
+            updatePreview();
+            Layout.showNotification('Asset details populated from discovery', 'info');
+        }
+
+        function saveDraft() {
+            const formData = getFormData();
+            localStorage.setItem('assetDraft', JSON.stringify(formData));
+            Layout.showNotification('Draft saved successfully', 'success');
+        }
+
+        function getFormData() {
+            return {
+                hostname: document.getElementById('hostname').value,
+                displayName: document.getElementById('displayName').value,
+                type: selectedType,
+                subtype: document.getElementById('subtype').value,
+                status: document.getElementById('status').value,
+                description: document.getElementById('description').value,
+                ip: document.getElementById('ipAddress').value,
+                mac: document.getElementById('macAddress').value,
+                fqdn: document.getElementById('fqdn').value,
+                dnsName: document.getElementById('dnsName').value,
+                manufacturer: document.getElementById('manufacturer').value,
+                model: document.getElementById('model').value,
+                serialNumber: document.getElementById('serialNumber').value,
+                assetTag: document.getElementById('assetTag').value,
+                purchaseDate: document.getElementById('purchaseDate').value,
+                operatingSystem: document.getElementById('operatingSystem').value,
+                osVersion: document.getElementById('osVersion').value,
+                cpuCores: document.getElementById('cpuCores').value,
+                ramGb: document.getElementById('ramGb').value,
+                storageGb: document.getElementById('storageGb').value,
+                environment: document.getElementById('environment').value,
+                dataCenter: document.getElementById('dataCenter').value,
+                rackLocation: document.getElementById('rackLocation').value,
+                room: document.getElementById('room').value,
+                ownerGroup: document.getElementById('ownerGroup').value,
+                supportGroup: document.getElementById('supportGroup').value,
+                primaryContact: document.getElementById('primaryContact').value,
+                contactEmail: document.getElementById('contactEmail').value,
+                tags: tags,
+                dependsOn: Array.from(document.querySelectorAll('input[name="dependsOn"]:checked')).map(cb => cb.value),
+                usedBy: Array.from(document.querySelectorAll('input[name="usedBy"]:checked')).map(cb => cb.value)
+            };
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+
+            const formData = getFormData();
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                let response;
+                if (isEditMode) {
+                    response = await API.assets.update(assetId, formData);
+                } else {
+                    response = await API.assets.create(formData);
+                }
+
+                if (response.success) {
+                    Layout.showNotification(
+                        isEditMode ? 'Asset updated successfully' : 'Asset created successfully',
+                        'success'
+                    );
+                    localStorage.removeItem('assetDraft');
+                    setTimeout(() => {
+                        window.location.href = 'assets.html';
+                    }, 1500);
+                } else {
+                    throw new Error(response.error || 'Failed to save asset');
+                }
+            } catch (error) {
+                Layout.showNotification('Error: ' + error.message, 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = isEditMode ? '<i class="fas fa-save"></i> Save Changes' : '<i class="fas fa-plus"></i> Create Asset';
+            }
+        }
+
+        // Live preview updates
+        document.getElementById('hostname').addEventListener('input', updatePreview);
+        document.getElementById('subtype').addEventListener('change', updatePreview);
+    </script>
+</body>
+</html>

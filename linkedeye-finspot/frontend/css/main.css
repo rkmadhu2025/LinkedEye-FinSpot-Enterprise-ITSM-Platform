@@ -1,0 +1,22 @@
+/**
+ * LinkedEye-FinSpot Design System
+ * Main CSS Entry Point
+ *
+ * This file imports all CSS modules in the correct order.
+ * The order is important for proper cascade and specificity.
+ */
+
+/* 1. Design Tokens - CSS Custom Properties */
+@import url('design-tokens.css');
+
+/* 2. Base Styles - Reset, Typography, Global Elements */
+@import url('base.css');
+
+/* 3. Layout - Page Structure, Grid, Sidebar, Header */
+@import url('layout.css');
+
+/* 4. Components - Buttons, Cards, Forms, Tables, etc. */
+@import url('components.css');
+
+/* 5. Utilities - Helper Classes */
+@import url('utilities.css');

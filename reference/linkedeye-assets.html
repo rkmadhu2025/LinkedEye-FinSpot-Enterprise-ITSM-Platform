@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Asset Management - LinkedEye-FinSpot CMDB">
+    <title>Asset Management | LinkedEye-FinSpot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #0f1c3f;
+            --primary-blue: #2563eb;
+            --primary-blue-light: #3b82f6;
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --pink: #ec4899;
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+            --text-primary: #0f1c3f;
+            --text-secondary: #6b7785;
+            --border-color: #e5e8eb;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-body); color: var(--text-primary); font-size: 13px; }
+
+        /* Sidebar */
+        .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh; background: var(--primary-navy); z-index: 200; }
+        .sidebar-header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-logo { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-blue-light), var(--purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .sidebar-logo i { color: #fff; font-size: 20px; }
+        .sidebar-brand { color: #fff; }
+        .sidebar-brand h1 { font-size: 16px; font-weight: 700; }
+        .sidebar-brand span { font-size: 10px; color: rgba(255,255,255,0.6); }
+        .sidebar-nav { padding: 16px 12px; overflow-y: auto; height: calc(100vh - 140px); }
+        .nav-section { margin-bottom: 20px; }
+        .nav-section-title { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.2s; margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .nav-item.active { background: linear-gradient(135deg, var(--primary-blue), #1d4ed8); color: #fff; }
+        .nav-item i { width: 20px; text-align: center; }
+        .nav-item .nav-badge { background: var(--danger); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: auto; }
+        .nav-item .nav-badge.warning { background: var(--warning); }
+        .sidebar-footer { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .env-selector { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; color: #fff; font-size: 12px; }
+        .env-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; }
+
+        /* Header */
+        .header { position: fixed; top: 0; left: var(--sidebar-width); right: 0; height: var(--header-height); background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .search-box { position: relative; width: 360px; }
+        .search-box input { width: 100%; padding: 10px 16px 10px 40px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: #f9fafb; }
+        .search-box input:focus { outline: none; border-color: var(--primary-blue); background: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .search-box i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .notification-btn { position: relative; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border-color); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .notification-btn:hover { background: #f9fafb; }
+        .notification-badge { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 600; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
+        .user-menu { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+        .user-menu:hover { background: #f3f4f6; }
+        .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-blue), var(--purple)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 14px; }
+        .user-info { text-align: left; }
+        .user-name { font-size: 13px; font-weight: 600; }
+        .user-role { font-size: 11px; color: var(--text-secondary); }
+
+        /* Main Content */
+        .main-content { margin-left: var(--sidebar-width); margin-top: var(--header-height); padding: 24px; min-height: calc(100vh - var(--header-height)); }
+
+        /* Page Header */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-header-left h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .page-header-left p { font-size: 13px; color: var(--text-secondary); }
+        .page-header-right { display: flex; gap: 12px; }
+
+        /* Buttons */
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; border: none; transition: all 0.2s; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary-blue), #1d4ed8); color: #fff; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .btn-secondary { background: #fff; color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; }
+
+        /* Asset Categories */
+        .asset-categories { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .category-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; transition: all 0.2s; cursor: pointer; }
+        .category-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-2px); }
+        .category-card.active { border-color: var(--primary-blue); background: rgba(37, 99, 235, 0.03); }
+        .category-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 14px; }
+        .category-card.servers .category-icon { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .category-card.network .category-icon { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .category-card.database .category-icon { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+        .category-card.cloud .category-icon { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .category-count { font-size: 32px; font-weight: 700; margin-bottom: 4px; line-height: 1; }
+        .category-name { font-size: 13px; color: var(--text-secondary); }
+        .category-card.active .category-count { color: var(--primary-blue); }
+
+        /* Toolbar */
+        .toolbar { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+        .toolbar-left { display: flex; gap: 10px; flex-wrap: wrap; }
+        .filter-btn { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: #fff; border: 1px solid var(--border-color); border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+        .filter-btn:hover { background: #f9fafb; border-color: #d1d5db; }
+        .filter-btn i:first-child { color: var(--text-secondary); }
+        .filter-btn i:last-child { font-size: 10px; color: #9ca3af; margin-left: 4px; }
+        .view-toggle { display: flex; background: #f3f4f6; padding: 4px; border-radius: 8px; }
+        .view-btn { padding: 8px 14px; border: none; background: transparent; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text-secondary); transition: all 0.2s; }
+        .view-btn.active { background: #fff; color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        /* Card */
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; }
+
+        /* Assets Table */
+        .assets-table { width: 100%; border-collapse: collapse; }
+        .assets-table th { text-align: left; padding: 14px 20px; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; background: #f9fafb; border-bottom: 1px solid var(--border-color); }
+        .assets-table td { padding: 16px 20px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        .assets-table tr { transition: all 0.2s; }
+        .assets-table tbody tr:hover { background: #f9fafb; }
+        .assets-table tr:last-child td { border-bottom: none; }
+
+        .asset-name { display: flex; align-items: center; gap: 14px; }
+        .asset-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .asset-icon.server { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .asset-icon.database { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+        .asset-icon.network { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .asset-icon.cloud { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .asset-info .hostname { font-weight: 600; color: var(--primary-blue); font-size: 13px; }
+        .asset-info .ip { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .status-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+        .status-badge.up { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .status-badge.up::before { background: var(--success); }
+        .status-badge.down { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .status-badge.down::before { background: var(--danger); }
+        .status-badge.maintenance { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .status-badge.maintenance::before { background: var(--warning); }
+
+        .env-badge { padding: 4px 10px; background: #f3f4f6; border-radius: 6px; font-size: 11px; font-weight: 500; display: inline-block; }
+
+        .pagination { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-top: 1px solid var(--border-color); background: #f9fafb; }
+        .pagination-info { font-size: 13px; color: var(--text-secondary); }
+        .pagination-info strong { color: var(--text-primary); }
+        .pagination-controls { display: flex; gap: 6px; }
+        .page-btn { min-width: 36px; height: 36px; border: 1px solid var(--border-color); background: #fff; border-radius: 8px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .page-btn:hover { background: #f9fafb; border-color: #d1d5db; }
+        .page-btn.active { background: var(--primary-blue); border-color: var(--primary-blue); color: #fff; }
+
+        @media (max-width: 1200px) {
+            .asset-categories { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .asset-categories { grid-template-columns: 1fr; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .toolbar-left { justify-content: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fas fa-eye"></i></div>
+            <div class="sidebar-brand"><h1>LinkedEye</h1><span>FinSpot Enterprise</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="linkedeye-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+                <a href="linkedeye-incidents.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Incidents</span><span class="nav-badge">23</span></a>
+                <a href="linkedeye-change-calendar.html" class="nav-item"><i class="fas fa-code-branch"></i><span>Changes</span><span class="nav-badge warning">7</span></a>
+                <a href="linkedeye-problem-detail.html" class="nav-item"><i class="fas fa-search"></i><span>Problems</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Infrastructure</div>
+                <a href="linkedeye-assets.html" class="nav-item active"><i class="fas fa-cubes"></i><span>Assets</span></a>
+                <a href="linkedeye-network-topology.html" class="nav-item"><i class="fas fa-network-wired"></i><span>Network</span></a>
+                <a href="linkedeye-network-devices.html" class="nav-item"><i class="fas fa-server"></i><span>Devices</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Analytics</div>
+                <a href="linkedeye-reports.html" class="nav-item"><i class="fas fa-file-alt"></i><span>Reports</span></a>
+                <a href="linkedeye-analytics.html" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Administration</div>
+                <a href="linkedeye-users.html" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+                <a href="linkedeye-groups.html" class="nav-item"><i class="fas fa-user-friends"></i><span>Groups</span></a>
+                <a href="linkedeye-integrations.html" class="nav-item"><i class="fas fa-plug"></i><span>Integrations</span></a>
+                <a href="linkedeye-admin-settings.html" class="nav-item"><i class="fas fa-cog"></i><span>Settings</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="env-selector">
+                <div class="env-dot"></div>
+                <span>Production Environment</span>
+            </div>
+        </div>
+    </aside>
+
+    <header class="header">
+        <div class="header-left">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search assets by hostname, IP, location...">
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="notification-btn">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">3</span>
+            </button>
+            <div class="user-menu">
+                <div class="user-avatar">RM</div>
+                <div class="user-info">
+                    <div class="user-name">Rajkumar M.</div>
+                    <div class="user-role">DevOps Engineer</div>
+                </div>
+                <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-secondary);"></i>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div class="page-header-left">
+                <h1>Asset Management</h1>
+                <p>CMDB - Configuration Management Database</p>
+            </div>
+            <div class="page-header-right">
+                <button class="btn btn-secondary"><i class="fas fa-download"></i> Export</button>
+                <button class="btn btn-secondary"><i class="fas fa-upload"></i> Import</button>
+                <button class="btn btn-primary"><i class="fas fa-plus"></i> Add Asset</button>
+            </div>
+        </div>
+
+        <!-- Asset Categories -->
+        <div class="asset-categories">
+            <div class="category-card servers active">
+                <div class="category-icon"><i class="fas fa-server"></i></div>
+                <div class="category-count">142</div>
+                <div class="category-name">Servers</div>
+            </div>
+            <div class="category-card network">
+                <div class="category-icon"><i class="fas fa-network-wired"></i></div>
+                <div class="category-count">89</div>
+                <div class="category-name">Network Devices</div>
+            </div>
+            <div class="category-card database">
+                <div class="category-icon"><i class="fas fa-database"></i></div>
+                <div class="category-count">24</div>
+                <div class="category-name">Databases</div>
+            </div>
+            <div class="category-card cloud">
+                <div class="category-icon"><i class="fas fa-cloud"></i></div>
+                <div class="category-count">67</div>
+                <div class="category-name">Cloud Resources</div>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <button class="filter-btn"><i class="fas fa-filter"></i> Environment <i class="fas fa-chevron-down"></i></button>
+                <button class="filter-btn"><i class="fas fa-map-marker-alt"></i> Location <i class="fas fa-chevron-down"></i></button>
+                <button class="filter-btn"><i class="fas fa-circle"></i> Status <i class="fas fa-chevron-down"></i></button>
+                <button class="filter-btn"><i class="fas fa-user"></i> Owner <i class="fas fa-chevron-down"></i></button>
+            </div>
+            <div class="view-toggle">
+                <button class="view-btn active"><i class="fas fa-list"></i> List</button>
+                <button class="view-btn"><i class="fas fa-th"></i> Grid</button>
+            </div>
+        </div>
+
+        <!-- Assets Table -->
+        <div class="card">
+            <table class="assets-table">
+                <thead>
+                    <tr>
+                        <th>Hostname</th>
+                        <th>Type</th>
+                        <th>Environment</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                        <th>Owner</th>
+                        <th>Last Seen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="asset-name">
+                                <div class="asset-icon server"><i class="fas fa-server"></i></div>
+                                <div class="asset-info">
+                                    <div class="hostname">prod-app-01</div>
+                                    <div class="ip">10.0.1.10</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>Application Server</td>
+                        <td><span class="env-badge">fs-mum-indmoney-prod-le</span></td>
+                        <td>DC-1, Rack A3</td>
+                        <td><span class="status-badge up">Up</span></td>
+                        <td>Infrastructure Ops</td>
+                        <td>2 min ago</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="asset-name">
+                                <div class="asset-icon database"><i class="fas fa-database"></i></div>
+                                <div class="asset-info">
+                                    <div class="hostname">prod-db-01</div>
+                                    <div class="ip">10.0.1.20</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>PostgreSQL Database</td>
+                        <td><span class="env-badge">fs-mum-indmoney-prod-le</span></td>
+                        <td>DC-1, Rack B2</td>
+                        <td><span class="status-badge up">Up</span></td>
+                        <td>DBA Team</td>
+                        <td>1 min ago</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="asset-name">
+                                <div class="asset-icon network"><i class="fas fa-network-wired"></i></div>
+                                <div class="asset-info">
+                                    <div class="hostname">sw-core-01</div>
+                                    <div class="ip">10.0.1.1</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>Cisco Catalyst 9500</td>
+                        <td><span class="env-badge">fs-dx-le</span></td>
+                        <td>DC-1, Core</td>
+                        <td><span class="status-badge up">Up</span></td>
+                        <td>Network Ops</td>
+                        <td>30 sec ago</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="asset-name">
+                                <div class="asset-icon server"><i class="fas fa-server"></i></div>
+                                <div class="asset-info">
+                                    <div class="hostname">trading-engine-01</div>
+                                    <div class="ip">10.0.2.50</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>Trading Server</td>
+                        <td><span class="env-badge">neo-prod-le</span></td>
+                        <td>DC-2, Rack A1</td>
+                        <td><span class="status-badge maintenance">Maintenance</span></td>
+                        <td>Trading Ops</td>
+                        <td>5 min ago</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="asset-name">
+                                <div class="asset-icon cloud"><i class="fas fa-cloud"></i></div>
+                                <div class="asset-info">
+                                    <div class="hostname">api-gateway</div>
+                                    <div class="ip">52.66.x.x</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>AWS EKS Cluster</td>
+                        <td><span class="env-badge">pl-prod-le</span></td>
+                        <td>ap-south-1</td>
+                        <td><span class="status-badge up">Up</span></td>
+                        <td>DevOps Team</td>
+                        <td>1 min ago</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="asset-name">
+                                <div class="asset-icon server"><i class="fas fa-server"></i></div>
+                                <div class="asset-info">
+                                    <div class="hostname">backup-server-01</div>
+                                    <div class="ip">10.0.3.10</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>Backup Server</td>
+                        <td><span class="env-badge">fs-dr-le</span></td>
+                        <td>DR Site, Rack C1</td>
+                        <td><span class="status-badge down">Down</span></td>
+                        <td>Infrastructure Ops</td>
+                        <td>15 min ago</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="pagination">
+                <div class="pagination-info">Showing <strong>1-6</strong> of <strong>322</strong> assets</div>
+                <div class="pagination-controls">
+                    <button class="page-btn"><i class="fas fa-chevron-left"></i></button>
+                    <button class="page-btn active">1</button>
+                    <button class="page-btn">2</button>
+                    <button class="page-btn">3</button>
+                    <button class="page-btn">...</button>
+                    <button class="page-btn">54</button>
+                    <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.querySelectorAll('.category-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

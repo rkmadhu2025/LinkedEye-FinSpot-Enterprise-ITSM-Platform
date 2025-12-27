@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Change CHG0012456 - PgBouncer Configuration Update">
+    <title>CHG0012456 | LinkedEye-FinSpot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #0f1c3f;
+            --primary-blue: #2563eb;
+            --primary-blue-light: #3b82f6;
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+            --text-primary: #0f1c3f;
+            --text-secondary: #6b7785;
+            --border-color: #e5e8eb;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-body); color: var(--text-primary); font-size: 13px; }
+
+        .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh; background: var(--primary-navy); z-index: 200; }
+        .sidebar-header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-logo { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-blue-light), var(--purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .sidebar-logo i { color: #fff; font-size: 20px; }
+        .sidebar-brand { color: #fff; }
+        .sidebar-brand h1 { font-size: 16px; font-weight: 700; }
+        .sidebar-brand span { font-size: 10px; color: rgba(255,255,255,0.6); }
+        .sidebar-nav { padding: 16px 12px; overflow-y: auto; height: calc(100vh - 140px); }
+        .nav-section { margin-bottom: 20px; }
+        .nav-section-title { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.2s; margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .nav-item.active { background: linear-gradient(135deg, var(--primary-blue), #1d4ed8); color: #fff; }
+        .nav-item i { width: 20px; text-align: center; }
+        .sidebar-footer { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .env-selector { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; color: #fff; font-size: 12px; }
+        .env-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; }
+
+        .header { position: fixed; top: 0; left: var(--sidebar-width); right: 0; height: var(--header-height); background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .back-btn { width: 36px; height: 36px; border: 1px solid var(--border-color); background: #fff; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); }
+        .back-btn:hover { background: #f9fafb; color: var(--primary-blue); border-color: var(--primary-blue); }
+        .header-title { display: flex; align-items: center; gap: 12px; }
+        .header-title h1 { font-size: 16px; font-weight: 600; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .header-btn { padding: 8px 16px; border: 1px solid var(--border-color); background: #fff; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+        .header-btn:hover { background: #f9fafb; border-color: var(--primary-blue); color: var(--primary-blue); }
+        .header-btn.primary { background: linear-gradient(135deg, var(--success), #059669); color: #fff; border: none; }
+        .header-btn.primary:hover { box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+        .header-btn.danger { background: var(--danger); color: #fff; border: none; }
+
+        .main-content { margin-left: var(--sidebar-width); margin-top: var(--header-height); padding: 24px; min-height: calc(100vh - var(--header-height)); }
+        .detail-grid { display: grid; grid-template-columns: 1fr 380px; gap: 24px; }
+
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 24px; }
+        .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .card-title i { color: var(--primary-blue); }
+        .card-body { padding: 20px; }
+
+        /* Change Header */
+        .change-header-card { background: linear-gradient(135deg, var(--success) 0%, #059669 100%); border: none; color: #fff; }
+        .change-header-card .card-body { padding: 24px; }
+        .change-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .change-id-badge { background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 14px; }
+        .type-badge { background: rgba(255,255,255,0.9); color: var(--success); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .status-badge { background: rgba(59, 130, 246, 0.9); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .change-title-main { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+        .change-schedule { display: flex; align-items: center; gap: 20px; font-size: 14px; opacity: 0.9; }
+        .change-schedule i { margin-right: 6px; }
+
+        /* Info Grid */
+        .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .info-item { padding: 14px; background: #f9fafb; border-radius: 8px; }
+        .info-item label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+        .info-item .value { font-size: 13px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+        .info-item .value .avatar { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-blue), var(--purple)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 600; }
+
+        /* Approval Workflow */
+        .approval-flow { display: flex; flex-direction: column; gap: 16px; }
+        .approval-step { display: flex; align-items: center; gap: 16px; padding: 16px; background: #f9fafb; border-radius: 10px; position: relative; }
+        .approval-step::before { content: ''; position: absolute; left: 27px; top: 100%; width: 2px; height: 16px; background: var(--border-color); }
+        .approval-step:last-child::before { display: none; }
+        .approval-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+        .approval-icon.approved { background: var(--success); color: #fff; }
+        .approval-icon.pending { background: var(--warning); color: #fff; }
+        .approval-icon.waiting { background: #e5e7eb; color: #9ca3af; }
+        .approval-info { flex: 1; }
+        .approval-title { font-weight: 600; font-size: 13px; }
+        .approval-subtitle { font-size: 11px; color: var(--text-secondary); }
+        .approval-date { font-size: 11px; color: var(--text-secondary); text-align: right; }
+
+        /* Implementation Plan */
+        .impl-timeline { position: relative; padding-left: 24px; }
+        .impl-timeline::before { content: ''; position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: var(--border-color); }
+        .impl-step { position: relative; padding-bottom: 20px; }
+        .impl-step:last-child { padding-bottom: 0; }
+        .impl-dot { position: absolute; left: -24px; width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 2px solid var(--border-color); }
+        .impl-dot.done { border-color: var(--success); background: var(--success); }
+        .impl-dot.current { border-color: var(--primary-blue); background: var(--primary-blue); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); } 50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); } }
+        .impl-content { padding: 12px 16px; background: #f9fafb; border-radius: 8px; }
+        .impl-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+        .impl-time { font-size: 11px; color: var(--text-secondary); }
+
+        /* Rollback Plan */
+        .rollback-section { background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(245, 158, 11, 0.05) 100%); border: 1px dashed var(--warning); border-radius: 10px; padding: 16px; }
+        .rollback-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .rollback-header i { color: var(--warning); font-size: 18px; }
+        .rollback-header span { font-weight: 600; font-size: 14px; }
+        .rollback-steps { font-size: 13px; line-height: 1.8; }
+        .rollback-steps ol { padding-left: 20px; }
+
+        /* Risk Assessment */
+        .risk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .risk-item { text-align: center; padding: 16px; background: #f9fafb; border-radius: 8px; }
+        .risk-item .label { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; }
+        .risk-item .value { font-size: 18px; font-weight: 700; }
+        .risk-item .value.low { color: var(--success); }
+        .risk-item .value.medium { color: var(--warning); }
+        .risk-item .value.high { color: var(--danger); }
+
+        /* Badges */
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge.approved { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .badge.normal { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+
+        /* CI List */
+        .ci-list { display: flex; flex-direction: column; gap: 10px; }
+        .ci-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f9fafb; border-radius: 8px; }
+        .ci-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(59, 130, 246, 0.1); color: var(--info); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .ci-info { flex: 1; }
+        .ci-name { font-weight: 600; font-size: 13px; }
+        .ci-type { font-size: 11px; color: var(--text-secondary); }
+
+        @media (max-width: 1400px) { .detail-grid { grid-template-columns: 1fr 340px; } }
+        @media (max-width: 1200px) { .detail-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 992px) { .sidebar { width: 60px; } .sidebar-brand, .nav-item span, .nav-section-title { display: none; } .header { left: 60px; } .main-content { margin-left: 60px; } }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fas fa-eye"></i></div>
+            <div class="sidebar-brand"><h1>LinkedEye</h1><span>FinSpot Enterprise</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="linkedeye-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">ITSM</div>
+                <a href="linkedeye-incidents.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Incidents</span></a>
+                <a href="linkedeye-change-calendar.html" class="nav-item active"><i class="fas fa-code-branch"></i><span>Changes</span></a>
+                <a href="linkedeye-problem-detail.html" class="nav-item"><i class="fas fa-search"></i><span>Problems</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Infrastructure</div>
+                <a href="linkedeye-network-topology.html" class="nav-item"><i class="fas fa-network-wired"></i><span>Network</span></a>
+                <a href="linkedeye-assets.html" class="nav-item"><i class="fas fa-cubes"></i><span>Assets</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="env-selector"><div class="env-dot"></div><span>fs-mum-indmoney-prod-le</span></div>
+        </div>
+    </aside>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <button class="back-btn" onclick="window.location='linkedeye-change-calendar.html'"><i class="fas fa-arrow-left"></i></button>
+            <div class="header-title">
+                <h1>CHG0012456</h1>
+                <span class="badge approved"><i class="fas fa-check"></i> Approved</span>
+                <span class="badge normal">Normal</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="header-btn"><i class="fas fa-edit"></i> Edit</button>
+            <button class="header-btn"><i class="fas fa-copy"></i> Clone</button>
+            <button class="header-btn primary"><i class="fas fa-play"></i> Start Implementation</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="detail-grid">
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- Change Header -->
+                <div class="card change-header-card">
+                    <div class="card-body">
+                        <div class="change-meta">
+                            <span class="change-id-badge">CHG0012456</span>
+                            <span class="type-badge"><i class="fas fa-code-branch"></i> Normal Change</span>
+                            <span class="status-badge">Approved</span>
+                        </div>
+                        <h1 class="change-title-main">PgBouncer Configuration Update - Increase Pool Size</h1>
+                        <div class="change-schedule">
+                            <span><i class="fas fa-calendar"></i> Dec 26, 2025 18:00 IST</span>
+                            <span><i class="fas fa-clock"></i> Duration: 30 minutes</span>
+                            <span><i class="fas fa-server"></i> fs-mum-indmoney-prod-le</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Change Details -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fas fa-info-circle"></i> Change Details</span>
+                    </div>
+                    <div class="card-body">
+                        <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Description</h4>
+                        <p style="font-size: 14px; line-height: 1.7; margin-bottom: 20px;">
+                            Increase PgBouncer connection pool size from 256 to 384 connections to handle increased trading volume during peak hours. This change addresses recurring connection exhaustion incidents (INC0015847, INC0015721).
+                        </p>
+
+                        <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Business Justification</h4>
+                        <p style="font-size: 14px; line-height: 1.7; margin-bottom: 20px;">
+                            Trading operations have increased 40% over the past quarter. Current pool configuration is causing 3-5 connection exhaustion incidents per week during market open and close, impacting order processing SLAs.
+                        </p>
+
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Requested By</label>
+                                <div class="value"><span class="avatar">RM</span> Rajkumar Madhu</div>
+                            </div>
+                            <div class="info-item">
+                                <label>Assigned To</label>
+                                <div class="value"><span class="avatar">RM</span> Rajkumar Madhu</div>
+                            </div>
+                            <div class="info-item">
+                                <label>Change Type</label>
+                                <div class="value">Normal</div>
+                            </div>
+                            <div class="info-item">
+                                <label>Category</label>
+                                <div class="value">Database Configuration</div>
+                            </div>
+                            <div class="info-item">
+                                <label>Environment</label>
+                                <div class="value">Production</div>
+                            </div>
+                            <div class="info-item">
+                                <label>Maintenance Window</label>
+                                <div class="value">Post-Market Hours</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Implementation Plan -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fas fa-tasks"></i> Implementation Plan</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="impl-timeline">
+                            <div class="impl-step">
+                                <div class="impl-dot done"></div>
+                                <div class="impl-content">
+                                    <div class="impl-title">1. Pre-Implementation Verification</div>
+                                    <div class="impl-time">Verify current pool stats, backup config</div>
+                                </div>
+                            </div>
+                            <div class="impl-step">
+                                <div class="impl-dot current"></div>
+                                <div class="impl-content">
+                                    <div class="impl-title">2. Update pgbouncer.ini Configuration</div>
+                                    <div class="impl-time">Change max_client_conn from 256 to 384</div>
+                                </div>
+                            </div>
+                            <div class="impl-step">
+                                <div class="impl-dot"></div>
+                                <div class="impl-content">
+                                    <div class="impl-title">3. Reload PgBouncer Service</div>
+                                    <div class="impl-time">Execute: pgbouncer -R (no restart required)</div>
+                                </div>
+                            </div>
+                            <div class="impl-step">
+                                <div class="impl-dot"></div>
+                                <div class="impl-content">
+                                    <div class="impl-title">4. Verify New Pool Settings</div>
+                                    <div class="impl-time">Check SHOW POOLS; confirm 384 max connections</div>
+                                </div>
+                            </div>
+                            <div class="impl-step">
+                                <div class="impl-dot"></div>
+                                <div class="impl-content">
+                                    <div class="impl-title">5. Monitor for 15 Minutes</div>
+                                    <div class="impl-time">Watch Grafana dashboard for anomalies</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rollback Plan -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fas fa-undo"></i> Rollback Plan</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="rollback-section">
+                            <div class="rollback-header">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Emergency Rollback Procedure</span>
+                            </div>
+                            <div class="rollback-steps">
+                                <ol>
+                                    <li>Restore pgbouncer.ini from backup: <code>cp /etc/pgbouncer/pgbouncer.ini.bak /etc/pgbouncer/pgbouncer.ini</code></li>
+                                    <li>Reload PgBouncer: <code>pgbouncer -R</code></li>
+                                    <li>Verify rollback: <code>SHOW POOLS;</code> - confirm 256 max connections</li>
+                                    <li>Notify stakeholders via Slack #incidents channel</li>
+                                    <li>Create incident ticket for root cause analysis</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="right-column">
+                <!-- Risk Assessment -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fas fa-shield-alt"></i> Risk Assessment</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="risk-grid">
+                            <div class="risk-item">
+                                <div class="label">Risk Level</div>
+                                <div class="value low">Low</div>
+                            </div>
+                            <div class="risk-item">
+                                <div class="label">Impact</div>
+                                <div class="value low">Low</div>
+                            </div>
+                            <div class="risk-item">
+                                <div class="label">Complexity</div>
+                                <div class="value low">Low</div>
+                            </div>
+                        </div>
+                        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 16px; line-height: 1.6;">
+                            This is a low-risk configuration change. PgBouncer supports hot reload without service interruption. No database downtime expected.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Approval Workflow -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fas fa-user-check"></i> Approval Workflow</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="approval-flow">
+                            <div class="approval-step">
+                                <div class="approval-icon approved"><i class="fas fa-check"></i></div>
+                                <div class="approval-info">
+                                    <div class="approval-title">Technical Review</div>
+                                    <div class="approval-subtitle">Hoysala B. (DBA Lead)</div>
+                                </div>
+                                <div class="approval-date">Dec 24, 14:30</div>
+                            </div>
+                            <div class="approval-step">
+                                <div class="approval-icon approved"><i class="fas fa-check"></i></div>
+                                <div class="approval-info">
+                                    <div class="approval-title">CAB Approval</div>
+                                    <div class="approval-subtitle">Change Advisory Board</div>
+                                </div>
+                                <div class="approval-date">Dec 25, 10:00</div>
+                            </div>
+                            <div class="approval-step">
+                                <div class="approval-icon approved"><i class="fas fa-check"></i></div>
+                                <div class="approval-info">
+                                    <div class="approval-title">Manager Approval</div>
+                                    <div class="approval-subtitle">Priya Singh (Ops Manager)</div>
+                                </div>
+                                <div class="approval-date">Dec 25, 11:30</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Affected CIs -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fas fa-server"></i> Affected CIs</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="ci-list">
+                            <div class="ci-item">
+                                <div class="ci-icon"><i class="fas fa-database"></i></div>
+                                <div class="ci-info">
+                                    <div class="ci-name">pgbouncer-trading-01</div>
+                                    <div class="ci-type">PgBouncer Instance</div>
+                                </div>
+                            </div>
+                            <div class="ci-item">
+                                <div class="ci-icon"><i class="fas fa-database"></i></div>
+                                <div class="ci-info">
+                                    <div class="ci-name">trading-db-primary</div>
+                                    <div class="ci-type">PostgreSQL Primary</div>
+                                </div>
+                            </div>
+                            <div class="ci-item">
+                                <div class="ci-icon"><i class="fas fa-cube"></i></div>
+                                <div class="ci-info">
+                                    <div class="ci-name">order-service</div>
+                                    <div class="ci-type">Kubernetes Deployment</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Related Records -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fas fa-link"></i> Related Records</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="ci-list">
+                            <div class="ci-item" style="cursor: pointer;" onclick="window.location='linkedeye-incident-detail.html'">
+                                <div class="ci-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--danger);"><i class="fas fa-exclamation-triangle"></i></div>
+                                <div class="ci-info">
+                                    <div class="ci-name">INC0015847</div>
+                                    <div class="ci-type">Related Incident</div>
+                                </div>
+                            </div>
+                            <div class="ci-item" style="cursor: pointer;">
+                                <div class="ci-icon" style="background: rgba(139, 92, 246, 0.1); color: var(--purple);"><i class="fas fa-search"></i></div>
+                                <div class="ci-info">
+                                    <div class="ci-name">PRB0004521</div>
+                                    <div class="ci-type">Related Problem</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Simulate implementation progress
+        function startImplementation() {
+            alert('Starting implementation...\n\nIn production, this would trigger the StackStorm workflow and update the change status.');
+        }
+    </script>
+</body>
+</html>

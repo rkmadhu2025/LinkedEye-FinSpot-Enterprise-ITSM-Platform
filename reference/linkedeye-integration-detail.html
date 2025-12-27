@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prometheus Integration | LinkedEye-FinSpot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-navy: #0f1c3f;
+            --primary-blue: #2563eb;
+            --primary-blue-light: #3b82f6;
+            --purple: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --prometheus: #e6522c;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --border-color: #e5e8eb;
+            --text-primary: #0f1c3f;
+            --text-secondary: #6b7785;
+            --bg-card: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--gray-100);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--primary-navy);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 200;
+        }
+        .sidebar-header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-logo { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-blue-light), var(--purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .sidebar-logo i { color: #fff; font-size: 20px; }
+        .sidebar-brand { color: #fff; }
+        .sidebar-brand h1 { font-size: 16px; font-weight: 700; }
+        .sidebar-brand span { font-size: 10px; color: rgba(255,255,255,0.6); }
+        .sidebar-nav { padding: 16px 12px; overflow-y: auto; height: calc(100vh - 140px); }
+        .nav-section { margin-bottom: 20px; }
+        .nav-section-title { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.2s; margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .nav-item.active { background: linear-gradient(135deg, var(--primary-blue), #1d4ed8); color: #fff; }
+        .nav-item i { width: 20px; text-align: center; }
+        .nav-item .nav-badge { background: var(--danger); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: auto; }
+        .nav-item .nav-badge.warning { background: var(--warning); }
+        .sidebar-footer { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .env-selector { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; color: #fff; font-size: 12px; }
+        .env-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-width);
+            right: 0;
+            height: var(--header-height);
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--gray-500); }
+        .breadcrumb a { color: var(--gray-500); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--primary-blue); }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .notification-btn { position: relative; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border-color); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .notification-btn:hover { background: #f9fafb; }
+        .notification-badge { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 600; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
+        .user-menu { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+        .user-menu:hover { background: #f3f4f6; }
+        .user-avatar-header { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-blue), var(--purple)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 14px; }
+        .user-info-header { text-align: left; }
+        .user-name-header { font-size: 13px; font-weight: 600; }
+        .user-role-header { font-size: 11px; color: var(--text-secondary); }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 24px;
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), #1d4ed8);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: #fff;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        /* Page Content */
+        .page-content {
+            padding: 24px;
+        }
+
+        /* Integration Header */
+        .integration-header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .integration-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .integration-info {
+            display: flex;
+            gap: 20px;
+        }
+
+        .integration-logo {
+            width: 72px;
+            height: 72px;
+            background: var(--prometheus);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+        }
+
+        .integration-details h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .integration-details .category {
+            color: var(--gray-500);
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .integration-badges {
+            display: flex;
+            gap: 8px;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .integration-status {
+            text-align: right;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .last-sync {
+            color: var(--gray-500);
+            font-size: 13px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            padding-top: 24px;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .stat-value.success {
+            color: var(--success);
+        }
+
+        .stat-value.warning {
+            color: var(--warning);
+        }
+
+        .stat-value.danger {
+            color: var(--danger);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0 20px;
+            background: var(--gray-50);
+        }
+
+        .tab {
+            padding: 14px 20px;
+            font-size: 14px;
+            color: var(--gray-600);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: var(--gray-900);
+        }
+
+        .tab.active {
+            color: var(--primary-blue);
+            border-bottom-color: var(--primary-blue);
+            background: white;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 6px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        /* Toggle */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: var(--gray-50);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .toggle-info {
+            flex: 1;
+        }
+
+        .toggle-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray-900);
+        }
+
+        .toggle-description {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--gray-300);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--primary-blue);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Alert Rules Table */
+        .rules-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .rules-table th,
+        .rules-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 13px;
+        }
+
+        .rules-table th {
+            background: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .rules-table tr:hover {
+            background: var(--gray-50);
+        }
+
+        .rule-name {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .rule-severity {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .rule-severity.critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .rule-severity.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .rule-severity.info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 250px;
+        }
+
+        /* Recent Alerts */
+        .alert-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .alert-item.critical {
+            background: #fef2f2;
+            border-left: 3px solid var(--danger);
+        }
+
+        .alert-item.warning {
+            background: #fffbeb;
+            border-left: 3px solid var(--warning);
+        }
+
+        .alert-item.resolved {
+            background: var(--gray-50);
+            border-left: 3px solid var(--gray-300);
+        }
+
+        .alert-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .alert-item.critical .alert-icon {
+            background: var(--danger);
+            color: white;
+        }
+
+        .alert-item.warning .alert-icon {
+            background: var(--warning);
+            color: white;
+        }
+
+        .alert-item.resolved .alert-icon {
+            background: var(--gray-400);
+            color: white;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .alert-meta {
+            font-size: 11px;
+            color: var(--gray-500);
+        }
+
+        /* Connection Test */
+        .connection-status {
+            padding: 16px;
+            background: #d1fae5;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .connection-status.error {
+            background: #fee2e2;
+        }
+
+        .connection-status i {
+            font-size: 20px;
+            color: var(--success);
+        }
+
+        .connection-status.error i {
+            color: var(--danger);
+        }
+
+        .connection-info {
+            flex: 1;
+        }
+
+        .connection-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .connection-detail {
+            font-size: 12px;
+            color: var(--gray-600);
+        }
+
+        /* Mapping Table */
+        .mapping-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--gray-50);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .mapping-source {
+            flex: 1;
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: monospace;
+        }
+
+        .mapping-arrow {
+            color: var(--gray-400);
+        }
+
+        .mapping-target {
+            flex: 1;
+        }
+
+        .mapping-target select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        /* Full Width */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* Webhook */
+        .webhook-url {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--gray-50);
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .webhook-url .url {
+            flex: 1;
+            color: var(--gray-700);
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: 4px;
+            background: white;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .copy-btn:hover {
+            background: var(--gray-100);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fas fa-eye"></i></div>
+            <div class="sidebar-brand"><h1>LinkedEye</h1><span>FinSpot Enterprise</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="linkedeye-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+                <a href="linkedeye-incidents.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Incidents</span><span class="nav-badge">23</span></a>
+                <a href="linkedeye-change-calendar.html" class="nav-item"><i class="fas fa-code-branch"></i><span>Changes</span><span class="nav-badge warning">7</span></a>
+                <a href="linkedeye-problem-detail.html" class="nav-item"><i class="fas fa-search"></i><span>Problems</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Infrastructure</div>
+                <a href="linkedeye-assets.html" class="nav-item"><i class="fas fa-cubes"></i><span>Assets</span></a>
+                <a href="linkedeye-network-topology.html" class="nav-item"><i class="fas fa-network-wired"></i><span>Network</span></a>
+                <a href="linkedeye-network-devices.html" class="nav-item"><i class="fas fa-server"></i><span>Devices</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Analytics</div>
+                <a href="linkedeye-reports.html" class="nav-item"><i class="fas fa-file-alt"></i><span>Reports</span></a>
+                <a href="linkedeye-analytics.html" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Administration</div>
+                <a href="linkedeye-users.html" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+                <a href="linkedeye-groups.html" class="nav-item"><i class="fas fa-user-friends"></i><span>Groups</span></a>
+                <a href="linkedeye-integrations.html" class="nav-item active"><i class="fas fa-plug"></i><span>Integrations</span></a>
+                <a href="linkedeye-admin-settings.html" class="nav-item"><i class="fas fa-cog"></i><span>Settings</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="env-selector">
+                <div class="env-dot"></div>
+                <span>Production Environment</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <nav class="breadcrumb">
+                <a href="linkedeye-dashboard.html">Home</a>
+                <i class="fas fa-chevron-right"></i>
+                <a href="linkedeye-integrations.html">Integrations</a>
+                <i class="fas fa-chevron-right"></i>
+                <span>Prometheus</span>
+            </nav>
+        </div>
+        <div class="header-right">
+            <button class="notification-btn">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">3</span>
+            </button>
+            <div class="user-menu">
+                <div class="user-avatar-header">RK</div>
+                <div class="user-info-header">
+                    <div class="user-name-header">Rahul Kumar</div>
+                    <div class="user-role-header">Admin</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-header" style="display: flex; justify-content: flex-end; margin-bottom: 24px;">
+            <div class="header-actions">
+                <button class="btn btn-secondary">
+                    <i class="fas fa-sync-alt"></i>
+                    Test Connection
+                </button>
+                <button class="btn btn-danger">
+                    <i class="fas fa-unlink"></i>
+                    Disconnect
+                </button>
+                <button class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <!-- Integration Header -->
+            <div class="integration-header">
+                <div class="integration-header-top">
+                    <div class="integration-info">
+                        <div class="integration-logo">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <div class="integration-details">
+                            <h1>Prometheus</h1>
+                            <div class="category">Monitoring & Alerting</div>
+                            <div class="integration-badges">
+                                <span class="badge badge-success">Connected</span>
+                                <span class="badge badge-info">v2.45.0</span>
+                                <span class="badge badge-info">Production</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="integration-status">
+                        <div class="status-indicator">
+                            <span class="status-dot"></span>
+                            <span style="color: var(--success); font-weight: 600;">Healthy</span>
+                        </div>
+                        <div class="last-sync">
+                            <i class="fas fa-sync"></i> Last sync: 12 seconds ago
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">1.2M</div>
+                        <div class="stat-label">Metrics/min</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">847</div>
+                        <div class="stat-label">Active Rules</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value success">23</div>
+                        <div class="stat-label">Alerts Today</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">142</div>
+                        <div class="stat-label">Incidents Created</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value success">99.8%</div>
+                        <div class="stat-label">Uptime</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="tabs">
+                    <div class="tab active">Configuration</div>
+                    <div class="tab">Alert Rules</div>
+                    <div class="tab">Field Mapping</div>
+                    <div class="tab">Recent Alerts</div>
+                    <div class="tab">Logs</div>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <!-- Configuration -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-cog"></i>
+                            Connection Settings
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="connection-status">
+                            <i class="fas fa-check-circle"></i>
+                            <div class="connection-info">
+                                <div class="connection-title">Connection Successful</div>
+                                <div class="connection-detail">Last verified: Dec 24, 2024 at 10:32 AM</div>
+                            </div>
+                            <button class="btn btn-secondary" style="font-size: 13px;">
+                                <i class="fas fa-sync-alt"></i>
+                                Re-test
+                            </button>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Prometheus URL</label>
+                            <input type="text" class="form-input" value="https://prometheus.finspot.internal:9090">
+                            <div class="form-hint">The base URL of your Prometheus server</div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Authentication Type</label>
+                                <select class="form-input">
+                                    <option>Basic Auth</option>
+                                    <option selected>Bearer Token</option>
+                                    <option>mTLS Certificate</option>
+                                    <option>None</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Scrape Interval</label>
+                                <select class="form-input">
+                                    <option>15 seconds</option>
+                                    <option selected>30 seconds</option>
+                                    <option>1 minute</option>
+                                    <option>5 minutes</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">API Token</label>
+                            <input type="password" class="form-input" value="••••••••••••••••••••••••">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Webhook Endpoint (for Alertmanager)</label>
+                            <div class="webhook-url">
+                                <span class="url">https://api.linkedeye.finspot.in/v1/webhooks/prometheus/a7f3e9c2</span>
+                                <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            </div>
+                            <div class="form-hint">Configure this URL in your Alertmanager to receive alerts</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Behavior Settings -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-sliders-h"></i>
+                            Behavior Settings
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="toggle-group">
+                            <div class="toggle-info">
+                                <div class="toggle-label">Auto-create Incidents</div>
+                                <div class="toggle-description">Create incidents from firing alerts</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-group">
+                            <div class="toggle-info">
+                                <div class="toggle-label">Auto-resolve Incidents</div>
+                                <div class="toggle-description">Close incidents when alerts resolve</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-group">
+                            <div class="toggle-info">
+                                <div class="toggle-label">Deduplicate Alerts</div>
+                                <div class="toggle-description">Group related alerts into single incident</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-group">
+                            <div class="toggle-info">
+                                <div class="toggle-label">Trigger Auto-Remediation</div>
+                                <div class="toggle-description">Run StackStorm workflows for known issues</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-group">
+                            <div class="toggle-info">
+                                <div class="toggle-label">Sync Labels as Tags</div>
+                                <div class="toggle-description">Import Prometheus labels as incident tags</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert Metrics Chart -->
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-area"></i>
+                            Alert Volume (Last 7 Days)
+                        </h3>
+                        <select style="padding: 6px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px;">
+                            <option>Last 7 Days</option>
+                            <option>Last 30 Days</option>
+                            <option>Last 90 Days</option>
+                        </select>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="alertChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Field Mapping -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-exchange-alt"></i>
+                            Severity Mapping
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mapping-row">
+                            <div class="mapping-source">severity="critical"</div>
+                            <i class="fas fa-arrow-right mapping-arrow"></i>
+                            <div class="mapping-target">
+                                <select>
+                                    <option selected>Priority 1 (Critical)</option>
+                                    <option>Priority 2 (High)</option>
+                                    <option>Priority 3 (Medium)</option>
+                                    <option>Priority 4 (Low)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mapping-row">
+                            <div class="mapping-source">severity="warning"</div>
+                            <i class="fas fa-arrow-right mapping-arrow"></i>
+                            <div class="mapping-target">
+                                <select>
+                                    <option>Priority 1 (Critical)</option>
+                                    <option selected>Priority 2 (High)</option>
+                                    <option>Priority 3 (Medium)</option>
+                                    <option>Priority 4 (Low)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mapping-row">
+                            <div class="mapping-source">severity="info"</div>
+                            <i class="fas fa-arrow-right mapping-arrow"></i>
+                            <div class="mapping-target">
+                                <select>
+                                    <option>Priority 1 (Critical)</option>
+                                    <option>Priority 2 (High)</option>
+                                    <option selected>Priority 3 (Medium)</option>
+                                    <option>Priority 4 (Low)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" style="margin-top: 12px; font-size: 13px;">
+                            <i class="fas fa-plus"></i>
+                            Add Mapping
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Alerts -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-bell"></i>
+                            Recent Alerts
+                        </h3>
+                        <a href="#" style="font-size: 13px; color: var(--primary); text-decoration: none;">View All</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert-item critical">
+                            <div class="alert-icon">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div class="alert-content">
+                                <div class="alert-title">HighMemoryUsage</div>
+                                <div class="alert-meta">payment-gateway-prod • 2 min ago • Created INC0012847</div>
+                            </div>
+                        </div>
+                        <div class="alert-item warning">
+                            <div class="alert-icon">
+                                <i class="fas fa-exclamation"></i>
+                            </div>
+                            <div class="alert-content">
+                                <div class="alert-title">PodRestartLooping</div>
+                                <div class="alert-meta">auth-service-prod • 15 min ago • Created INC0012845</div>
+                            </div>
+                        </div>
+                        <div class="alert-item resolved">
+                            <div class="alert-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="alert-content">
+                                <div class="alert-title">HighLatency</div>
+                                <div class="alert-meta">api-gateway • 1 hour ago • Auto-resolved</div>
+                            </div>
+                        </div>
+                        <div class="alert-item resolved">
+                            <div class="alert-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="alert-content">
+                                <div class="alert-title">DiskSpaceWarning</div>
+                                <div class="alert-meta">db-primary-01 • 2 hours ago • Auto-remediated</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert Rules Preview -->
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-list-alt"></i>
+                            Configured Alert Rules
+                        </h3>
+                        <button class="btn btn-secondary" style="font-size: 13px;">
+                            <i class="fas fa-sync-alt"></i>
+                            Sync from Prometheus
+                        </button>
+                    </div>
+                    <table class="rules-table">
+                        <thead>
+                            <tr>
+                                <th>Alert Name</th>
+                                <th>Expression</th>
+                                <th>Severity</th>
+                                <th>For</th>
+                                <th>Auto-Remediate</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="rule-name">HighMemoryUsage</span></td>
+                                <td><code style="font-size: 12px;">container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.9</code></td>
+                                <td><span class="rule-severity critical">Critical</span></td>
+                                <td>5m</td>
+                                <td><i class="fas fa-check" style="color: var(--success);"></i></td>
+                                <td><span style="color: var(--success);"><i class="fas fa-circle" style="font-size: 8px;"></i> Active</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="rule-name">HighCPUUsage</span></td>
+                                <td><code style="font-size: 12px;">rate(container_cpu_usage_seconds_total[5m]) > 0.8</code></td>
+                                <td><span class="rule-severity warning">Warning</span></td>
+                                <td>10m</td>
+                                <td><i class="fas fa-check" style="color: var(--success);"></i></td>
+                                <td><span style="color: var(--success);"><i class="fas fa-circle" style="font-size: 8px;"></i> Active</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="rule-name">PodRestartLooping</span></td>
+                                <td><code style="font-size: 12px;">increase(kube_pod_container_status_restarts_total[1h]) > 5</code></td>
+                                <td><span class="rule-severity warning">Warning</span></td>
+                                <td>15m</td>
+                                <td><i class="fas fa-check" style="color: var(--success);"></i></td>
+                                <td><span style="color: var(--success);"><i class="fas fa-circle" style="font-size: 8px;"></i> Active</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="rule-name">DiskSpaceWarning</span></td>
+                                <td><code style="font-size: 12px;">(node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.15</code></td>
+                                <td><span class="rule-severity warning">Warning</span></td>
+                                <td>30m</td>
+                                <td><i class="fas fa-check" style="color: var(--success);"></i></td>
+                                <td><span style="color: var(--success);"><i class="fas fa-circle" style="font-size: 8px;"></i> Active</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="rule-name">ServiceDown</span></td>
+                                <td><code style="font-size: 12px;">up == 0</code></td>
+                                <td><span class="rule-severity critical">Critical</span></td>
+                                <td>1m</td>
+                                <td><i class="fas fa-times" style="color: var(--gray-400);"></i></td>
+                                <td><span style="color: var(--success);"><i class="fas fa-circle" style="font-size: 8px;"></i> Active</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="rule-name">HighLatency</span></td>
+                                <td><code style="font-size: 12px;">histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m])) > 1</code></td>
+                                <td><span class="rule-severity warning">Warning</span></td>
+                                <td>5m</td>
+                                <td><i class="fas fa-times" style="color: var(--gray-400);"></i></td>
+                                <td><span style="color: var(--success);"><i class="fas fa-circle" style="font-size: 8px;"></i> Active</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Alert Volume Chart
+        const ctx = document.getElementById('alertChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Dec 18', 'Dec 19', 'Dec 20', 'Dec 21', 'Dec 22', 'Dec 23', 'Dec 24'],
+                datasets: [{
+                    label: 'Critical',
+                    data: [5, 3, 8, 4, 6, 7, 5],
+                    backgroundColor: '#ef4444',
+                    borderRadius: 4
+                }, {
+                    label: 'Warning',
+                    data: [12, 15, 18, 14, 16, 19, 13],
+                    backgroundColor: '#f59e0b',
+                    borderRadius: 4
+                }, {
+                    label: 'Info',
+                    data: [8, 6, 10, 7, 9, 5, 5],
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        stacked: true,
+                        grid: { color: '#f3f4f6' }
+                    },
+                    x: {
+                        stacked: true,
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

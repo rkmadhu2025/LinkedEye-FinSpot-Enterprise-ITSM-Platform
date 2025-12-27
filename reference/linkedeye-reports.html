@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Reports - LinkedEye-FinSpot Reporting">
+    <title>Reports | LinkedEye-FinSpot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-navy: #0f1c3f;
+            --primary-blue: #2563eb;
+            --primary-blue-light: #3b82f6;
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --border-color: #e5e8eb;
+            --text-primary: #0f1c3f;
+            --text-secondary: #6b7785;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--gray-100);
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--primary-navy);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            z-index: 200;
+        }
+
+        .sidebar-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-blue-light), var(--purple));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-logo i {
+            font-size: 20px;
+            color: #fff;
+        }
+
+        .sidebar-brand {
+            color: #fff;
+        }
+
+        .sidebar-brand h1 {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .sidebar-brand span {
+            font-size: 10px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .sidebar-nav {
+            padding: 16px 12px;
+            overflow-y: auto;
+            height: calc(100vh - 140px);
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-section-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 12px 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--primary-blue), #1d4ed8);
+            color: #fff;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-item .nav-badge {
+            background: var(--danger);
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: auto;
+        }
+
+        .nav-item .nav-badge.warning {
+            background: var(--warning);
+        }
+
+        .sidebar-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .env-selector-footer {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+            font-size: 12px;
+        }
+
+        .env-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--success);
+            border-radius: 50%;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-width);
+            right: 0;
+            height: var(--header-height);
+            background: white;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .header-left h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .header-left p {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notification-btn {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-btn:hover {
+            background: #f9fafb;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 18px;
+            height: 18px;
+            background: var(--danger);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fff;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .user-menu:hover {
+            background: #f3f4f6;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-blue), var(--purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-info {
+            text-align: left;
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .user-role {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+        }
+
+        /* Page Content */
+        .page-content {
+            padding: 24px;
+        }
+
+        /* Report Categories */
+        .report-categories {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .report-category {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .report-category:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .report-category.active {
+            border-color: var(--primary);
+        }
+
+        .category-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .category-icon.incident {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .category-icon.change {
+            background: #dbeafe;
+            color: var(--info);
+        }
+
+        .category-icon.sla {
+            background: #d1fae5;
+            color: var(--success);
+        }
+
+        .category-icon.asset {
+            background: #fef3c7;
+            color: var(--warning);
+        }
+
+        .report-category h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .report-category p {
+            font-size: 13px;
+            color: var(--gray-500);
+        }
+
+        .report-count {
+            font-size: 12px;
+            color: var(--gray-400);
+            margin-top: 8px;
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Report List */
+        .report-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .report-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-100);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .report-item:hover {
+            background: var(--gray-50);
+        }
+
+        .report-item:last-child {
+            border-bottom: none;
+        }
+
+        .report-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .report-icon.pdf {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .report-icon.excel {
+            background: #d1fae5;
+            color: var(--success);
+        }
+
+        .report-icon.chart {
+            background: #dbeafe;
+            color: var(--info);
+        }
+
+        .report-info {
+            flex: 1;
+        }
+
+        .report-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .report-meta {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--gray-200);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--gray-500);
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        /* Quick Stats */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .quick-stat {
+            background: var(--gray-50);
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .quick-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .quick-stat-label {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 200px;
+        }
+
+        /* Scheduled Reports */
+        .scheduled-report {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--gray-50);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .scheduled-report:last-child {
+            margin-bottom: 0;
+        }
+
+        .schedule-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .schedule-info {
+            flex: 1;
+        }
+
+        .schedule-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .schedule-time {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .schedule-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .schedule-badge.daily {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .schedule-badge.weekly {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .schedule-badge.monthly {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Report Builder Preview */
+        .report-builder {
+            background: var(--gray-50);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .builder-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 16px;
+        }
+
+        .builder-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .builder-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .builder-option label {
+            font-size: 13px;
+            color: var(--gray-700);
+            min-width: 100px;
+        }
+
+        .builder-option select,
+        .builder-option input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        /* Recent Downloads */
+        .download-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .download-item:last-child {
+            border-bottom: none;
+        }
+
+        .download-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .download-icon.pdf {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .download-icon.xlsx {
+            background: #d1fae5;
+            color: var(--success);
+        }
+
+        .download-icon.csv {
+            background: #dbeafe;
+            color: var(--info);
+        }
+
+        .download-info {
+            flex: 1;
+        }
+
+        .download-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--gray-900);
+        }
+
+        .download-time {
+            font-size: 11px;
+            color: var(--gray-500);
+        }
+
+        .download-size {
+            font-size: 12px;
+            color: var(--gray-400);
+        }
+
+        /* Template Gallery */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .template-card {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .template-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+        }
+
+        .template-preview {
+            height: 80px;
+            background: var(--gray-100);
+            border-radius: 6px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-400);
+        }
+
+        .template-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .template-desc {
+            font-size: 11px;
+            color: var(--gray-500);
+        }
+
+        /* Environment Selector */
+        .env-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .env-chip {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            background: var(--gray-100);
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .env-chip:hover {
+            background: var(--gray-200);
+        }
+
+        .env-chip.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Full Width */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fas fa-eye"></i></div>
+            <div class="sidebar-brand"><h1>LinkedEye</h1><span>FinSpot Enterprise</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="linkedeye-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+                <a href="linkedeye-incidents.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Incidents</span><span class="nav-badge">23</span></a>
+                <a href="linkedeye-change-calendar.html" class="nav-item"><i class="fas fa-code-branch"></i><span>Changes</span><span class="nav-badge warning">7</span></a>
+                <a href="linkedeye-problem-detail.html" class="nav-item"><i class="fas fa-search"></i><span>Problems</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Infrastructure</div>
+                <a href="linkedeye-assets.html" class="nav-item"><i class="fas fa-cubes"></i><span>Assets</span></a>
+                <a href="linkedeye-network-topology.html" class="nav-item"><i class="fas fa-network-wired"></i><span>Network</span></a>
+                <a href="linkedeye-network-devices.html" class="nav-item"><i class="fas fa-server"></i><span>Devices</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Analytics</div>
+                <a href="linkedeye-reports.html" class="nav-item active"><i class="fas fa-file-alt"></i><span>Reports</span></a>
+                <a href="linkedeye-analytics.html" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Administration</div>
+                <a href="linkedeye-users.html" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+                <a href="linkedeye-groups.html" class="nav-item"><i class="fas fa-user-friends"></i><span>Groups</span></a>
+                <a href="linkedeye-integrations.html" class="nav-item"><i class="fas fa-plug"></i><span>Integrations</span></a>
+                <a href="linkedeye-admin-settings.html" class="nav-item"><i class="fas fa-cog"></i><span>Settings</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="env-selector-footer">
+                <div class="env-dot"></div>
+                <span>Production Environment</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <h1>Reports</h1>
+        </div>
+        <div class="header-right">
+            <div class="header-actions">
+                <button class="btn btn-secondary"><i class="fas fa-clock"></i> Scheduled</button>
+                <button class="btn btn-primary"><i class="fas fa-plus"></i> Create Report</button>
+            </div>
+            <button class="notification-btn">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">3</span>
+            </button>
+            <div class="user-menu">
+                <div class="user-avatar">RM</div>
+                <div class="user-info">
+                    <div class="user-name">Rajkumar M.</div>
+                    <div class="user-role">DevOps Engineer</div>
+                </div>
+                <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-secondary);"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <!-- Report Categories -->
+            <div class="report-categories">
+                <div class="report-category active">
+                    <div class="category-icon incident">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h3>Incident Reports</h3>
+                    <p>MTTR, volume, SLA performance</p>
+                    <div class="report-count">12 templates available</div>
+                </div>
+                <div class="report-category">
+                    <div class="category-icon change">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <h3>Change Reports</h3>
+                    <p>Success rate, CAB metrics, lead time</p>
+                    <div class="report-count">8 templates available</div>
+                </div>
+                <div class="report-category">
+                    <div class="category-icon sla">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>SLA Reports</h3>
+                    <p>Compliance, breaches, trends</p>
+                    <div class="report-count">6 templates available</div>
+                </div>
+                <div class="report-category">
+                    <div class="category-icon asset">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <h3>Asset Reports</h3>
+                    <p>Inventory, lifecycle, utilization</p>
+                    <div class="report-count">10 templates available</div>
+                </div>
+            </div>
+
+            <!-- Environment Selector -->
+            <div class="env-selector">
+                <span class="env-chip active">All Environments</span>
+                <span class="env-chip">fs-mum-indmoney-prod-le</span>
+                <span class="env-chip">fs-blr-indmoney-dr-le</span>
+                <span class="env-chip">neo-prod-le</span>
+                <span class="env-chip">lemonn-mum-le</span>
+                <span class="env-chip">pl-prod-le</span>
+                <span class="env-chip">fs-dx-le</span>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <!-- Available Reports -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-file-alt"></i>
+                            Incident Reports
+                        </h3>
+                        <input type="text" placeholder="Search reports..." style="padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px; width: 200px;">
+                    </div>
+                    <div class="report-list">
+                        <div class="report-item">
+                            <div class="report-icon chart">
+                                <i class="fas fa-chart-pie"></i>
+                            </div>
+                            <div class="report-info">
+                                <div class="report-name">Weekly Incident Summary</div>
+                                <div class="report-meta">Volume, priority breakdown, top categories • Updated daily</div>
+                            </div>
+                            <div class="report-actions">
+                                <button class="action-btn" title="Preview"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn" title="Download PDF"><i class="fas fa-file-pdf"></i></button>
+                                <button class="action-btn" title="Download Excel"><i class="fas fa-file-excel"></i></button>
+                                <button class="action-btn" title="Schedule"><i class="fas fa-clock"></i></button>
+                            </div>
+                        </div>
+                        <div class="report-item">
+                            <div class="report-icon chart">
+                                <i class="fas fa-stopwatch"></i>
+                            </div>
+                            <div class="report-info">
+                                <div class="report-name">MTTR Analysis Report</div>
+                                <div class="report-meta">Mean time to resolution by team, priority, category</div>
+                            </div>
+                            <div class="report-actions">
+                                <button class="action-btn" title="Preview"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn" title="Download PDF"><i class="fas fa-file-pdf"></i></button>
+                                <button class="action-btn" title="Download Excel"><i class="fas fa-file-excel"></i></button>
+                                <button class="action-btn" title="Schedule"><i class="fas fa-clock"></i></button>
+                            </div>
+                        </div>
+                        <div class="report-item">
+                            <div class="report-icon chart">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <div class="report-info">
+                                <div class="report-name">SLA Compliance Report</div>
+                                <div class="report-meta">Response & resolution SLA performance metrics</div>
+                            </div>
+                            <div class="report-actions">
+                                <button class="action-btn" title="Preview"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn" title="Download PDF"><i class="fas fa-file-pdf"></i></button>
+                                <button class="action-btn" title="Download Excel"><i class="fas fa-file-excel"></i></button>
+                                <button class="action-btn" title="Schedule"><i class="fas fa-clock"></i></button>
+                            </div>
+                        </div>
+                        <div class="report-item">
+                            <div class="report-icon chart">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="report-info">
+                                <div class="report-name">Team Performance Dashboard</div>
+                                <div class="report-meta">Workload, resolution rate, reopened tickets by assignee</div>
+                            </div>
+                            <div class="report-actions">
+                                <button class="action-btn" title="Preview"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn" title="Download PDF"><i class="fas fa-file-pdf"></i></button>
+                                <button class="action-btn" title="Download Excel"><i class="fas fa-file-excel"></i></button>
+                                <button class="action-btn" title="Schedule"><i class="fas fa-clock"></i></button>
+                            </div>
+                        </div>
+                        <div class="report-item">
+                            <div class="report-icon chart">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="report-info">
+                                <div class="report-name">Critical Incident Analysis</div>
+                                <div class="report-meta">P1/P2 deep dive with root cause and impact summary</div>
+                            </div>
+                            <div class="report-actions">
+                                <button class="action-btn" title="Preview"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn" title="Download PDF"><i class="fas fa-file-pdf"></i></button>
+                                <button class="action-btn" title="Download Excel"><i class="fas fa-file-excel"></i></button>
+                                <button class="action-btn" title="Schedule"><i class="fas fa-clock"></i></button>
+                            </div>
+                        </div>
+                        <div class="report-item">
+                            <div class="report-icon chart">
+                                <i class="fas fa-redo"></i>
+                            </div>
+                            <div class="report-info">
+                                <div class="report-name">Recurring Incidents Report</div>
+                                <div class="report-meta">Pattern detection, problem candidates, automation opportunities</div>
+                            </div>
+                            <div class="report-actions">
+                                <button class="action-btn" title="Preview"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn" title="Download PDF"><i class="fas fa-file-pdf"></i></button>
+                                <button class="action-btn" title="Download Excel"><i class="fas fa-file-excel"></i></button>
+                                <button class="action-btn" title="Schedule"><i class="fas fa-clock"></i></button>
+                            </div>
+                        </div>
+                        <div class="report-item">
+                            <div class="report-icon chart">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="report-info">
+                                <div class="report-name">Auto-Remediation Effectiveness</div>
+                                <div class="report-meta">StackStorm workflow success rates, time saved metrics</div>
+                            </div>
+                            <div class="report-actions">
+                                <button class="action-btn" title="Preview"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn" title="Download PDF"><i class="fas fa-file-pdf"></i></button>
+                                <button class="action-btn" title="Download Excel"><i class="fas fa-file-excel"></i></button>
+                                <button class="action-btn" title="Schedule"><i class="fas fa-clock"></i></button>
+                            </div>
+                        </div>
+                        <div class="report-item">
+                            <div class="report-icon chart">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="report-info">
+                                <div class="report-name">Monthly Executive Summary</div>
+                                <div class="report-meta">High-level KPIs, trends, executive dashboard</div>
+                            </div>
+                            <div class="report-actions">
+                                <button class="action-btn" title="Preview"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn" title="Download PDF"><i class="fas fa-file-pdf"></i></button>
+                                <button class="action-btn" title="Download Excel"><i class="fas fa-file-excel"></i></button>
+                                <button class="action-btn" title="Schedule"><i class="fas fa-clock"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar -->
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <!-- Quick Stats -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-line"></i>
+                                This Month's Highlights
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="quick-stats">
+                                <div class="quick-stat">
+                                    <div class="quick-stat-value">1,247</div>
+                                    <div class="quick-stat-label">Total Incidents</div>
+                                </div>
+                                <div class="quick-stat">
+                                    <div class="quick-stat-value" style="color: var(--success);">98.2%</div>
+                                    <div class="quick-stat-label">SLA Compliance</div>
+                                </div>
+                                <div class="quick-stat">
+                                    <div class="quick-stat-value">42m</div>
+                                    <div class="quick-stat-label">Avg MTTR</div>
+                                </div>
+                                <div class="quick-stat">
+                                    <div class="quick-stat-value" style="color: var(--warning);">23</div>
+                                    <div class="quick-stat-label">Critical (P1)</div>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scheduled Reports -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-calendar-check"></i>
+                                Scheduled Reports
+                            </h3>
+                            <a href="#" style="font-size: 13px; color: var(--primary); text-decoration: none;">Manage</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="scheduled-report">
+                                <div class="schedule-icon">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div class="schedule-info">
+                                    <div class="schedule-name">Weekly Incident Summary</div>
+                                    <div class="schedule-time">Every Monday, 8:00 AM</div>
+                                </div>
+                                <span class="schedule-badge weekly">Weekly</span>
+                            </div>
+                            <div class="scheduled-report">
+                                <div class="schedule-icon">
+                                    <i class="fas fa-file-excel"></i>
+                                </div>
+                                <div class="schedule-info">
+                                    <div class="schedule-name">Daily SLA Report</div>
+                                    <div class="schedule-time">Every day, 6:00 AM</div>
+                                </div>
+                                <span class="schedule-badge daily">Daily</span>
+                            </div>
+                            <div class="scheduled-report">
+                                <div class="schedule-icon">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div class="schedule-info">
+                                    <div class="schedule-name">Executive Summary</div>
+                                    <div class="schedule-time">1st of every month</div>
+                                </div>
+                                <span class="schedule-badge monthly">Monthly</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Downloads -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-download"></i>
+                                Recent Downloads
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="download-item">
+                                <div class="download-icon pdf">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div class="download-info">
+                                    <div class="download-name">Weekly_Summary_Dec23.pdf</div>
+                                    <div class="download-time">2 hours ago</div>
+                                </div>
+                                <div class="download-size">2.4 MB</div>
+                            </div>
+                            <div class="download-item">
+                                <div class="download-icon xlsx">
+                                    <i class="fas fa-file-excel"></i>
+                                </div>
+                                <div class="download-info">
+                                    <div class="download-name">MTTR_Analysis_Q4.xlsx</div>
+                                    <div class="download-time">Yesterday</div>
+                                </div>
+                                <div class="download-size">1.8 MB</div>
+                            </div>
+                            <div class="download-item">
+                                <div class="download-icon csv">
+                                    <i class="fas fa-file-csv"></i>
+                                </div>
+                                <div class="download-info">
+                                    <div class="download-name">Incident_Export_All.csv</div>
+                                    <div class="download-time">2 days ago</div>
+                                </div>
+                                <div class="download-size">5.2 MB</div>
+                            </div>
+                            <div class="download-item">
+                                <div class="download-icon pdf">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div class="download-info">
+                                    <div class="download-name">SLA_Compliance_Nov.pdf</div>
+                                    <div class="download-time">1 week ago</div>
+                                </div>
+                                <div class="download-size">3.1 MB</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Builder - Full Width -->
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-tools"></i>
+                            Custom Report Builder
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-builder">
+                            <div class="builder-title">Build a Custom Report</div>
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+                                <div class="builder-option" style="flex-direction: column; align-items: flex-start;">
+                                    <label>Report Type</label>
+                                    <select style="width: 100%; margin-top: 6px;">
+                                        <option>Incident Analysis</option>
+                                        <option>Change Management</option>
+                                        <option>Problem Analysis</option>
+                                        <option>Asset Inventory</option>
+                                        <option>SLA Performance</option>
+                                    </select>
+                                </div>
+                                <div class="builder-option" style="flex-direction: column; align-items: flex-start;">
+                                    <label>Date Range</label>
+                                    <select style="width: 100%; margin-top: 6px;">
+                                        <option>Last 7 days</option>
+                                        <option>Last 30 days</option>
+                                        <option>Last 90 days</option>
+                                        <option>This Month</option>
+                                        <option>Last Month</option>
+                                        <option>Custom Range</option>
+                                    </select>
+                                </div>
+                                <div class="builder-option" style="flex-direction: column; align-items: flex-start;">
+                                    <label>Environment</label>
+                                    <select style="width: 100%; margin-top: 6px;">
+                                        <option>All Environments</option>
+                                        <option>fs-mum-indmoney-prod-le</option>
+                                        <option>fs-blr-indmoney-dr-le</option>
+                                        <option>neo-prod-le</option>
+                                        <option>lemonn-mum-le</option>
+                                    </select>
+                                </div>
+                                <div class="builder-option" style="flex-direction: column; align-items: flex-start;">
+                                    <label>Format</label>
+                                    <select style="width: 100%; margin-top: 6px;">
+                                        <option>PDF Report</option>
+                                        <option>Excel Spreadsheet</option>
+                                        <option>CSV Export</option>
+                                        <option>Interactive Dashboard</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
+                                <button class="btn btn-secondary">
+                                    <i class="fas fa-eye"></i>
+                                    Preview
+                                </button>
+                                <button class="btn btn-secondary">
+                                    <i class="fas fa-save"></i>
+                                    Save as Template
+                                </button>
+                                <button class="btn btn-primary">
+                                    <i class="fas fa-download"></i>
+                                    Generate Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Templates Gallery -->
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-th-large"></i>
+                            Report Templates Gallery
+                        </h3>
+                        <a href="#" style="font-size: 13px; color: var(--primary); text-decoration: none;">View All Templates</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="template-grid">
+                            <div class="template-card">
+                                <div class="template-preview">
+                                    <i class="fas fa-chart-pie fa-2x"></i>
+                                </div>
+                                <div class="template-name">Incident Distribution</div>
+                                <div class="template-desc">Pie chart breakdown by category, priority, status</div>
+                            </div>
+                            <div class="template-card">
+                                <div class="template-preview">
+                                    <i class="fas fa-chart-line fa-2x"></i>
+                                </div>
+                                <div class="template-name">Trend Analysis</div>
+                                <div class="template-desc">Time-series visualization of incident volume</div>
+                            </div>
+                            <div class="template-card">
+                                <div class="template-preview">
+                                    <i class="fas fa-table fa-2x"></i>
+                                </div>
+                                <div class="template-name">Detailed Export</div>
+                                <div class="template-desc">Full incident data with all fields exported</div>
+                            </div>
+                            <div class="template-card">
+                                <div class="template-preview">
+                                    <i class="fas fa-tachometer-alt fa-2x"></i>
+                                </div>
+                                <div class="template-name">SLA Dashboard</div>
+                                <div class="template-desc">Response & resolution SLA gauges and metrics</div>
+                            </div>
+                            <div class="template-card">
+                                <div class="template-preview">
+                                    <i class="fas fa-users fa-2x"></i>
+                                </div>
+                                <div class="template-name">Team Workload</div>
+                                <div class="template-desc">Assignment distribution and resolution rates</div>
+                            </div>
+                            <div class="template-card">
+                                <div class="template-preview">
+                                    <i class="fas fa-calendar-alt fa-2x"></i>
+                                </div>
+                                <div class="template-name">Monthly Summary</div>
+                                <div class="template-desc">Executive-level monthly performance overview</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Trend Chart
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                datasets: [{
+                    label: 'Incidents',
+                    data: [312, 287, 342, 306],
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f3f4f6' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Category card selection
+        document.querySelectorAll('.report-category').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.report-category').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Environment chip selection
+        document.querySelectorAll('.env-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                document.querySelectorAll('.env-chip').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

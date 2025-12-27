@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | LinkedEye-FinSpot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        /* Settings Layout */
+        .settings-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 24px;
+        }
+
+        /* Settings Nav */
+        .settings-nav {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 8px;
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+        .settings-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .settings-nav-item:hover { background: var(--bg-body); color: var(--text-primary); }
+        .settings-nav-item.active { background: #eef2ff; color: var(--primary-blue); font-weight: 500; }
+        .settings-nav-item i { width: 18px; text-align: center; }
+
+        /* Settings Content */
+        .settings-content { display: flex; flex-direction: column; gap: 24px; }
+        .settings-section { display: none; }
+        .settings-section.active { display: block; }
+
+        .settings-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        .settings-card:last-child { margin-bottom: 0; }
+        .settings-card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .settings-card-title { font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+        .settings-card-description { font-size: 13px; color: var(--text-secondary); }
+        .settings-card-body { padding: 24px; }
+
+        /* Form Elements */
+        .form-group { margin-bottom: 24px; }
+        .form-group:last-child { margin-bottom: 0; }
+        .form-label { display: block; font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 8px; }
+        .form-hint { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .form-input:focus { outline: none; border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .form-input.short { max-width: 300px; }
+        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+
+        /* Toggle Switch */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: var(--bg-body);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .toggle-group:last-child { margin-bottom: 0; }
+        .toggle-info { flex: 1; }
+        .toggle-label { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+        .toggle-description { font-size: 12px; color: var(--text-secondary); }
+        .toggle-switch { position: relative; width: 48px; height: 26px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--border-color);
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        .toggle-switch input:checked + .toggle-slider { background-color: var(--primary-blue); }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
+
+        /* SLA Configuration */
+        .sla-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        .sla-card { background: var(--bg-body); border-radius: 8px; padding: 16px; text-align: center; }
+        .sla-priority {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            margin: 0 auto 12px;
+        }
+        .sla-priority.p1 { background: var(--danger); }
+        .sla-priority.p2 { background: var(--warning); }
+        .sla-priority.p3 { background: var(--info); }
+        .sla-priority.p4 { background: #9ca3af; }
+        .sla-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; }
+        .sla-inputs { display: flex; flex-direction: column; gap: 8px; }
+        .sla-input-group { display: flex; align-items: center; gap: 8px; }
+        .sla-input-group label { font-size: 11px; color: var(--text-secondary); min-width: 55px; text-align: left; }
+        .sla-input-group input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        /* Environment Config */
+        .env-list { display: flex; flex-direction: column; gap: 8px; }
+        .env-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-body);
+            border-radius: 8px;
+        }
+        .env-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .env-icon.prod { background: #fee2e2; color: var(--danger); }
+        .env-icon.dr { background: #fef3c7; color: var(--warning); }
+        .env-icon.staging { background: #dbeafe; color: var(--info); }
+        .env-info { flex: 1; }
+        .env-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .env-domain { font-size: 12px; color: var(--text-secondary); font-family: monospace; }
+        .env-status { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        .env-status.active { background: #d1fae5; color: #065f46; }
+        .env-status.inactive { background: var(--bg-body); color: var(--text-secondary); }
+        .env-actions { display: flex; gap: 8px; }
+        .env-action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+        .env-action-btn:hover { background: var(--bg-body); color: var(--text-primary); }
+
+        /* Workflow Config */
+        .workflow-list { display: flex; flex-direction: column; gap: 12px; }
+        .workflow-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        .workflow-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--purple));
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .workflow-info { flex: 1; }
+        .workflow-name { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+        .workflow-meta { font-size: 12px; color: var(--text-secondary); }
+        .workflow-stats { display: flex; gap: 24px; }
+        .workflow-stat { text-align: center; }
+        .workflow-stat-value { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+        .workflow-stat-label { font-size: 11px; color: var(--text-secondary); }
+
+        /* API Key Section */
+        .api-key-display {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-body);
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .api-key-display .key { flex: 1; color: var(--text-primary); }
+        .api-key-display .actions { display: flex; gap: 8px; }
+        .copy-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: white;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .copy-btn:hover { background: var(--bg-body); }
+
+        /* Security Grid */
+        .security-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .security-card {
+            padding: 16px;
+            background: var(--bg-body);
+            border-radius: 8px;
+        }
+        .security-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        .security-card p { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
+
+        /* Save Bar */
+        .save-bar {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--primary-navy);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .save-bar.active { display: flex; }
+        .save-bar-text { font-size: 14px; }
+        .save-bar .btn { padding: 8px 16px; }
+
+        @media (max-width: 1200px) {
+            .settings-layout { grid-template-columns: 1fr; }
+            .settings-nav { position: static; display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
+            .sla-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .form-row { grid-template-columns: 1fr; }
+            .sla-grid { grid-template-columns: 1fr; }
+            .security-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar"></div>
+    <header id="header"></header>
+
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-header-left">
+                <h1>Settings</h1>
+                <p>Configure platform settings, SLAs, and system preferences</p>
+            </div>
+            <div class="page-header-right">
+                <button class="btn btn-secondary" onclick="showChangeHistory()">
+                    <i class="fas fa-history"></i> Change History
+                </button>
+                <button class="btn btn-primary" onclick="saveSettings()">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+
+        <div class="settings-layout">
+            <!-- Settings Navigation -->
+            <div class="settings-nav">
+                <div class="settings-nav-item active" data-section="organization">
+                    <i class="fas fa-building"></i> Organization
+                </div>
+                <div class="settings-nav-item" data-section="sla">
+                    <i class="fas fa-clock"></i> SLA Configuration
+                </div>
+                <div class="settings-nav-item" data-section="environments">
+                    <i class="fas fa-server"></i> Environments
+                </div>
+                <div class="settings-nav-item" data-section="notifications">
+                    <i class="fas fa-bell"></i> Notifications
+                </div>
+                <div class="settings-nav-item" data-section="automation">
+                    <i class="fas fa-robot"></i> Automation
+                </div>
+                <div class="settings-nav-item" data-section="api">
+                    <i class="fas fa-key"></i> API Keys
+                </div>
+                <div class="settings-nav-item" data-section="security">
+                    <i class="fas fa-shield-alt"></i> Security
+                </div>
+                <div class="settings-nav-item" data-section="branding">
+                    <i class="fas fa-paint-brush"></i> Branding
+                </div>
+            </div>
+
+            <!-- Settings Content -->
+            <div class="settings-content">
+                <!-- Organization Section -->
+                <div class="settings-section active" id="section-organization">
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">Organization Settings</h3>
+                            <p class="settings-card-description">Configure your organization's basic information</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Organization Name</label>
+                                    <input type="text" class="form-input" id="orgName" value="FinSpot Technologies">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Display Name</label>
+                                    <input type="text" class="form-input" id="displayName" value="FinSpot">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Primary Contact Email</label>
+                                <input type="email" class="form-input short" id="contactEmail" value="platform@finspot.in">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Default Timezone</label>
+                                    <select class="form-input" id="timezone">
+                                        <option value="Asia/Kolkata" selected>Asia/Kolkata (IST)</option>
+                                        <option value="UTC">UTC</option>
+                                        <option value="America/New_York">America/New_York (EST)</option>
+                                        <option value="Europe/London">Europe/London (GMT)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Date Format</label>
+                                    <select class="form-input" id="dateFormat">
+                                        <option value="DD/MM/YYYY" selected>DD/MM/YYYY</option>
+                                        <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                        <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLA Section -->
+                <div class="settings-section" id="section-sla">
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">SLA Configuration</h3>
+                            <p class="settings-card-description">Define response and resolution time targets by priority</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="sla-grid">
+                                <div class="sla-card">
+                                    <div class="sla-priority p1">P1</div>
+                                    <div class="sla-title">Critical</div>
+                                    <div class="sla-inputs">
+                                        <div class="sla-input-group">
+                                            <label>Response</label>
+                                            <input type="text" id="sla-p1-response" value="15 min">
+                                        </div>
+                                        <div class="sla-input-group">
+                                            <label>Resolution</label>
+                                            <input type="text" id="sla-p1-resolution" value="4 hrs">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="sla-card">
+                                    <div class="sla-priority p2">P2</div>
+                                    <div class="sla-title">High</div>
+                                    <div class="sla-inputs">
+                                        <div class="sla-input-group">
+                                            <label>Response</label>
+                                            <input type="text" id="sla-p2-response" value="30 min">
+                                        </div>
+                                        <div class="sla-input-group">
+                                            <label>Resolution</label>
+                                            <input type="text" id="sla-p2-resolution" value="8 hrs">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="sla-card">
+                                    <div class="sla-priority p3">P3</div>
+                                    <div class="sla-title">Medium</div>
+                                    <div class="sla-inputs">
+                                        <div class="sla-input-group">
+                                            <label>Response</label>
+                                            <input type="text" id="sla-p3-response" value="2 hrs">
+                                        </div>
+                                        <div class="sla-input-group">
+                                            <label>Resolution</label>
+                                            <input type="text" id="sla-p3-resolution" value="24 hrs">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="sla-card">
+                                    <div class="sla-priority p4">P4</div>
+                                    <div class="sla-title">Low</div>
+                                    <div class="sla-inputs">
+                                        <div class="sla-input-group">
+                                            <label>Response</label>
+                                            <input type="text" id="sla-p4-response" value="8 hrs">
+                                        </div>
+                                        <div class="sla-input-group">
+                                            <label>Resolution</label>
+                                            <input type="text" id="sla-p4-resolution" value="72 hrs">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-hint" style="margin-top: 16px;">
+                                <i class="fas fa-info-circle"></i>
+                                SLA timers pause outside business hours (Mon-Fri, 9:00 AM - 6:00 PM IST) unless marked as 24x7
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">Business Hours</h3>
+                            <p class="settings-card-description">Define working hours for SLA calculations</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Start Time</label>
+                                    <input type="time" class="form-input short" value="09:00">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">End Time</label>
+                                    <input type="time" class="form-input short" value="18:00">
+                                </div>
+                            </div>
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Include Weekends</div>
+                                    <div class="toggle-description">Consider Saturday and Sunday as working days</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Environments Section -->
+                <div class="settings-section" id="section-environments">
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">Environment Configuration</h3>
+                            <p class="settings-card-description">Manage production and staging environments</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="env-list" id="envList">
+                                <!-- Populated by JS -->
+                            </div>
+                            <button class="btn btn-secondary" style="margin-top: 16px;" onclick="addEnvironment()">
+                                <i class="fas fa-plus"></i> Add Environment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications Section -->
+                <div class="settings-section" id="section-notifications">
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">Notification Settings</h3>
+                            <p class="settings-card-description">Configure how and when notifications are sent</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Email Notifications</div>
+                                    <div class="toggle-description">Send email alerts for incidents and changes</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notif-email" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Slack Integration</div>
+                                    <div class="toggle-description">Post alerts to configured Slack channels</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notif-slack" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">PagerDuty Escalation</div>
+                                    <div class="toggle-description">Escalate P1/P2 incidents to PagerDuty</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notif-pagerduty" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">SMS Alerts</div>
+                                    <div class="toggle-description">Send SMS for critical incidents to on-call team</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notif-sms">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Daily Digest</div>
+                                    <div class="toggle-description">Send daily summary email at 9:00 AM</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notif-digest" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Automation Section -->
+                <div class="settings-section" id="section-automation">
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">Auto-Remediation Workflows</h3>
+                            <p class="settings-card-description">StackStorm workflow configuration and statistics</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="workflow-list" id="workflowList">
+                                <!-- Populated by JS -->
+                            </div>
+                            <button class="btn btn-secondary" style="margin-top: 16px;" onclick="addWorkflow()">
+                                <i class="fas fa-plus"></i> Add Workflow
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Section -->
+                <div class="settings-section" id="section-api">
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">API Keys</h3>
+                            <p class="settings-card-description">Manage API keys for external integrations</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="form-group">
+                                <label class="form-label">Active API Key</label>
+                                <div class="api-key-display">
+                                    <span class="key" id="apiKeyDisplay">le_api_****************************a7f3</span>
+                                    <div class="actions">
+                                        <button class="copy-btn" onclick="copyApiKey()"><i class="fas fa-copy"></i> Copy</button>
+                                        <button class="copy-btn" onclick="toggleApiKey()"><i class="fas fa-eye" id="apiKeyToggle"></i> Show</button>
+                                    </div>
+                                </div>
+                                <div class="form-hint">Created on Dec 1, 2024 - Last used 2 hours ago</div>
+                            </div>
+                            <button class="btn btn-secondary" onclick="regenerateApiKey()">
+                                <i class="fas fa-sync-alt"></i> Regenerate Key
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">Webhook Configuration</h3>
+                            <p class="settings-card-description">Configure outgoing webhooks for integrations</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="form-group">
+                                <label class="form-label">Webhook URL</label>
+                                <input type="url" class="form-input" placeholder="https://your-service.com/webhook">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Events to Send</label>
+                                <div class="toggle-group">
+                                    <div class="toggle-info">
+                                        <div class="toggle-label">Incident Created</div>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="toggle-group">
+                                    <div class="toggle-info">
+                                        <div class="toggle-label">Incident Resolved</div>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="toggle-group">
+                                    <div class="toggle-info">
+                                        <div class="toggle-label">Change Approved</div>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Section -->
+                <div class="settings-section" id="section-security">
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">Security Settings</h3>
+                            <p class="settings-card-description">Configure authentication and access control</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="security-grid">
+                                <div class="security-card">
+                                    <h4><i class="fas fa-lock"></i> Two-Factor Authentication</h4>
+                                    <p>Require 2FA for all users</p>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="security-card">
+                                    <h4><i class="fas fa-history"></i> Session Timeout</h4>
+                                    <p>Auto-logout after inactivity</p>
+                                    <select class="form-input" style="margin-top: 8px;">
+                                        <option>15 minutes</option>
+                                        <option selected>30 minutes</option>
+                                        <option>1 hour</option>
+                                        <option>4 hours</option>
+                                    </select>
+                                </div>
+                                <div class="security-card">
+                                    <h4><i class="fas fa-key"></i> Password Policy</h4>
+                                    <p>Minimum requirements for passwords</p>
+                                    <select class="form-input" style="margin-top: 8px;">
+                                        <option>Basic (8+ chars)</option>
+                                        <option selected>Medium (12+ chars, mixed)</option>
+                                        <option>Strong (16+ chars, special)</option>
+                                    </select>
+                                </div>
+                                <div class="security-card">
+                                    <h4><i class="fas fa-sign-in-alt"></i> SSO Configuration</h4>
+                                    <p>Single Sign-On with SAML/OIDC</p>
+                                    <button class="btn btn-secondary" style="margin-top: 8px;">Configure SSO</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">Audit Logging</h3>
+                            <p class="settings-card-description">Configure what actions are logged</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Log All User Actions</div>
+                                    <div class="toggle-description">Track all user interactions with the system</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Log API Requests</div>
+                                    <div class="toggle-description">Record all API calls with request/response data</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Log Configuration Changes</div>
+                                    <div class="toggle-description">Track changes to system settings</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Branding Section -->
+                <div class="settings-section" id="section-branding">
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">Branding</h3>
+                            <p class="settings-card-description">Customize the appearance of your LinkedEye instance</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Logo</label>
+                                    <div style="display: flex; align-items: center; gap: 16px;">
+                                        <div style="width: 64px; height: 64px; background: linear-gradient(135deg, var(--primary-blue), var(--purple)); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-eye" style="color: white; font-size: 28px;"></i>
+                                        </div>
+                                        <button class="btn btn-secondary">Upload Logo</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Favicon</label>
+                                    <div style="display: flex; align-items: center; gap: 16px;">
+                                        <div style="width: 32px; height: 32px; background: var(--primary-blue); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-eye" style="color: white; font-size: 14px;"></i>
+                                        </div>
+                                        <button class="btn btn-secondary">Upload Favicon</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Primary Color</label>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <input type="color" value="#2563eb" style="width: 48px; height: 48px; border: none; cursor: pointer;">
+                                    <input type="text" class="form-input short" value="#2563eb">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Login Page Message</label>
+                                <textarea class="form-input" rows="3" placeholder="Welcome to LinkedEye-FinSpot ITSM Platform"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Save Bar -->
+    <div class="save-bar" id="saveBar">
+        <span class="save-bar-text">You have unsaved changes</span>
+        <button class="btn btn-secondary" onclick="discardChanges()">Discard</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        let hasChanges = false;
+        let showApiKey = false;
+        const fullApiKey = 'le_api_kJ8xLm2nPq3rSt4uVw5xYz6aB7cD8eF9gH0iJ1a7f3';
+
+        // Sample data
+        const environments = [
+            { name: 'Mumbai Production', domain: 'fs-mum-indmoney-prod-le', type: 'prod', status: 'active' },
+            { name: 'Bangalore DR', domain: 'fs-blr-indmoney-dr-le', type: 'dr', status: 'active' },
+            { name: 'Neo Production', domain: 'neo-prod-le', type: 'prod', status: 'active' },
+            { name: 'FinSpot DX', domain: 'fs-dx-le', type: 'staging', status: 'active' },
+            { name: 'Lemonn Mumbai', domain: 'lemonn-mum-le', type: 'prod', status: 'active' }
+        ];
+
+        const workflows = [
+            { name: 'Pod Restart Workflow', trigger: 'High Memory / CPU', target: 'Kubernetes', executions: 247, success: 94 },
+            { name: 'DB Connection Pool Reset', trigger: 'Connection Exhaustion', target: 'PostgreSQL', executions: 89, success: 98 },
+            { name: 'Disk Cleanup Workflow', trigger: 'Disk > 85%', target: 'All Nodes', executions: 156, success: 91 }
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            Layout.init();
+            setupNavigation();
+            renderEnvironments();
+            renderWorkflows();
+            setupChangeTracking();
+        });
+
+        function setupNavigation() {
+            document.querySelectorAll('.settings-nav-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const section = this.dataset.section;
+
+                    document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
+                    document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+
+                    this.classList.add('active');
+                    document.getElementById(`section-${section}`).classList.add('active');
+                });
+            });
+        }
+
+        function renderEnvironments() {
+            const container = document.getElementById('envList');
+            container.innerHTML = environments.map(env => `
+                <div class="env-item">
+                    <div class="env-icon ${env.type}">
+                        <i class="fas fa-${env.type === 'staging' ? 'flask' : 'server'}"></i>
+                    </div>
+                    <div class="env-info">
+                        <div class="env-name">${env.name}</div>
+                        <div class="env-domain">${env.domain}</div>
+                    </div>
+                    <span class="env-status ${env.status}">${env.status}</span>
+                    <div class="env-actions">
+                        <button class="env-action-btn" title="Edit"><i class="fas fa-edit"></i></button>
+                        <button class="env-action-btn" title="Settings"><i class="fas fa-cog"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderWorkflows() {
+            const container = document.getElementById('workflowList');
+            container.innerHTML = workflows.map(wf => `
+                <div class="workflow-item">
+                    <div class="workflow-icon">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                    <div class="workflow-info">
+                        <div class="workflow-name">${wf.name}</div>
+                        <div class="workflow-meta">Trigger: ${wf.trigger} - Target: ${wf.target}</div>
+                    </div>
+                    <div class="workflow-stats">
+                        <div class="workflow-stat">
+                            <div class="workflow-stat-value">${wf.executions}</div>
+                            <div class="workflow-stat-label">Executions</div>
+                        </div>
+                        <div class="workflow-stat">
+                            <div class="workflow-stat-value" style="color: var(--success);">${wf.success}%</div>
+                            <div class="workflow-stat-label">Success Rate</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            `).join('');
+        }
+
+        function setupChangeTracking() {
+            document.querySelectorAll('input, select, textarea').forEach(input => {
+                input.addEventListener('change', () => {
+                    hasChanges = true;
+                    document.getElementById('saveBar').classList.add('active');
+                });
+            });
+        }
+
+        function toggleApiKey() {
+            showApiKey = !showApiKey;
+            const display = document.getElementById('apiKeyDisplay');
+            const toggle = document.getElementById('apiKeyToggle');
+
+            if (showApiKey) {
+                display.textContent = fullApiKey;
+                toggle.className = 'fas fa-eye-slash';
+            } else {
+                display.textContent = 'le_api_****************************a7f3';
+                toggle.className = 'fas fa-eye';
+            }
+        }
+
+        function copyApiKey() {
+            navigator.clipboard.writeText(fullApiKey);
+            Layout.showNotification('API key copied to clipboard', 'success');
+        }
+
+        function regenerateApiKey() {
+            if (confirm('Are you sure you want to regenerate the API key? This will invalidate the current key.')) {
+                Layout.showNotification('API key regenerated successfully', 'success');
+            }
+        }
+
+        function addEnvironment() {
+            Layout.showNotification('Add environment feature coming soon', 'info');
+        }
+
+        function addWorkflow() {
+            Layout.showNotification('Add workflow feature coming soon', 'info');
+        }
+
+        function showChangeHistory() {
+            Layout.showNotification('Change history feature coming soon', 'info');
+        }
+
+        async function saveSettings() {
+            const settings = {
+                organization: {
+                    name: document.getElementById('orgName').value,
+                    displayName: document.getElementById('displayName').value,
+                    contactEmail: document.getElementById('contactEmail').value,
+                    timezone: document.getElementById('timezone').value,
+                    dateFormat: document.getElementById('dateFormat').value
+                },
+                sla: {
+                    p1: {
+                        response: document.getElementById('sla-p1-response').value,
+                        resolution: document.getElementById('sla-p1-resolution').value
+                    },
+                    p2: {
+                        response: document.getElementById('sla-p2-response').value,
+                        resolution: document.getElementById('sla-p2-resolution').value
+                    },
+                    p3: {
+                        response: document.getElementById('sla-p3-response').value,
+                        resolution: document.getElementById('sla-p3-resolution').value
+                    },
+                    p4: {
+                        response: document.getElementById('sla-p4-response').value,
+                        resolution: document.getElementById('sla-p4-resolution').value
+                    }
+                },
+                notifications: {
+                    email: document.getElementById('notif-email').checked,
+                    slack: document.getElementById('notif-slack').checked,
+                    pagerduty: document.getElementById('notif-pagerduty').checked,
+                    sms: document.getElementById('notif-sms').checked,
+                    digest: document.getElementById('notif-digest').checked
+                }
+            };
+
+            try {
+                await API.settings.update(settings);
+                hasChanges = false;
+                document.getElementById('saveBar').classList.remove('active');
+                Layout.showNotification('Settings saved successfully', 'success');
+            } catch (error) {
+                Layout.showNotification('Failed to save settings: ' + error.message, 'error');
+            }
+        }
+
+        function discardChanges() {
+            if (confirm('Are you sure you want to discard all changes?')) {
+                hasChanges = false;
+                document.getElementById('saveBar').classList.remove('active');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

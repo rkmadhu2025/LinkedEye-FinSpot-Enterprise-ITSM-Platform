@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="LinkedEye-FinSpot Enterprise Incident Management Platform - Create Account">
+    <meta name="theme-color" content="#0f1c3f">
+    <title>LinkedEye-FinSpot | Create Account</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-navy: #0f1c3f;
+            --primary-navy-light: #1e3a5f;
+            --primary-blue: #2563eb;
+            --primary-blue-light: #3b82f6;
+            --purple: #8b5cf6;
+            --purple-light: #a78bfa;
+            --success: #10b981;
+            --success-light: #34d399;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg-body) 0%, #e8eef5 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+        }
+
+        .register-container {
+            width: 100%;
+            max-width: 580px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .register-header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-navy-light) 50%, #4c1d95 100%);
+            padding: 40px 36px;
+            text-align: center;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .register-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 60%);
+        }
+
+        .logo-icon {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, var(--primary-blue-light) 0%, var(--purple) 100%);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 12px 32px rgba(139, 92, 246, 0.4);
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-icon i {
+            font-size: 36px;
+            color: #fff;
+        }
+
+        .register-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .register-header p {
+            font-size: 15px;
+            opacity: 0.85;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Body */
+        .register-body {
+            padding: 36px;
+        }
+
+        /* Alert Box */
+        .alert {
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .alert.show {
+            display: flex;
+        }
+
+        .alert.alert-danger {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+
+        .alert.alert-success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+        .alert i {
+            font-size: 18px;
+        }
+
+        /* Progress Steps */
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 36px;
+            position: relative;
+        }
+
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 60px;
+            right: 60px;
+            height: 3px;
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        .progress-steps::after {
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-blue), var(--purple));
+            border-radius: 2px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .progress-steps.step-2::after { width: 50%; }
+        .progress-steps.step-3::after { width: 100%; }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--border-color);
+            color: #9ca3af;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            transition: all 0.4s ease;
+            border: 3px solid #fff;
+        }
+
+        .step.active .step-number {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--purple) 100%);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+            transform: scale(1.1);
+        }
+
+        .step.completed .step-number {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .step-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .step.active .step-label,
+        .step.completed .step-label {
+            color: var(--text-primary);
+        }
+
+        /* Form Sections */
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+            animation: fadeSlideIn 0.4s ease;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .form-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            flex: 1;
+            margin-bottom: 20px;
+        }
+
+        .form-row .form-group {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .form-group label .required {
+            color: var(--danger);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i.input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 15px;
+            transition: color 0.2s;
+        }
+
+        .input-wrapper input:focus + i.input-icon,
+        .input-wrapper select:focus + i.input-icon {
+            color: var(--primary-blue);
+        }
+
+        .input-wrapper input,
+        .input-wrapper select {
+            width: 100%;
+            padding: 14px 14px 14px 44px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.2s;
+            background: #f9fafb;
+            color: var(--text-primary);
+        }
+
+        .input-wrapper input:focus,
+        .input-wrapper select:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .input-wrapper input.valid {
+            border-color: var(--success);
+        }
+
+        .input-wrapper input.invalid {
+            border-color: var(--danger);
+        }
+
+        .input-wrapper .validation-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .input-wrapper input.valid ~ .validation-icon.valid,
+        .input-wrapper input.invalid ~ .validation-icon.invalid {
+            opacity: 1;
+        }
+
+        .validation-icon.valid { color: var(--success); }
+        .validation-icon.invalid { color: var(--danger); }
+
+        /* Password Strength */
+        .password-strength {
+            margin-top: 12px;
+        }
+
+        .strength-bar {
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .strength-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: all 0.3s;
+            width: 0%;
+        }
+
+        .strength-bar-fill.weak { width: 25%; background: var(--danger); }
+        .strength-bar-fill.fair { width: 50%; background: var(--warning); }
+        .strength-bar-fill.good { width: 75%; background: var(--info); }
+        .strength-bar-fill.strong { width: 100%; background: var(--success); }
+
+        .password-requirements {
+            background: #f9fafb;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .password-requirements h4 {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .requirement {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: #6b7280;
+            padding: 4px 0;
+            transition: color 0.2s;
+        }
+
+        .requirement i {
+            font-size: 12px;
+            color: #d1d5db;
+            transition: color 0.2s;
+        }
+
+        .requirement.met {
+            color: var(--success);
+        }
+
+        .requirement.met i {
+            color: var(--success);
+        }
+
+        /* Organization Type Selector */
+        .org-type-selector {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .org-type-btn {
+            flex: 1;
+            padding: 20px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            background: #fff;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .org-type-btn:hover {
+            border-color: #d1d5db;
+            background: #f9fafb;
+        }
+
+        .org-type-btn.selected {
+            border-color: var(--primary-blue);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .org-type-btn i {
+            font-size: 28px;
+            color: #9ca3af;
+            margin-bottom: 10px;
+            transition: color 0.3s;
+        }
+
+        .org-type-btn.selected i {
+            color: var(--primary-blue);
+        }
+
+        .org-type-btn span {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .org-type-btn small {
+            display: block;
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        /* Environment Grid */
+        .env-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .env-chip {
+            padding: 12px 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+            color: var(--text-secondary);
+        }
+
+        .env-chip:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        .env-chip.selected {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--purple) 100%);
+            border-color: var(--primary-blue);
+            color: #fff;
+        }
+
+        /* Terms Checkbox */
+        .terms-section {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .terms-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .terms-checkbox:last-child {
+            margin-bottom: 0;
+        }
+
+        .terms-checkbox input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            margin-top: 2px;
+            accent-color: var(--primary-blue);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .terms-checkbox label {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.6;
+            cursor: pointer;
+        }
+
+        .terms-checkbox a {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .terms-checkbox a:hover {
+            text-decoration: underline;
+        }
+
+        /* Buttons */
+        .form-buttons {
+            display: flex;
+            gap: 14px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: none;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            border: 2px solid var(--border-color);
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--purple) 100%);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        .btn.loading .spinner { display: block; }
+        .btn.loading .btn-text { display: none; }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 28px 0;
+            color: #9ca3af;
+            font-size: 13px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        .divider span {
+            padding: 0 16px;
+        }
+
+        /* SSO Buttons */
+        .sso-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .sso-btn {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            transition: all 0.2s;
+        }
+
+        .sso-btn:hover {
+            border-color: #d1d5db;
+            background: #f9fafb;
+            transform: translateY(-1px);
+        }
+
+        .sso-btn .icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .sso-btn .icon.microsoft { background: linear-gradient(135deg, #00a4ef, #0078d4); }
+        .sso-btn .icon.google { background: linear-gradient(135deg, #ea4335, #c53929); }
+        .sso-btn .icon.github { background: #24292e; }
+
+        /* Login Link */
+        .login-link {
+            text-align: center;
+            margin-top: 28px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .login-link a {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Success State */
+        .success-state {
+            text-align: center;
+            padding: 48px 24px;
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--success) 0%, var(--success-light) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 28px;
+            animation: scaleIn 0.5s ease, pulse-success 2s infinite 0.5s;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes pulse-success {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            50% { box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); }
+        }
+
+        .success-icon i {
+            font-size: 48px;
+            color: #fff;
+        }
+
+        .success-state h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .success-state p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+
+        .success-state p strong {
+            color: var(--primary-blue);
+        }
+
+        .success-details {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 28px;
+            text-align: left;
+        }
+
+        .success-details h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+
+        .success-details p {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .register-container {
+                margin: 12px;
+                max-width: 100%;
+            }
+
+            .register-header {
+                padding: 32px 24px;
+            }
+
+            .register-body {
+                padding: 28px 24px;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .env-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .sso-buttons {
+                flex-direction: column;
+            }
+
+            .progress-steps::before,
+            .progress-steps::after {
+                left: 40px;
+                right: 40px;
+            }
+
+            .step-label {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-header">
+            <div class="logo-icon">
+                <i class="fas fa-eye"></i>
+            </div>
+            <h1>Create Your Account</h1>
+            <p>Join LinkedEye-FinSpot Enterprise Platform</p>
+        </div>
+
+        <div class="register-body">
+            <!-- Alert -->
+            <div class="alert alert-danger" id="errorAlert">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorMessage">Registration failed. Please try again.</span>
+            </div>
+
+            <!-- Progress Steps -->
+            <div class="progress-steps" id="progressSteps">
+                <div class="step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <span class="step-label">Personal</span>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-number">2</div>
+                    <span class="step-label">Organization</span>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-number">3</div>
+                    <span class="step-label">Confirm</span>
+                </div>
+            </div>
+
+            <form id="registerForm" novalidate>
+                <!-- Step 1: Personal Information -->
+                <div class="form-section active" data-section="1">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>First Name <span class="required">*</span></label>
+                            <div class="input-wrapper">
+                                <input type="text" id="firstName" name="firstName" placeholder="Enter first name" required>
+                                <i class="fas fa-user input-icon"></i>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name <span class="required">*</span></label>
+                            <div class="input-wrapper">
+                                <input type="text" id="lastName" name="lastName" placeholder="Enter last name" required>
+                                <i class="fas fa-user input-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Work Email <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <input type="email" id="email" name="email" placeholder="name@company.com" required>
+                            <i class="fas fa-envelope input-icon"></i>
+                            <i class="fas fa-check-circle validation-icon valid"></i>
+                            <i class="fas fa-times-circle validation-icon invalid"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <input type="password" id="password" name="password" placeholder="Create a strong password" required>
+                            <i class="fas fa-lock input-icon"></i>
+                        </div>
+                        <div class="password-strength">
+                            <div class="strength-bar">
+                                <div class="strength-bar-fill" id="strengthBar"></div>
+                            </div>
+                        </div>
+                        <div class="password-requirements">
+                            <h4><i class="fas fa-shield-alt"></i> Password Requirements</h4>
+                            <div class="requirement" id="req-length"><i class="fas fa-check"></i> At least 8 characters</div>
+                            <div class="requirement" id="req-upper"><i class="fas fa-check"></i> One uppercase letter (A-Z)</div>
+                            <div class="requirement" id="req-lower"><i class="fas fa-check"></i> One lowercase letter (a-z)</div>
+                            <div class="requirement" id="req-number"><i class="fas fa-check"></i> One number (0-9)</div>
+                            <div class="requirement" id="req-special"><i class="fas fa-check"></i> One special character (!@#$%)</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Confirm Password <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
+                            <i class="fas fa-lock input-icon"></i>
+                            <i class="fas fa-check-circle validation-icon valid"></i>
+                            <i class="fas fa-times-circle validation-icon invalid"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-primary" onclick="nextStep(2)">
+                            <span class="btn-text">Continue <i class="fas fa-arrow-right"></i></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Organization Details -->
+                <div class="form-section" data-section="2">
+                    <div class="org-type-selector">
+                        <div class="org-type-btn selected" data-type="join" onclick="selectOrgType(this)">
+                            <i class="fas fa-building"></i>
+                            <span>Join Organization</span>
+                            <small>Join existing org</small>
+                        </div>
+                        <div class="org-type-btn" data-type="create" onclick="selectOrgType(this)">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Create New</span>
+                            <small>Start fresh org</small>
+                        </div>
+                    </div>
+
+                    <div id="joinOrgFields">
+                        <div class="form-group">
+                            <label>Organization Code <span class="required">*</span></label>
+                            <div class="input-wrapper">
+                                <input type="text" id="orgCode" name="orgCode" placeholder="Enter organization code (e.g., FINSPOT)">
+                                <i class="fas fa-key input-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="createOrgFields" style="display: none;">
+                        <div class="form-group">
+                            <label>Organization Name <span class="required">*</span></label>
+                            <div class="input-wrapper">
+                                <input type="text" id="orgName" name="orgName" placeholder="Enter organization name">
+                                <i class="fas fa-building input-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Department</label>
+                            <div class="input-wrapper">
+                                <select id="department" name="department">
+                                    <option value="">Select department...</option>
+                                    <option value="Infrastructure Operations">Infrastructure Operations</option>
+                                    <option value="DevOps Engineering">DevOps Engineering</option>
+                                    <option value="Network Operations">Network Operations</option>
+                                    <option value="Database Administration">Database Administration</option>
+                                    <option value="Security Operations">Security Operations</option>
+                                    <option value="Trading Operations">Trading Operations</option>
+                                    <option value="Network Operations Center">Network Operations Center</option>
+                                </select>
+                                <i class="fas fa-sitemap input-icon"></i>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Job Title</label>
+                            <div class="input-wrapper">
+                                <input type="text" id="jobTitle" name="jobTitle" placeholder="e.g., DevOps Engineer">
+                                <i class="fas fa-id-badge input-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mobile Number (On-Call)</label>
+                        <div class="input-wrapper">
+                            <input type="tel" id="mobile" name="mobile" placeholder="+91 98765 43210">
+                            <i class="fas fa-phone input-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-secondary" onclick="prevStep(1)">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep(3)">
+                            <span class="btn-text">Continue <i class="fas fa-arrow-right"></i></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Confirmation -->
+                <div class="form-section" data-section="3">
+                    <div class="terms-section">
+                        <div class="terms-checkbox">
+                            <input type="checkbox" id="agreeTerms" required>
+                            <label for="agreeTerms">
+                                I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+                                I understand that my account will be subject to organization policies and all actions will be audit logged.
+                            </label>
+                        </div>
+
+                        <div class="terms-checkbox">
+                            <input type="checkbox" id="agreeOnCall">
+                            <label for="agreeOnCall">
+                                I consent to receive on-call alerts, critical incident notifications, and escalation calls via SMS, email, and phone during designated on-call rotations.
+                            </label>
+                        </div>
+
+                        <div class="terms-checkbox">
+                            <input type="checkbox" id="agreeDataProcessing">
+                            <label for="agreeDataProcessing">
+                                I acknowledge that my activity data may be processed for AI-powered features including smart assignment, similar incident detection, and predictive analytics.
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-secondary" onclick="prevStep(2)">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <span class="spinner"></span>
+                            <span class="btn-text"><i class="fas fa-user-plus"></i> Create Account</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Success State -->
+                <div class="form-section" data-section="success">
+                    <div class="success-state">
+                        <div class="success-icon">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <h2>Account Created Successfully!</h2>
+                        <p>We've sent a verification email to <strong id="verifyEmail">your@email.com</strong>.<br>Please check your inbox to activate your account.</p>
+
+                        <div class="success-details">
+                            <h4>What's Next?</h4>
+                            <p>1. Check your email and click the verification link<br>
+                            2. Your admin will approve your access request<br>
+                            3. You'll receive an email when your account is activated</p>
+                        </div>
+
+                        <button type="button" class="btn btn-primary" onclick="window.location.href='login.html'" style="width: auto; margin: 0 auto;">
+                            <i class="fas fa-sign-in-alt"></i> Go to Sign In
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="divider" id="ssoSection">
+                <span>or sign up with</span>
+            </div>
+
+            <div class="sso-buttons" id="ssoButtons">
+                <button class="sso-btn" onclick="ssoSignup('microsoft')">
+                    <span class="icon microsoft"></span>
+                    Microsoft
+                </button>
+                <button class="sso-btn" onclick="ssoSignup('google')">
+                    <span class="icon google"></span>
+                    Google
+                </button>
+                <button class="sso-btn" onclick="ssoSignup('github')">
+                    <span class="icon github"></span>
+                    GitHub
+                </button>
+            </div>
+
+            <p class="login-link" id="loginLink">
+                Already have an account? <a href="login.html">Sign in</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="js/services/api.js"></script>
+    <script>
+        let currentStep = 1;
+        let organizationType = 'join';
+
+        // Initialize API
+        API.init();
+
+        // Check if already logged in
+        document.addEventListener('DOMContentLoaded', function() {
+            if (API.isAuthenticated()) {
+                window.location.href = 'dashboard.html';
+            }
+        });
+
+        // Step Navigation
+        function updateProgressSteps() {
+            document.getElementById('progressSteps').className = 'progress-steps step-' + currentStep;
+
+            document.querySelectorAll('.step').forEach((step, index) => {
+                const stepNum = index + 1;
+                step.classList.remove('active', 'completed');
+                if (stepNum === currentStep) {
+                    step.classList.add('active');
+                } else if (stepNum < currentStep) {
+                    step.classList.add('completed');
+                }
+            });
+        }
+
+        function nextStep(step) {
+            if (!validateCurrentStep()) return;
+
+            document.querySelector(`.form-section[data-section="${currentStep}"]`).classList.remove('active');
+            currentStep = step;
+            document.querySelector(`.form-section[data-section="${currentStep}"]`).classList.add('active');
+            updateProgressSteps();
+        }
+
+        function prevStep(step) {
+            document.querySelector(`.form-section[data-section="${currentStep}"]`).classList.remove('active');
+            currentStep = step;
+            document.querySelector(`.form-section[data-section="${currentStep}"]`).classList.add('active');
+            updateProgressSteps();
+        }
+
+        function showError(message) {
+            const errorAlert = document.getElementById('errorAlert');
+            errorAlert.querySelector('#errorMessage').textContent = message;
+            errorAlert.classList.add('show');
+        }
+
+        function hideError() {
+            document.getElementById('errorAlert').classList.remove('show');
+        }
+
+        function validateCurrentStep() {
+            hideError();
+
+            if (currentStep === 1) {
+                const firstName = document.getElementById('firstName').value.trim();
+                const lastName = document.getElementById('lastName').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                if (!firstName) {
+                    showError('Please enter your first name');
+                    document.getElementById('firstName').focus();
+                    return false;
+                }
+
+                if (!lastName) {
+                    showError('Please enter your last name');
+                    document.getElementById('lastName').focus();
+                    return false;
+                }
+
+                if (!email || !validateEmail(email)) {
+                    showError('Please enter a valid email address');
+                    document.getElementById('email').focus();
+                    return false;
+                }
+
+                if (!validatePassword(password).allMet) {
+                    showError('Password does not meet all requirements');
+                    document.getElementById('password').focus();
+                    return false;
+                }
+
+                if (password !== confirmPassword) {
+                    showError('Passwords do not match');
+                    document.getElementById('confirmPassword').focus();
+                    return false;
+                }
+            }
+
+            if (currentStep === 2) {
+                if (organizationType === 'join') {
+                    const orgCode = document.getElementById('orgCode').value.trim();
+                    if (!orgCode) {
+                        showError('Please enter an organization code');
+                        document.getElementById('orgCode').focus();
+                        return false;
+                    }
+                } else {
+                    const orgName = document.getElementById('orgName').value.trim();
+                    if (!orgName) {
+                        showError('Please enter an organization name');
+                        document.getElementById('orgName').focus();
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        // Email Validation
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        document.getElementById('email').addEventListener('input', function() {
+            const email = this.value.trim();
+            this.classList.remove('valid', 'invalid');
+            if (email.length > 0) {
+                if (validateEmail(email)) {
+                    this.classList.add('valid');
+                } else {
+                    this.classList.add('invalid');
+                }
+            }
+        });
+
+        // Password Validation
+        function validatePassword(password) {
+            const requirements = {
+                length: password.length >= 8,
+                upper: /[A-Z]/.test(password),
+                lower: /[a-z]/.test(password),
+                number: /[0-9]/.test(password),
+                special: /[^A-Za-z0-9]/.test(password)
+            };
+
+            const allMet = Object.values(requirements).every(r => r);
+
+            // Update UI
+            document.getElementById('req-length').classList.toggle('met', requirements.length);
+            document.getElementById('req-upper').classList.toggle('met', requirements.upper);
+            document.getElementById('req-lower').classList.toggle('met', requirements.lower);
+            document.getElementById('req-number').classList.toggle('met', requirements.number);
+            document.getElementById('req-special').classList.toggle('met', requirements.special);
+
+            // Update strength bar
+            const metCount = Object.values(requirements).filter(r => r).length;
+            const strengthBar = document.getElementById('strengthBar');
+            strengthBar.className = 'strength-bar-fill';
+
+            if (metCount >= 5) {
+                strengthBar.classList.add('strong');
+            } else if (metCount >= 4) {
+                strengthBar.classList.add('good');
+            } else if (metCount >= 2) {
+                strengthBar.classList.add('fair');
+            } else if (metCount >= 1) {
+                strengthBar.classList.add('weak');
+            }
+
+            return { ...requirements, allMet };
+        }
+
+        document.getElementById('password').addEventListener('input', function() {
+            validatePassword(this.value);
+        });
+
+        // Confirm Password Validation
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = this.value;
+
+            this.classList.remove('valid', 'invalid');
+            if (confirmPassword.length > 0) {
+                if (password === confirmPassword) {
+                    this.classList.add('valid');
+                } else {
+                    this.classList.add('invalid');
+                }
+            }
+        });
+
+        // Organization Type Selector
+        function selectOrgType(element) {
+            document.querySelectorAll('.org-type-btn').forEach(btn => btn.classList.remove('selected'));
+            element.classList.add('selected');
+            organizationType = element.dataset.type;
+
+            if (organizationType === 'join') {
+                document.getElementById('joinOrgFields').style.display = 'block';
+                document.getElementById('createOrgFields').style.display = 'none';
+            } else {
+                document.getElementById('joinOrgFields').style.display = 'none';
+                document.getElementById('createOrgFields').style.display = 'block';
+            }
+        }
+
+        // Form Submission
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            hideError();
+
+            if (!document.getElementById('agreeTerms').checked) {
+                showError('Please agree to the Terms of Service and Privacy Policy');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+
+            // Gather form data
+            const formData = {
+                firstName: document.getElementById('firstName').value.trim(),
+                lastName: document.getElementById('lastName').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                password: document.getElementById('password').value,
+                organizationType: organizationType,
+                department: document.getElementById('department').value,
+                jobTitle: document.getElementById('jobTitle').value.trim(),
+                phone: document.getElementById('mobile').value.trim()
+            };
+
+            if (organizationType === 'join') {
+                formData.organizationCode = document.getElementById('orgCode').value.trim();
+            } else {
+                formData.organizationName = document.getElementById('orgName').value.trim();
+            }
+
+            try {
+                const result = await API.auth.register(formData);
+
+                if (result.success) {
+                    // Hide non-success elements
+                    document.querySelector('.form-section.active').classList.remove('active');
+                    document.querySelector('.form-section[data-section="success"]').classList.add('active');
+                    document.getElementById('verifyEmail').textContent = formData.email;
+
+                    document.getElementById('progressSteps').style.display = 'none';
+                    document.getElementById('ssoSection').style.display = 'none';
+                    document.getElementById('ssoButtons').style.display = 'none';
+                    document.getElementById('loginLink').style.display = 'none';
+                } else {
+                    showError(result.message || 'Registration failed. Please try again.');
+                }
+            } catch (error) {
+                showError('Network error. Please check your connection and try again.');
+                console.error('Registration error:', error);
+            } finally {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+            }
+        });
+
+        // SSO Signup
+        function ssoSignup(provider) {
+            const providerNames = {
+                microsoft: 'Microsoft Azure AD',
+                google: 'Google Workspace',
+                github: 'GitHub Enterprise'
+            };
+            alert(`Redirecting to ${providerNames[provider]} for SSO signup...\n\nIn production, this would redirect to your organization's identity provider.`);
+        }
+    </script>
+</body>
+</html>

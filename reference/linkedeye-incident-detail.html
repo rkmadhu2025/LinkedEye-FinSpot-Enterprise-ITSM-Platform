@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Incident INC0015847 - Database Connection Pool Exhaustion">
+    <title>INC0015847 | LinkedEye-FinSpot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #0f1c3f;
+            --primary-blue: #2563eb;
+            --primary-blue-light: #3b82f6;
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --pink: #ec4899;
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+            --text-primary: #0f1c3f;
+            --text-secondary: #6b7785;
+            --border-color: #e5e8eb;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-body); color: var(--text-primary); font-size: 13px; }
+
+        /* Sidebar */
+        .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh; background: var(--primary-navy); z-index: 200; }
+        .sidebar-header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-logo { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-blue-light), var(--purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .sidebar-logo i { color: #fff; font-size: 20px; }
+        .sidebar-brand { color: #fff; }
+        .sidebar-brand h1 { font-size: 16px; font-weight: 700; }
+        .sidebar-brand span { font-size: 10px; color: rgba(255,255,255,0.6); }
+        .sidebar-nav { padding: 16px 12px; overflow-y: auto; height: calc(100vh - 140px); }
+        .nav-section { margin-bottom: 20px; }
+        .nav-section-title { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.2s; margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .nav-item.active { background: linear-gradient(135deg, var(--primary-blue), #1d4ed8); color: #fff; }
+        .nav-item i { width: 20px; text-align: center; }
+        .nav-item .nav-badge { background: var(--danger); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: auto; }
+        .sidebar-footer { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .env-selector { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; color: #fff; font-size: 12px; }
+        .env-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; }
+
+        /* Header */
+        .header { position: fixed; top: 0; left: var(--sidebar-width); right: 0; height: var(--header-height); background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .back-btn { width: 36px; height: 36px; border: 1px solid var(--border-color); background: #fff; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); }
+        .back-btn:hover { background: #f9fafb; color: var(--primary-blue); border-color: var(--primary-blue); }
+        .header-title { display: flex; align-items: center; gap: 12px; }
+        .header-title h1 { font-size: 16px; font-weight: 600; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .header-btn { padding: 8px 16px; border: 1px solid var(--border-color); background: #fff; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+        .header-btn:hover { background: #f9fafb; border-color: var(--primary-blue); color: var(--primary-blue); }
+        .header-btn.primary { background: linear-gradient(135deg, var(--primary-blue), #1d4ed8); color: #fff; border: none; }
+        .header-btn.primary:hover { box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .header-btn.danger { background: var(--danger); color: #fff; border: none; }
+
+        /* Main Content */
+        .main-content { margin-left: var(--sidebar-width); margin-top: var(--header-height); padding: 24px; min-height: calc(100vh - var(--header-height)); }
+
+        /* Grid Layout */
+        .detail-grid { display: grid; grid-template-columns: 1fr 380px; gap: 24px; }
+
+        /* Card */
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 24px; }
+        .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .card-title i { color: var(--primary-blue); }
+        .card-body { padding: 20px; }
+
+        /* Incident Header Card */
+        .incident-header-card { background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); border: none; color: #fff; }
+        .incident-header-card .card-body { padding: 24px; }
+        .incident-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .incident-id-badge { background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 14px; }
+        .priority-badge { background: rgba(255,255,255,0.9); color: var(--danger); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+        .status-badge { background: rgba(59, 130, 246, 0.9); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .incident-title-main { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+        .incident-env { display: flex; align-items: center; gap: 8px; font-size: 13px; opacity: 0.9; }
+        .incident-env i { font-size: 14px; }
+        .sla-timer { margin-top: 20px; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .sla-info h4 { font-size: 12px; opacity: 0.8; margin-bottom: 4px; }
+        .sla-info .time { font-size: 24px; font-weight: 700; }
+        .sla-progress-bar { width: 200px; height: 8px; background: rgba(255,255,255,0.3); border-radius: 4px; overflow: hidden; }
+        .sla-progress-fill { height: 100%; background: var(--warning); border-radius: 4px; transition: width 1s; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 4px; padding: 16px 20px; background: #f9fafb; border-bottom: 1px solid var(--border-color); }
+        .tab { padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text-secondary); transition: all 0.2s; }
+        .tab:hover { background: #fff; color: var(--text-primary); }
+        .tab.active { background: var(--primary-blue); color: #fff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Description */
+        .description-text { font-size: 14px; line-height: 1.7; color: var(--text-primary); }
+        .description-text p { margin-bottom: 12px; }
+
+        /* Info Grid */
+        .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .info-item { padding: 14px; background: #f9fafb; border-radius: 8px; }
+        .info-item label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+        .info-item .value { font-size: 13px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+        .info-item .value .avatar { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-blue), var(--purple)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 600; }
+
+        /* Timeline */
+        .timeline { position: relative; padding-left: 28px; }
+        .timeline::before { content: ''; position: absolute; left: 9px; top: 0; bottom: 0; width: 2px; background: var(--border-color); }
+        .timeline-item { position: relative; padding-bottom: 24px; }
+        .timeline-item:last-child { padding-bottom: 0; }
+        .timeline-dot { position: absolute; left: -28px; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; }
+        .timeline-dot i { font-size: 10px; color: var(--text-secondary); }
+        .timeline-dot.success { border-color: var(--success); background: rgba(16, 185, 129, 0.1); }
+        .timeline-dot.success i { color: var(--success); }
+        .timeline-dot.warning { border-color: var(--warning); background: rgba(245, 158, 11, 0.1); }
+        .timeline-dot.warning i { color: var(--warning); }
+        .timeline-dot.info { border-color: var(--info); background: rgba(59, 130, 246, 0.1); }
+        .timeline-dot.info i { color: var(--info); }
+        .timeline-dot.purple { border-color: var(--purple); background: rgba(139, 92, 246, 0.1); }
+        .timeline-dot.purple i { color: var(--purple); }
+        .timeline-content { background: #f9fafb; border-radius: 8px; padding: 14px 16px; }
+        .timeline-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+        .timeline-title { font-weight: 600; font-size: 13px; }
+        .timeline-time { font-size: 11px; color: var(--text-secondary); }
+        .timeline-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+        .timeline-user { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; color: var(--text-secondary); }
+        .timeline-user .avatar { width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-blue), var(--purple)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 8px; font-weight: 600; }
+
+        /* Grafana Iframe */
+        .grafana-placeholder { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 8px; height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; }
+        .grafana-placeholder i { font-size: 48px; color: #f97316; margin-bottom: 16px; }
+        .grafana-placeholder h4 { font-size: 14px; margin-bottom: 8px; }
+        .grafana-placeholder p { font-size: 12px; opacity: 0.7; }
+
+        /* Loki Logs */
+        .logs-container { background: #1a1a2e; border-radius: 8px; padding: 16px; max-height: 300px; overflow-y: auto; font-family: 'Consolas', 'Monaco', monospace; }
+        .log-line { display: flex; gap: 12px; padding: 4px 0; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .log-time { color: #6b7280; white-space: nowrap; }
+        .log-level { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        .log-level.error { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .log-level.warn { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .log-level.info { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+        .log-message { color: #e5e7eb; flex: 1; word-break: break-all; }
+
+        /* AI Suggestions Panel */
+        .ai-panel { background: linear-gradient(135deg, #0f1c3f 0%, #1e3a5f 100%); border-radius: 12px; padding: 20px; color: #fff; margin-bottom: 24px; }
+        .ai-panel-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .ai-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--purple), var(--pink)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .ai-panel-header h3 { font-size: 14px; font-weight: 600; }
+        .ai-panel-header p { font-size: 11px; opacity: 0.7; }
+        .ai-suggestion { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+        .ai-suggestion:last-child { margin-bottom: 0; }
+        .ai-suggestion-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .ai-suggestion-header i { font-size: 14px; }
+        .ai-suggestion-header i.runbook { color: var(--success); }
+        .ai-suggestion-header i.similar { color: var(--info); }
+        .ai-suggestion-header i.assign { color: var(--warning); }
+        .ai-suggestion-header span { font-size: 12px; font-weight: 600; }
+        .ai-suggestion-text { font-size: 12px; opacity: 0.9; line-height: 1.5; }
+        .ai-action-btn { margin-top: 10px; padding: 6px 12px; background: rgba(255,255,255,0.15); border: none; border-radius: 6px; color: #fff; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .ai-action-btn:hover { background: rgba(255,255,255,0.25); }
+
+        /* Related Incidents */
+        .related-list { display: flex; flex-direction: column; gap: 12px; }
+        .related-item { padding: 14px; background: #f9fafb; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .related-item:hover { background: #f3f4f6; }
+        .related-id { color: var(--primary-blue); font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+        .related-title { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+        .related-meta { display: flex; gap: 8px; }
+        .related-badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 500; }
+        .related-badge.resolved { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .related-badge.similarity { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+
+        /* Worknotes */
+        .worknote-form { margin-bottom: 20px; }
+        .worknote-form textarea { width: 100%; padding: 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; resize: vertical; min-height: 100px; font-family: inherit; }
+        .worknote-form textarea:focus { outline: none; border-color: var(--primary-blue); }
+        .worknote-form-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .worknote-list { display: flex; flex-direction: column; gap: 16px; }
+        .worknote-item { padding: 16px; background: #f9fafb; border-radius: 8px; border-left: 3px solid var(--primary-blue); }
+        .worknote-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .worknote-author { display: flex; align-items: center; gap: 8px; }
+        .worknote-author .avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-blue), var(--purple)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 600; }
+        .worknote-author .name { font-weight: 600; font-size: 13px; }
+        .worknote-time { font-size: 11px; color: var(--text-secondary); }
+        .worknote-text { font-size: 13px; line-height: 1.6; color: var(--text-primary); }
+
+        /* Badges */
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge.critical { background: var(--danger); color: #fff; }
+        .badge.high { background: #f97316; color: #fff; }
+        .badge.medium { background: var(--warning); color: #1e3a5f; }
+        .badge.in-progress { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+
+        /* Responsive */
+        @media (max-width: 1400px) { .detail-grid { grid-template-columns: 1fr 340px; } }
+        @media (max-width: 1200px) { .detail-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 992px) { .sidebar { width: 60px; } .sidebar-brand, .nav-item span, .nav-badge, .nav-section-title { display: none; } .header { left: 60px; } .main-content { margin-left: 60px; } }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fas fa-eye"></i></div>
+            <div class="sidebar-brand"><h1>LinkedEye</h1><span>FinSpot Enterprise</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="linkedeye-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">ITSM</div>
+                <a href="linkedeye-incidents.html" class="nav-item active"><i class="fas fa-exclamation-triangle"></i><span>Incidents</span><span class="nav-badge">23</span></a>
+                <a href="linkedeye-change-calendar.html" class="nav-item"><i class="fas fa-code-branch"></i><span>Changes</span></a>
+                <a href="linkedeye-problem-detail.html" class="nav-item"><i class="fas fa-search"></i><span>Problems</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Infrastructure</div>
+                <a href="linkedeye-network-topology.html" class="nav-item"><i class="fas fa-network-wired"></i><span>Network</span></a>
+                <a href="linkedeye-assets.html" class="nav-item"><i class="fas fa-cubes"></i><span>Assets</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Analytics</div>
+                <a href="linkedeye-analytics.html" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+                <a href="linkedeye-reports.html" class="nav-item"><i class="fas fa-file-alt"></i><span>Reports</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="env-selector"><div class="env-dot"></div><span>fs-mum-indmoney-prod-le</span></div>
+        </div>
+    </aside>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <button class="back-btn" onclick="window.location='linkedeye-incidents.html'"><i class="fas fa-arrow-left"></i></button>
+            <div class="header-title">
+                <h1>INC0015847</h1>
+                <span class="badge critical"><i class="fas fa-fire"></i> Critical</span>
+                <span class="badge in-progress">In Progress</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="header-btn"><i class="fas fa-link"></i> Copy Link</button>
+            <button class="header-btn"><i class="fas fa-share"></i> Share</button>
+            <button class="header-btn"><i class="fas fa-edit"></i> Edit</button>
+            <button class="header-btn primary"><i class="fas fa-check"></i> Resolve</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="detail-grid">
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- Incident Header Card -->
+                <div class="card incident-header-card">
+                    <div class="card-body">
+                        <div class="incident-meta">
+                            <span class="incident-id-badge">INC0015847</span>
+                            <span class="priority-badge"><i class="fas fa-fire"></i> Critical (P1)</span>
+                            <span class="status-badge">In Progress</span>
+                        </div>
+                        <h1 class="incident-title-main">Database Connection Pool Exhaustion - Trading Operations</h1>
+                        <div class="incident-env">
+                            <i class="fas fa-server"></i>
+                            <span>fs-mum-indmoney-prod-le</span>
+                            <span>|</span>
+                            <i class="fas fa-database"></i>
+                            <span>PostgreSQL Primary - pgbouncer-trading-01</span>
+                        </div>
+                        <div class="sla-timer">
+                            <div class="sla-info">
+                                <h4>SLA Response Time</h4>
+                                <div class="time" id="slaTime">00:45:23</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; margin-bottom: 8px; opacity: 0.8;">75% Time Remaining</div>
+                                <div class="sla-progress-bar">
+                                    <div class="sla-progress-fill" style="width: 25%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs Card -->
+                <div class="card">
+                    <div class="tabs">
+                        <div class="tab active" onclick="showTab('details')">Details</div>
+                        <div class="tab" onclick="showTab('timeline')">Timeline</div>
+                        <div class="tab" onclick="showTab('metrics')">Metrics</div>
+                        <div class="tab" onclick="showTab('logs')">Logs</div>
+                        <div class="tab" onclick="showTab('worknotes')">Work Notes</div>
+                    </div>
+
+                    <!-- Details Tab -->
+                    <div id="details" class="tab-content active">
+                        <div class="card-body">
+                            <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 16px;">Description</h4>
+                            <div class="description-text">
+                                <p>PgBouncer connection pool for trading-db-primary reached maximum capacity of 256 connections. Multiple trading operations services are experiencing connection timeouts and elevated error rates.</p>
+                                <p><strong>Impact:</strong> Trading order processing is delayed by 3-5 seconds. Approximately 15% of orders are failing with timeout errors. Real-time quote feeds are intermittently unavailable.</p>
+                                <p><strong>Affected Services:</strong> order-service, quote-engine, portfolio-service, risk-calculator</p>
+                            </div>
+
+                            <h4 style="font-size: 14px; font-weight: 600; margin: 24px 0 16px;">Incident Details</h4>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <label>Assigned To</label>
+                                    <div class="value"><span class="avatar">RM</span> Rajkumar Madhu</div>
+                                </div>
+                                <div class="info-item">
+                                    <label>Assignment Group</label>
+                                    <div class="value">Infrastructure Operations</div>
+                                </div>
+                                <div class="info-item">
+                                    <label>Category</label>
+                                    <div class="value">Database</div>
+                                </div>
+                                <div class="info-item">
+                                    <label>Subcategory</label>
+                                    <div class="value">Connection Pooling</div>
+                                </div>
+                                <div class="info-item">
+                                    <label>Impact</label>
+                                    <div class="value">1 - High</div>
+                                </div>
+                                <div class="info-item">
+                                    <label>Urgency</label>
+                                    <div class="value">1 - High</div>
+                                </div>
+                                <div class="info-item">
+                                    <label>Created</label>
+                                    <div class="value">Dec 26, 2025 14:32 IST</div>
+                                </div>
+                                <div class="info-item">
+                                    <label>Last Updated</label>
+                                    <div class="value">Dec 26, 2025 14:44 IST</div>
+                                </div>
+                                <div class="info-item">
+                                    <label>Source</label>
+                                    <div class="value"><i class="fas fa-bell" style="color: var(--warning);"></i> Prometheus Alert</div>
+                                </div>
+                                <div class="info-item">
+                                    <label>Alert Rule</label>
+                                    <div class="value">pgbouncer_pool_exhausted</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Tab -->
+                    <div id="timeline" class="tab-content">
+                        <div class="card-body">
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-dot info"><i class="fas fa-play"></i></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-header">
+                                            <span class="timeline-title">Incident Created</span>
+                                            <span class="timeline-time">14:32:15 IST</span>
+                                        </div>
+                                        <div class="timeline-desc">Auto-created from Prometheus alert: pgbouncer_pool_exhausted fired on pgbouncer-trading-01</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot purple"><i class="fas fa-robot"></i></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-header">
+                                            <span class="timeline-title">AI Assignment</span>
+                                            <span class="timeline-time">14:32:18 IST</span>
+                                        </div>
+                                        <div class="timeline-desc">Automatically assigned to Rajkumar Madhu based on skill match (PostgreSQL, PgBouncer) and on-call schedule</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot success"><i class="fas fa-check"></i></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-header">
+                                            <span class="timeline-title">Acknowledged</span>
+                                            <span class="timeline-time">14:33:45 IST</span>
+                                        </div>
+                                        <div class="timeline-desc">Incident acknowledged by assignee</div>
+                                        <div class="timeline-user"><span class="avatar">RM</span> Rajkumar Madhu</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot warning"><i class="fas fa-cog"></i></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-header">
+                                            <span class="timeline-title">StackStorm Workflow Triggered</span>
+                                            <span class="timeline-time">14:34:02 IST</span>
+                                        </div>
+                                        <div class="timeline-desc">Runbook "pgbouncer_connection_recovery" executed. Attempting to free stale connections.</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot info"><i class="fas fa-comment"></i></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-header">
+                                            <span class="timeline-title">Work Note Added</span>
+                                            <span class="timeline-time">14:38:22 IST</span>
+                                        </div>
+                                        <div class="timeline-desc">Identified root cause: Bulk data import job holding excessive connections. Coordinating with data team.</div>
+                                        <div class="timeline-user"><span class="avatar">RM</span> Rajkumar Madhu</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Tab -->
+                    <div id="metrics" class="tab-content">
+                        <div class="card-body">
+                            <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 16px;"><i class="fas fa-chart-area" style="color: #f97316; margin-right: 8px;"></i>Grafana Metrics - PgBouncer Trading</h4>
+                            <div class="grafana-placeholder">
+                                <i class="fas fa-chart-line"></i>
+                                <h4>Grafana Dashboard</h4>
+                                <p>pgbouncer_trading_connections_panel</p>
+                                <p style="margin-top: 8px; font-size: 11px;">Current: 256/256 connections (100% utilized)</p>
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 16px;">Related Metrics</h4>
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <label>Active Connections</label>
+                                        <div class="value" style="color: var(--danger); font-weight: 700;">256 / 256</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Waiting Clients</label>
+                                        <div class="value" style="color: var(--warning); font-weight: 700;">47</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Avg Query Time</label>
+                                        <div class="value">342ms</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Error Rate</label>
+                                        <div class="value" style="color: var(--danger);">15.2%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logs Tab -->
+                    <div id="logs" class="tab-content">
+                        <div class="card-body">
+                            <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 16px;"><i class="fas fa-stream" style="color: var(--success); margin-right: 8px;"></i>Loki Logs - Real-time Stream</h4>
+                            <div class="logs-container">
+                                <div class="log-line">
+                                    <span class="log-time">14:44:32.847</span>
+                                    <span class="log-level error">ERROR</span>
+                                    <span class="log-message">pgbouncer[1234]: pool trading-db: no free connections, waiting...</span>
+                                </div>
+                                <div class="log-line">
+                                    <span class="log-time">14:44:31.234</span>
+                                    <span class="log-level warn">WARN</span>
+                                    <span class="log-message">order-service: Connection timeout after 5000ms - retrying (attempt 2/3)</span>
+                                </div>
+                                <div class="log-line">
+                                    <span class="log-time">14:44:30.112</span>
+                                    <span class="log-level error">ERROR</span>
+                                    <span class="log-message">quote-engine: Failed to execute query: connection pool exhausted</span>
+                                </div>
+                                <div class="log-line">
+                                    <span class="log-time">14:44:28.998</span>
+                                    <span class="log-level info">INFO</span>
+                                    <span class="log-message">pgbouncer[1234]: stats: 256 active, 47 waiting, 0 free</span>
+                                </div>
+                                <div class="log-line">
+                                    <span class="log-time">14:44:27.445</span>
+                                    <span class="log-level error">ERROR</span>
+                                    <span class="log-message">risk-calculator: Database connection failed - circuit breaker opened</span>
+                                </div>
+                                <div class="log-line">
+                                    <span class="log-time">14:44:25.332</span>
+                                    <span class="log-level warn">WARN</span>
+                                    <span class="log-message">portfolio-service: Slow query detected - 4.2s execution time</span>
+                                </div>
+                                <div class="log-line">
+                                    <span class="log-time">14:44:22.112</span>
+                                    <span class="log-level info">INFO</span>
+                                    <span class="log-message">bulk-import-job: Processing batch 847/2000 - holding 48 connections</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Work Notes Tab -->
+                    <div id="worknotes" class="tab-content">
+                        <div class="card-body">
+                            <div class="worknote-form">
+                                <textarea placeholder="Add a work note... Describe investigation progress, findings, or next steps."></textarea>
+                                <div class="worknote-form-actions">
+                                    <button class="header-btn primary"><i class="fas fa-paper-plane"></i> Add Note</button>
+                                    <button class="header-btn"><i class="fas fa-at"></i> Mention</button>
+                                    <button class="header-btn"><i class="fas fa-paperclip"></i> Attach</button>
+                                </div>
+                            </div>
+                            <div class="worknote-list">
+                                <div class="worknote-item">
+                                    <div class="worknote-header">
+                                        <div class="worknote-author">
+                                            <span class="avatar">RM</span>
+                                            <span class="name">Rajkumar Madhu</span>
+                                        </div>
+                                        <span class="worknote-time">14:38 IST</span>
+                                    </div>
+                                    <div class="worknote-text">
+                                        Identified root cause: The bulk-import-job is running a large data migration that's holding 48 database connections for extended periods. This is consuming 19% of the pool capacity. Coordinating with the data team to pause the job temporarily while we increase pool size.
+                                    </div>
+                                </div>
+                                <div class="worknote-item">
+                                    <div class="worknote-header">
+                                        <div class="worknote-author">
+                                            <span class="avatar">RM</span>
+                                            <span class="name">Rajkumar Madhu</span>
+                                        </div>
+                                        <span class="worknote-time">14:34 IST</span>
+                                    </div>
+                                    <div class="worknote-text">
+                                        Acknowledged alert. Checking PgBouncer stats and connection distribution. Running automated recovery runbook to kill stale connections if any.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="right-column">
+                <!-- AI Suggestions -->
+                <div class="ai-panel">
+                    <div class="ai-panel-header">
+                        <div class="ai-icon"><i class="fas fa-robot"></i></div>
+                        <div>
+                            <h3>AI Recommendations</h3>
+                            <p>Based on incident patterns and history</p>
+                        </div>
+                    </div>
+                    <div class="ai-suggestion">
+                        <div class="ai-suggestion-header">
+                            <i class="fas fa-book runbook"></i>
+                            <span>Suggested Runbook</span>
+                        </div>
+                        <div class="ai-suggestion-text">
+                            "pgbouncer_pool_expansion" - Increase pool_size from 256 to 384, reload config without restart. 92% success rate for similar incidents.
+                        </div>
+                        <button class="ai-action-btn"><i class="fas fa-play"></i> Execute Runbook</button>
+                    </div>
+                    <div class="ai-suggestion">
+                        <div class="ai-suggestion-header">
+                            <i class="fas fa-clone similar"></i>
+                            <span>Similar Incidents</span>
+                        </div>
+                        <div class="ai-suggestion-text">
+                            3 similar incidents found in the last 30 days. All resolved by increasing pool size or pausing bulk jobs. Avg MTTR: 28 minutes.
+                        </div>
+                        <button class="ai-action-btn"><i class="fas fa-eye"></i> View Similar</button>
+                    </div>
+                    <div class="ai-suggestion">
+                        <div class="ai-suggestion-header">
+                            <i class="fas fa-user-check assign"></i>
+                            <span>Escalation Suggestion</span>
+                        </div>
+                        <div class="ai-suggestion-text">
+                            If not resolved in 15 minutes, escalate to DBA Team Lead (Hoysala B.) who has resolved 8 similar critical incidents.
+                        </div>
+                        <button class="ai-action-btn"><i class="fas fa-level-up-alt"></i> Escalate Now</button>
+                    </div>
+                </div>
+
+                <!-- Related Incidents -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fas fa-link"></i> Related Incidents</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="related-list">
+                            <div class="related-item" onclick="window.location='linkedeye-incident-detail.html'">
+                                <div class="related-id">INC0015721</div>
+                                <div class="related-title">PgBouncer pool exhaustion during market open</div>
+                                <div class="related-meta">
+                                    <span class="related-badge resolved">Resolved</span>
+                                    <span class="related-badge similarity">94% match</span>
+                                </div>
+                            </div>
+                            <div class="related-item" onclick="window.location='linkedeye-incident-detail.html'">
+                                <div class="related-id">INC0015689</div>
+                                <div class="related-title">Connection timeout errors - trading-db</div>
+                                <div class="related-meta">
+                                    <span class="related-badge resolved">Resolved</span>
+                                    <span class="related-badge similarity">87% match</span>
+                                </div>
+                            </div>
+                            <div class="related-item" onclick="window.location='linkedeye-incident-detail.html'">
+                                <div class="related-id">INC0015512</div>
+                                <div class="related-title">Bulk import blocking production queries</div>
+                                <div class="related-meta">
+                                    <span class="related-badge resolved">Resolved</span>
+                                    <span class="related-badge similarity">82% match</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Affected CIs -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fas fa-server"></i> Affected CIs</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="related-list">
+                            <div class="related-item">
+                                <div class="related-id">pgbouncer-trading-01</div>
+                                <div class="related-title">PgBouncer Instance - Trading Database</div>
+                                <div class="related-meta">
+                                    <span class="related-badge" style="background: rgba(239, 68, 68, 0.1); color: var(--danger);">Critical</span>
+                                </div>
+                            </div>
+                            <div class="related-item">
+                                <div class="related-id">trading-db-primary</div>
+                                <div class="related-title">PostgreSQL Primary - Trading</div>
+                                <div class="related-meta">
+                                    <span class="related-badge" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">Degraded</span>
+                                </div>
+                            </div>
+                            <div class="related-item">
+                                <div class="related-id">order-service-cluster</div>
+                                <div class="related-title">Kubernetes Deployment - Order Service</div>
+                                <div class="related-meta">
+                                    <span class="related-badge" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">Degraded</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Tab functionality
+        function showTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // SLA Timer countdown
+        let slaSeconds = 45 * 60 + 23; // 45:23
+        setInterval(() => {
+            if (slaSeconds > 0) {
+                slaSeconds--;
+                const mins = Math.floor(slaSeconds / 60);
+                const secs = slaSeconds % 60;
+                document.getElementById('slaTime').textContent =
+                    `00:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+        }, 1000);
+
+        // Simulate live log updates
+        const logMessages = [
+            { level: 'error', message: 'pgbouncer[1234]: pool trading-db: connection limit reached' },
+            { level: 'warn', message: 'order-service: Retry attempt 3/3 failed - giving up' },
+            { level: 'info', message: 'pgbouncer[1234]: freeing stale connection from client 10.0.1.45' },
+            { level: 'error', message: 'quote-engine: Circuit breaker triggered - failing fast' }
+        ];
+        let logIndex = 0;
+        setInterval(() => {
+            const container = document.querySelector('.logs-container');
+            if (container && document.getElementById('logs').classList.contains('active')) {
+                const log = logMessages[logIndex % logMessages.length];
+                const now = new Date();
+                const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
+                const newLog = document.createElement('div');
+                newLog.className = 'log-line';
+                newLog.innerHTML = `
+                    <span class="log-time">${time}</span>
+                    <span class="log-level ${log.level}">${log.level.toUpperCase()}</span>
+                    <span class="log-message">${log.message}</span>
+                `;
+                container.insertBefore(newLog, container.firstChild);
+                if (container.children.length > 20) {
+                    container.removeChild(container.lastChild);
+                }
+                logIndex++;
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

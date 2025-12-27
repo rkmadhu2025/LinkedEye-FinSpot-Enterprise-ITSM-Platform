@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Asset Management - LinkedEye-FinSpot CMDB">
+    <title>Asset Management | LinkedEye-FinSpot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        /* Asset Categories */
+        .asset-categories {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .category-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .category-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+        }
+        .category-card.active {
+            border-color: var(--primary-blue);
+            background: rgba(37, 99, 235, 0.03);
+        }
+        .category-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 14px;
+        }
+        .category-card.servers .category-icon { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .category-card.network .category-icon { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .category-card.database .category-icon { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+        .category-card.cloud .category-icon { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .category-card.workstation .category-icon { background: rgba(236, 72, 153, 0.1); color: var(--pink); }
+        .category-card.storage .category-icon { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+        .category-count {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            line-height: 1;
+        }
+        .category-name {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .category-card.active .category-count {
+            color: var(--primary-blue);
+        }
+
+        /* Toolbar */
+        .toolbar {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+        .toolbar-left {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+        .filter-btn.active {
+            border-color: var(--primary-blue);
+            background: rgba(37, 99, 235, 0.05);
+            color: var(--primary-blue);
+        }
+        .filter-btn i:first-child { color: var(--text-secondary); }
+        .filter-btn.active i:first-child { color: var(--primary-blue); }
+        .filter-btn i:last-child {
+            font-size: 10px;
+            color: #9ca3af;
+            margin-left: 4px;
+        }
+        .view-toggle {
+            display: flex;
+            background: #f3f4f6;
+            padding: 4px;
+            border-radius: 8px;
+        }
+        .view-btn {
+            padding: 8px 14px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .view-btn.active {
+            background: #fff;
+            color: var(--text-primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Assets Table */
+        .assets-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .assets-table th {
+            text-align: left;
+            padding: 14px 20px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: #f9fafb;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .assets-table th.sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+        .assets-table th.sortable:hover {
+            color: var(--primary-blue);
+        }
+        .assets-table th .sort-icon {
+            margin-left: 6px;
+            font-size: 10px;
+            opacity: 0.5;
+        }
+        .assets-table th.sorted .sort-icon {
+            opacity: 1;
+            color: var(--primary-blue);
+        }
+        .assets-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+        .assets-table tr {
+            transition: all 0.2s;
+        }
+        .assets-table tbody tr:hover {
+            background: #f9fafb;
+        }
+        .assets-table tbody tr:hover .asset-info .hostname {
+            text-decoration: underline;
+        }
+        .assets-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .asset-name {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .asset-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .asset-icon.server { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .asset-icon.database { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+        .asset-icon.network { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .asset-icon.cloud { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .asset-icon.workstation { background: rgba(236, 72, 153, 0.1); color: var(--pink); }
+        .asset-icon.storage { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+        .asset-info .hostname {
+            font-weight: 600;
+            color: var(--primary-blue);
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .asset-info .ip {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .status-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+        .status-badge.up { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .status-badge.up::before { background: var(--success); }
+        .status-badge.down { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .status-badge.down::before { background: var(--danger); }
+        .status-badge.maintenance { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .status-badge.maintenance::before { background: var(--warning); }
+        .status-badge.unknown { background: rgba(107, 114, 128, 0.1); color: #6b7280; }
+        .status-badge.unknown::before { background: #6b7280; }
+
+        .env-badge {
+            padding: 4px 10px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            display: inline-block;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+            background: #f9fafb;
+        }
+        .pagination-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .pagination-info strong {
+            color: var(--text-primary);
+        }
+        .pagination-controls {
+            display: flex;
+            gap: 6px;
+        }
+        .page-btn {
+            min-width: 36px;
+            height: 36px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .page-btn:hover:not(:disabled) {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .page-btn.active {
+            background: var(--primary-blue);
+            border-color: var(--primary-blue);
+            color: #fff;
+        }
+
+        /* Grid View */
+        .assets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+            padding: 20px;
+        }
+        .asset-grid-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .asset-grid-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+        }
+        .asset-grid-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+        .asset-grid-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .asset-grid-icon.server { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .asset-grid-icon.database { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+        .asset-grid-icon.network { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .asset-grid-icon.cloud { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .asset-grid-title {
+            flex: 1;
+        }
+        .asset-grid-title h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .asset-grid-title p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .asset-grid-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            font-size: 12px;
+        }
+        .asset-grid-meta-item label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .asset-grid-meta-item span {
+            color: var(--text-primary);
+        }
+
+        /* Filter Dropdown */
+        .filter-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            min-width: 200px;
+            max-height: 280px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+        .filter-dropdown.active {
+            display: block;
+        }
+        .filter-dropdown-item {
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .filter-dropdown-item:hover {
+            background: #f3f4f6;
+        }
+        .filter-dropdown-item input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .filter-dropdown-item label {
+            font-size: 13px;
+            cursor: pointer;
+            flex: 1;
+        }
+        .filter-wrapper {
+            position: relative;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .empty-state i {
+            font-size: 48px;
+            color: #d1d5db;
+            margin-bottom: 16px;
+        }
+        .empty-state h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .empty-state p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Import/Export Modal */
+        .import-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .import-modal.active {
+            display: flex;
+        }
+        .import-modal-content {
+            background: var(--bg-card);
+            border-radius: 16px;
+            width: 500px;
+            max-width: 90%;
+        }
+        .import-modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .import-modal-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .import-modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f3f4f6;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .import-modal-body {
+            padding: 24px;
+        }
+        .import-dropzone {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .import-dropzone:hover,
+        .import-dropzone.dragover {
+            border-color: var(--primary-blue);
+            background: rgba(37, 99, 235, 0.03);
+        }
+        .import-dropzone i {
+            font-size: 40px;
+            color: #d1d5db;
+            margin-bottom: 16px;
+        }
+        .import-dropzone h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .import-dropzone p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .import-modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        @media (max-width: 1200px) {
+            .asset-categories { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .asset-categories { grid-template-columns: 1fr; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .toolbar-left { justify-content: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar"></div>
+    <header id="header"></header>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div class="page-header-left">
+                <h1>Asset Management</h1>
+                <p>CMDB - Configuration Management Database</p>
+            </div>
+            <div class="page-header-right">
+                <button class="btn btn-secondary" onclick="showExportModal()"><i class="fas fa-download"></i> Export</button>
+                <button class="btn btn-secondary" onclick="showImportModal()"><i class="fas fa-upload"></i> Import</button>
+                <a href="asset-create.html" class="btn btn-primary"><i class="fas fa-plus"></i> Add Asset</a>
+            </div>
+        </div>
+
+        <!-- Asset Categories -->
+        <div class="asset-categories" id="categoryCards">
+            <!-- Populated by JS -->
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <div class="filter-wrapper">
+                    <button class="filter-btn" id="envFilterBtn" onclick="toggleFilter('env')">
+                        <i class="fas fa-filter"></i> Environment <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="filter-dropdown" id="envFilterDropdown"></div>
+                </div>
+                <div class="filter-wrapper">
+                    <button class="filter-btn" id="locationFilterBtn" onclick="toggleFilter('location')">
+                        <i class="fas fa-map-marker-alt"></i> Location <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="filter-dropdown" id="locationFilterDropdown"></div>
+                </div>
+                <div class="filter-wrapper">
+                    <button class="filter-btn" id="statusFilterBtn" onclick="toggleFilter('status')">
+                        <i class="fas fa-circle"></i> Status <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="filter-dropdown" id="statusFilterDropdown"></div>
+                </div>
+                <div class="filter-wrapper">
+                    <button class="filter-btn" id="ownerFilterBtn" onclick="toggleFilter('owner')">
+                        <i class="fas fa-user"></i> Owner <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="filter-dropdown" id="ownerFilterDropdown"></div>
+                </div>
+                <button class="btn btn-secondary" onclick="clearFilters()" style="padding: 8px 14px; font-size: 12px;">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+            <div class="view-toggle">
+                <button class="view-btn active" id="listViewBtn" onclick="setView('list')"><i class="fas fa-list"></i> List</button>
+                <button class="view-btn" id="gridViewBtn" onclick="setView('grid')"><i class="fas fa-th"></i> Grid</button>
+            </div>
+        </div>
+
+        <!-- Assets Table/Grid -->
+        <div class="card" id="assetsContainer">
+            <div id="listView">
+                <table class="assets-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="hostname">Hostname <i class="fas fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="type">Type <i class="fas fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="environment">Environment <i class="fas fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="location">Location <i class="fas fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="status">Status <i class="fas fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="owner">Owner <i class="fas fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="lastSeen">Last Seen <i class="fas fa-sort sort-icon"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="assetsTableBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="gridView" class="assets-grid" style="display: none;">
+                <!-- Populated by JS -->
+            </div>
+            <div class="pagination" id="pagination">
+                <div class="pagination-info">
+                    Showing <strong id="paginationStart">0</strong>-<strong id="paginationEnd">0</strong> of <strong id="paginationTotal">0</strong> assets
+                </div>
+                <div class="pagination-controls" id="paginationControls">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Import Modal -->
+    <div class="import-modal" id="importModal">
+        <div class="import-modal-content">
+            <div class="import-modal-header">
+                <h3>Import Assets</h3>
+                <button class="import-modal-close" onclick="closeImportModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="import-modal-body">
+                <div class="import-dropzone" id="importDropzone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h4>Drop files here or click to upload</h4>
+                    <p>Supports CSV, JSON, and Excel files</p>
+                    <input type="file" id="importFile" accept=".csv,.json,.xlsx,.xls" style="display: none;">
+                </div>
+                <div id="importPreview" style="margin-top: 20px; display: none;">
+                    <p style="font-size: 13px; margin-bottom: 10px;"><strong id="importFileName"></strong> selected</p>
+                    <p style="font-size: 12px; color: var(--text-secondary);">Ready to import <strong id="importRowCount">0</strong> assets</p>
+                </div>
+            </div>
+            <div class="import-modal-footer">
+                <button class="btn btn-secondary" onclick="closeImportModal()">Cancel</button>
+                <button class="btn btn-primary" id="importSubmitBtn" onclick="submitImport()" disabled><i class="fas fa-upload"></i> Import</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="import-modal" id="exportModal">
+        <div class="import-modal-content">
+            <div class="import-modal-header">
+                <h3>Export Assets</h3>
+                <button class="import-modal-close" onclick="closeExportModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="import-modal-body">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 12px; font-weight: 500; margin-bottom: 8px;">Export Format</label>
+                    <div style="display: flex; gap: 12px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="exportFormat" value="csv" checked> CSV
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="exportFormat" value="json"> JSON
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="exportFormat" value="xlsx"> Excel
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: 500; margin-bottom: 8px;">Export Scope</label>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="exportScope" value="all" checked> All assets (<span id="exportAllCount">0</span>)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="exportScope" value="filtered"> Filtered assets (<span id="exportFilteredCount">0</span>)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="exportScope" value="category"> Current category (<span id="exportCategoryCount">0</span>)
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="import-modal-footer">
+                <button class="btn btn-secondary" onclick="closeExportModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitExport()"><i class="fas fa-download"></i> Export</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        // State
+        let allAssets = [];
+        let filteredAssets = [];
+        let currentPage = 1;
+        const pageSize = 20;
+        let currentCategory = 'all';
+        let currentView = 'list';
+        let sortColumn = 'hostname';
+        let sortDirection = 'asc';
+        let activeFilters = {
+            environment: [],
+            location: [],
+            status: [],
+            owner: []
+        };
+
+        // Category mappings
+        const categoryTypes = {
+            servers: ['server', 'application server', 'web server', 'app server', 'trading server', 'backup server'],
+            network: ['router', 'switch', 'firewall', 'load balancer', 'network device', 'cisco catalyst'],
+            database: ['database', 'postgresql', 'mysql', 'mongodb', 'redis', 'oracle'],
+            cloud: ['aws', 'azure', 'gcp', 'cloud', 'eks', 'ecs', 'lambda', 'ec2'],
+            workstation: ['workstation', 'desktop', 'laptop'],
+            storage: ['storage', 'nas', 'san', 'backup']
+        };
+
+        // Icon mapping
+        function getAssetIcon(type) {
+            const typeLower = type?.toLowerCase() || '';
+            if (categoryTypes.database.some(t => typeLower.includes(t))) return { class: 'database', icon: 'fa-database' };
+            if (categoryTypes.network.some(t => typeLower.includes(t))) return { class: 'network', icon: 'fa-network-wired' };
+            if (categoryTypes.cloud.some(t => typeLower.includes(t))) return { class: 'cloud', icon: 'fa-cloud' };
+            if (categoryTypes.workstation.some(t => typeLower.includes(t))) return { class: 'workstation', icon: 'fa-desktop' };
+            if (categoryTypes.storage.some(t => typeLower.includes(t))) return { class: 'storage', icon: 'fa-hdd' };
+            return { class: 'server', icon: 'fa-server' };
+        }
+
+        // Get category for asset
+        function getAssetCategory(type) {
+            const typeLower = type?.toLowerCase() || '';
+            for (const [category, types] of Object.entries(categoryTypes)) {
+                if (types.some(t => typeLower.includes(t))) return category;
+            }
+            return 'servers';
+        }
+
+        // Sample data
+        const sampleAssets = [
+            { id: '1', hostname: 'prod-app-01', ip: '10.0.1.10', type: 'Application Server', environment: 'fs-mum-indmoney-prod-le', location: 'DC-1, Rack A3', status: 'up', owner: 'Infrastructure Ops', lastSeen: new Date(Date.now() - 120000) },
+            { id: '2', hostname: 'prod-db-01', ip: '10.0.1.20', type: 'PostgreSQL Database', environment: 'fs-mum-indmoney-prod-le', location: 'DC-1, Rack B2', status: 'up', owner: 'DBA Team', lastSeen: new Date(Date.now() - 60000) },
+            { id: '3', hostname: 'sw-core-01', ip: '10.0.1.1', type: 'Cisco Catalyst 9500', environment: 'fs-dx-le', location: 'DC-1, Core', status: 'up', owner: 'Network Ops', lastSeen: new Date(Date.now() - 30000) },
+            { id: '4', hostname: 'trading-engine-01', ip: '10.0.2.50', type: 'Trading Server', environment: 'neo-prod-le', location: 'DC-2, Rack A1', status: 'maintenance', owner: 'Trading Ops', lastSeen: new Date(Date.now() - 300000) },
+            { id: '5', hostname: 'api-gateway', ip: '52.66.x.x', type: 'AWS EKS Cluster', environment: 'pl-prod-le', location: 'ap-south-1', status: 'up', owner: 'DevOps Team', lastSeen: new Date(Date.now() - 60000) },
+            { id: '6', hostname: 'backup-server-01', ip: '10.0.3.10', type: 'Backup Server', environment: 'fs-dr-le', location: 'DR Site, Rack C1', status: 'down', owner: 'Infrastructure Ops', lastSeen: new Date(Date.now() - 900000) },
+            { id: '7', hostname: 'redis-cache-01', ip: '10.0.1.30', type: 'Redis Database', environment: 'fs-mum-indmoney-prod-le', location: 'DC-1, Rack B3', status: 'up', owner: 'Platform Team', lastSeen: new Date(Date.now() - 45000) },
+            { id: '8', hostname: 'lb-frontend-01', ip: '10.0.1.5', type: 'Load Balancer', environment: 'fs-dx-le', location: 'DC-1, Core', status: 'up', owner: 'Network Ops', lastSeen: new Date(Date.now() - 15000) },
+            { id: '9', hostname: 'mongodb-cluster-01', ip: '10.0.2.20', type: 'MongoDB Database', environment: 'neo-prod-le', location: 'DC-2, Rack B1', status: 'up', owner: 'DBA Team', lastSeen: new Date(Date.now() - 90000) },
+            { id: '10', hostname: 'k8s-worker-01', ip: '10.0.4.10', type: 'AWS EC2 Instance', environment: 'pl-prod-le', location: 'ap-south-1a', status: 'up', owner: 'DevOps Team', lastSeen: new Date(Date.now() - 120000) },
+            { id: '11', hostname: 'k8s-worker-02', ip: '10.0.4.11', type: 'AWS EC2 Instance', environment: 'pl-prod-le', location: 'ap-south-1b', status: 'up', owner: 'DevOps Team', lastSeen: new Date(Date.now() - 130000) },
+            { id: '12', hostname: 'fw-perimeter-01', ip: '10.0.0.1', type: 'Firewall', environment: 'fs-dx-le', location: 'DC-1, DMZ', status: 'up', owner: 'Security Ops', lastSeen: new Date(Date.now() - 20000) },
+            { id: '13', hostname: 'storage-san-01', ip: '10.0.5.10', type: 'Storage SAN', environment: 'fs-mum-indmoney-prod-le', location: 'DC-1, Rack D1', status: 'up', owner: 'Infrastructure Ops', lastSeen: new Date(Date.now() - 180000) },
+            { id: '14', hostname: 'web-server-01', ip: '10.0.1.40', type: 'Web Server', environment: 'fs-mum-indmoney-prod-le', location: 'DC-1, Rack A4', status: 'up', owner: 'Web Ops', lastSeen: new Date(Date.now() - 75000) },
+            { id: '15', hostname: 'web-server-02', ip: '10.0.1.41', type: 'Web Server', environment: 'fs-mum-indmoney-prod-le', location: 'DC-1, Rack A5', status: 'maintenance', owner: 'Web Ops', lastSeen: new Date(Date.now() - 600000) }
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            Layout.init();
+            await loadAssets();
+            setupEventListeners();
+        });
+
+        async function loadAssets() {
+            try {
+                const response = await API.assets.list();
+                if (response.success && response.data?.length > 0) {
+                    allAssets = response.data;
+                } else {
+                    allAssets = sampleAssets;
+                }
+            } catch (error) {
+                console.log('Using sample data');
+                allAssets = sampleAssets;
+            }
+
+            applyFilters();
+            renderCategories();
+            renderFilterDropdowns();
+        }
+
+        function renderCategories() {
+            const counts = {
+                servers: 0,
+                network: 0,
+                database: 0,
+                cloud: 0
+            };
+
+            allAssets.forEach(asset => {
+                const category = getAssetCategory(asset.type);
+                if (counts[category] !== undefined) {
+                    counts[category]++;
+                } else {
+                    counts.servers++;
+                }
+            });
+
+            const container = document.getElementById('categoryCards');
+            container.innerHTML = `
+                <div class="category-card servers ${currentCategory === 'all' || currentCategory === 'servers' ? 'active' : ''}" data-category="servers">
+                    <div class="category-icon"><i class="fas fa-server"></i></div>
+                    <div class="category-count">${counts.servers}</div>
+                    <div class="category-name">Servers</div>
+                </div>
+                <div class="category-card network ${currentCategory === 'network' ? 'active' : ''}" data-category="network">
+                    <div class="category-icon"><i class="fas fa-network-wired"></i></div>
+                    <div class="category-count">${counts.network}</div>
+                    <div class="category-name">Network Devices</div>
+                </div>
+                <div class="category-card database ${currentCategory === 'database' ? 'active' : ''}" data-category="database">
+                    <div class="category-icon"><i class="fas fa-database"></i></div>
+                    <div class="category-count">${counts.database}</div>
+                    <div class="category-name">Databases</div>
+                </div>
+                <div class="category-card cloud ${currentCategory === 'cloud' ? 'active' : ''}" data-category="cloud">
+                    <div class="category-icon"><i class="fas fa-cloud"></i></div>
+                    <div class="category-count">${counts.cloud}</div>
+                    <div class="category-name">Cloud Resources</div>
+                </div>
+            `;
+
+            // Add click handlers
+            container.querySelectorAll('.category-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const category = card.dataset.category;
+                    if (currentCategory === category) {
+                        currentCategory = 'all';
+                    } else {
+                        currentCategory = category;
+                    }
+                    container.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+                    if (currentCategory !== 'all') {
+                        card.classList.add('active');
+                    }
+                    currentPage = 1;
+                    applyFilters();
+                });
+            });
+        }
+
+        function renderFilterDropdowns() {
+            const environments = [...new Set(allAssets.map(a => a.environment))].filter(Boolean);
+            const locations = [...new Set(allAssets.map(a => a.location))].filter(Boolean);
+            const statuses = [...new Set(allAssets.map(a => a.status))].filter(Boolean);
+            const owners = [...new Set(allAssets.map(a => a.owner))].filter(Boolean);
+
+            document.getElementById('envFilterDropdown').innerHTML = environments.map(env => `
+                <div class="filter-dropdown-item">
+                    <input type="checkbox" id="env-${env}" value="${env}" onchange="updateFilter('environment', '${env}', this.checked)">
+                    <label for="env-${env}">${env}</label>
+                </div>
+            `).join('');
+
+            document.getElementById('locationFilterDropdown').innerHTML = locations.map(loc => `
+                <div class="filter-dropdown-item">
+                    <input type="checkbox" id="loc-${loc}" value="${loc}" onchange="updateFilter('location', '${loc}', this.checked)">
+                    <label for="loc-${loc}">${loc}</label>
+                </div>
+            `).join('');
+
+            document.getElementById('statusFilterDropdown').innerHTML = statuses.map(status => `
+                <div class="filter-dropdown-item">
+                    <input type="checkbox" id="status-${status}" value="${status}" onchange="updateFilter('status', '${status}', this.checked)">
+                    <label for="status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</label>
+                </div>
+            `).join('');
+
+            document.getElementById('ownerFilterDropdown').innerHTML = owners.map(owner => `
+                <div class="filter-dropdown-item">
+                    <input type="checkbox" id="owner-${owner}" value="${owner}" onchange="updateFilter('owner', '${owner}', this.checked)">
+                    <label for="owner-${owner}">${owner}</label>
+                </div>
+            `).join('');
+        }
+
+        function toggleFilter(type) {
+            const dropdowns = ['env', 'location', 'status', 'owner'];
+            dropdowns.forEach(d => {
+                const dropdown = document.getElementById(`${d}FilterDropdown`);
+                if (d === type) {
+                    dropdown.classList.toggle('active');
+                } else {
+                    dropdown.classList.remove('active');
+                }
+            });
+        }
+
+        function updateFilter(type, value, checked) {
+            if (checked) {
+                if (!activeFilters[type].includes(value)) {
+                    activeFilters[type].push(value);
+                }
+            } else {
+                activeFilters[type] = activeFilters[type].filter(v => v !== value);
+            }
+
+            // Update button state
+            const btnMap = { environment: 'env', location: 'location', status: 'status', owner: 'owner' };
+            const btn = document.getElementById(`${btnMap[type]}FilterBtn`);
+            if (activeFilters[type].length > 0) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+
+            currentPage = 1;
+            applyFilters();
+        }
+
+        function clearFilters() {
+            activeFilters = { environment: [], location: [], status: [], owner: [] };
+            document.querySelectorAll('.filter-dropdown input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            currentCategory = 'all';
+            document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+            currentPage = 1;
+            applyFilters();
+        }
+
+        function applyFilters() {
+            filteredAssets = allAssets.filter(asset => {
+                // Category filter
+                if (currentCategory !== 'all') {
+                    const assetCategory = getAssetCategory(asset.type);
+                    if (assetCategory !== currentCategory) return false;
+                }
+
+                // Environment filter
+                if (activeFilters.environment.length > 0 && !activeFilters.environment.includes(asset.environment)) {
+                    return false;
+                }
+
+                // Location filter
+                if (activeFilters.location.length > 0 && !activeFilters.location.includes(asset.location)) {
+                    return false;
+                }
+
+                // Status filter
+                if (activeFilters.status.length > 0 && !activeFilters.status.includes(asset.status)) {
+                    return false;
+                }
+
+                // Owner filter
+                if (activeFilters.owner.length > 0 && !activeFilters.owner.includes(asset.owner)) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            // Sort
+            sortAssets();
+
+            // Update export counts
+            document.getElementById('exportAllCount').textContent = allAssets.length;
+            document.getElementById('exportFilteredCount').textContent = filteredAssets.length;
+            document.getElementById('exportCategoryCount').textContent = filteredAssets.length;
+
+            renderAssets();
+            renderPagination();
+        }
+
+        function sortAssets() {
+            filteredAssets.sort((a, b) => {
+                let valA = a[sortColumn];
+                let valB = b[sortColumn];
+
+                if (sortColumn === 'lastSeen') {
+                    valA = new Date(valA);
+                    valB = new Date(valB);
+                } else {
+                    valA = (valA || '').toString().toLowerCase();
+                    valB = (valB || '').toString().toLowerCase();
+                }
+
+                if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        function renderAssets() {
+            const start = (currentPage - 1) * pageSize;
+            const end = Math.min(start + pageSize, filteredAssets.length);
+            const pageAssets = filteredAssets.slice(start, end);
+
+            if (currentView === 'list') {
+                renderListView(pageAssets);
+            } else {
+                renderGridView(pageAssets);
+            }
+        }
+
+        function renderListView(assets) {
+            const tbody = document.getElementById('assetsTableBody');
+
+            if (assets.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i class="fas fa-server"></i>
+                                <h3>No assets found</h3>
+                                <p>Try adjusting your filters or add a new asset</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = assets.map(asset => {
+                const iconInfo = getAssetIcon(asset.type);
+                const lastSeenText = formatLastSeen(asset.lastSeen);
+
+                return `
+                    <tr onclick="viewAsset('${asset.id}')" style="cursor: pointer;">
+                        <td>
+                            <div class="asset-name">
+                                <div class="asset-icon ${iconInfo.class}"><i class="fas ${iconInfo.icon}"></i></div>
+                                <div class="asset-info">
+                                    <div class="hostname">${asset.hostname}</div>
+                                    <div class="ip">${asset.ip || '-'}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${asset.type || '-'}</td>
+                        <td><span class="env-badge" title="${asset.environment}">${asset.environment || '-'}</span></td>
+                        <td>${asset.location || '-'}</td>
+                        <td><span class="status-badge ${asset.status || 'unknown'}">${(asset.status || 'Unknown').charAt(0).toUpperCase() + (asset.status || 'unknown').slice(1)}</span></td>
+                        <td>${asset.owner || '-'}</td>
+                        <td>${lastSeenText}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderGridView(assets) {
+            const container = document.getElementById('gridView');
+
+            if (assets.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <i class="fas fa-server"></i>
+                        <h3>No assets found</h3>
+                        <p>Try adjusting your filters or add a new asset</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = assets.map(asset => {
+                const iconInfo = getAssetIcon(asset.type);
+                const lastSeenText = formatLastSeen(asset.lastSeen);
+
+                return `
+                    <div class="asset-grid-card" onclick="viewAsset('${asset.id}')">
+                        <div class="asset-grid-header">
+                            <div class="asset-grid-icon ${iconInfo.class}"><i class="fas ${iconInfo.icon}"></i></div>
+                            <div class="asset-grid-title">
+                                <h4>${asset.hostname}</h4>
+                                <p>${asset.ip || '-'}</p>
+                            </div>
+                            <span class="status-badge ${asset.status || 'unknown'}">${(asset.status || 'Unknown').charAt(0).toUpperCase() + (asset.status || 'unknown').slice(1)}</span>
+                        </div>
+                        <div class="asset-grid-meta">
+                            <div class="asset-grid-meta-item">
+                                <label>Type</label>
+                                <span>${asset.type || '-'}</span>
+                            </div>
+                            <div class="asset-grid-meta-item">
+                                <label>Location</label>
+                                <span>${asset.location || '-'}</span>
+                            </div>
+                            <div class="asset-grid-meta-item">
+                                <label>Owner</label>
+                                <span>${asset.owner || '-'}</span>
+                            </div>
+                            <div class="asset-grid-meta-item">
+                                <label>Last Seen</label>
+                                <span>${lastSeenText}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatLastSeen(date) {
+            if (!date) return '-';
+            const now = new Date();
+            const seen = new Date(date);
+            const diff = Math.floor((now - seen) / 1000);
+
+            if (diff < 60) return `${diff} sec ago`;
+            if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+            return `${Math.floor(diff / 86400)} days ago`;
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredAssets.length / pageSize);
+            const start = (currentPage - 1) * pageSize + 1;
+            const end = Math.min(currentPage * pageSize, filteredAssets.length);
+
+            document.getElementById('paginationStart').textContent = filteredAssets.length > 0 ? start : 0;
+            document.getElementById('paginationEnd').textContent = end;
+            document.getElementById('paginationTotal').textContent = filteredAssets.length;
+
+            const controls = document.getElementById('paginationControls');
+
+            if (totalPages <= 1) {
+                controls.innerHTML = '';
+                return;
+            }
+
+            let html = `<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
+
+            // Page numbers
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+            if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+
+            if (startPage > 1) {
+                html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) html += `<button class="page-btn" disabled>...</button>`;
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<button class="page-btn" disabled>...</button>`;
+                html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+
+            html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
+
+            controls.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            const totalPages = Math.ceil(filteredAssets.length / pageSize);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderAssets();
+            renderPagination();
+        }
+
+        function setView(view) {
+            currentView = view;
+
+            document.getElementById('listViewBtn').classList.toggle('active', view === 'list');
+            document.getElementById('gridViewBtn').classList.toggle('active', view === 'grid');
+
+            document.getElementById('listView').style.display = view === 'list' ? 'block' : 'none';
+            document.getElementById('gridView').style.display = view === 'grid' ? 'grid' : 'none';
+
+            renderAssets();
+        }
+
+        function viewAsset(id) {
+            window.location.href = `asset-detail.html?id=${id}`;
+        }
+
+        function setupEventListeners() {
+            // Sortable headers
+            document.querySelectorAll('.assets-table th.sortable').forEach(th => {
+                th.addEventListener('click', () => {
+                    const column = th.dataset.sort;
+                    if (sortColumn === column) {
+                        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortColumn = column;
+                        sortDirection = 'asc';
+                    }
+
+                    // Update UI
+                    document.querySelectorAll('.assets-table th.sortable').forEach(h => {
+                        h.classList.remove('sorted');
+                        h.querySelector('.sort-icon').className = 'fas fa-sort sort-icon';
+                    });
+                    th.classList.add('sorted');
+                    th.querySelector('.sort-icon').className = `fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} sort-icon`;
+
+                    applyFilters();
+                });
+            });
+
+            // Close dropdowns on outside click
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.filter-wrapper')) {
+                    document.querySelectorAll('.filter-dropdown').forEach(d => d.classList.remove('active'));
+                }
+            });
+
+            // Import dropzone
+            const dropzone = document.getElementById('importDropzone');
+            const fileInput = document.getElementById('importFile');
+
+            dropzone.addEventListener('click', () => fileInput.click());
+
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.classList.add('dragover');
+            });
+
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.classList.remove('dragover');
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) {
+                    handleImportFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) {
+                    handleImportFile(fileInput.files[0]);
+                }
+            });
+
+            // Global search
+            const searchInput = document.querySelector('.search-box input');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase();
+                    if (query.length >= 2) {
+                        filteredAssets = allAssets.filter(asset =>
+                            asset.hostname?.toLowerCase().includes(query) ||
+                            asset.ip?.toLowerCase().includes(query) ||
+                            asset.type?.toLowerCase().includes(query) ||
+                            asset.environment?.toLowerCase().includes(query) ||
+                            asset.location?.toLowerCase().includes(query)
+                        );
+                    } else {
+                        applyFilters();
+                        return;
+                    }
+                    currentPage = 1;
+                    renderAssets();
+                    renderPagination();
+                });
+            }
+        }
+
+        // Import Modal
+        function showImportModal() {
+            document.getElementById('importModal').classList.add('active');
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('active');
+            document.getElementById('importFile').value = '';
+            document.getElementById('importPreview').style.display = 'none';
+            document.getElementById('importSubmitBtn').disabled = true;
+        }
+
+        function handleImportFile(file) {
+            document.getElementById('importFileName').textContent = file.name;
+            document.getElementById('importRowCount').textContent = '...';
+            document.getElementById('importPreview').style.display = 'block';
+            document.getElementById('importSubmitBtn').disabled = false;
+
+            // Simulate row count detection
+            setTimeout(() => {
+                document.getElementById('importRowCount').textContent = Math.floor(Math.random() * 100) + 10;
+            }, 500);
+        }
+
+        async function submitImport() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) return;
+
+            const btn = document.getElementById('importSubmitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                await API.assets.import(formData);
+                closeImportModal();
+                await loadAssets();
+                Layout.showNotification('Assets imported successfully', 'success');
+            } catch (error) {
+                Layout.showNotification('Failed to import assets: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-upload"></i> Import';
+            }
+        }
+
+        // Export Modal
+        function showExportModal() {
+            document.getElementById('exportModal').classList.add('active');
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.remove('active');
+        }
+
+        async function submitExport() {
+            const format = document.querySelector('input[name="exportFormat"]:checked').value;
+            const scope = document.querySelector('input[name="exportScope"]:checked').value;
+
+            let assetsToExport = [];
+            if (scope === 'all') {
+                assetsToExport = allAssets;
+            } else {
+                assetsToExport = filteredAssets;
+            }
+
+            try {
+                // Create download
+                let content, filename, mimeType;
+
+                if (format === 'json') {
+                    content = JSON.stringify(assetsToExport, null, 2);
+                    filename = 'assets-export.json';
+                    mimeType = 'application/json';
+                } else if (format === 'csv') {
+                    const headers = ['hostname', 'ip', 'type', 'environment', 'location', 'status', 'owner'];
+                    const csvRows = [headers.join(',')];
+                    assetsToExport.forEach(asset => {
+                        const row = headers.map(h => `"${(asset[h] || '').toString().replace(/"/g, '""')}"`);
+                        csvRows.push(row.join(','));
+                    });
+                    content = csvRows.join('\n');
+                    filename = 'assets-export.csv';
+                    mimeType = 'text/csv';
+                } else {
+                    // For Excel, use CSV as fallback in frontend
+                    const headers = ['hostname', 'ip', 'type', 'environment', 'location', 'status', 'owner'];
+                    const csvRows = [headers.join(',')];
+                    assetsToExport.forEach(asset => {
+                        const row = headers.map(h => `"${(asset[h] || '').toString().replace(/"/g, '""')}"`);
+                        csvRows.push(row.join(','));
+                    });
+                    content = csvRows.join('\n');
+                    filename = 'assets-export.csv';
+                    mimeType = 'text/csv';
+                }
+
+                const blob = new Blob([content], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                closeExportModal();
+                Layout.showNotification('Assets exported successfully', 'success');
+            } catch (error) {
+                Layout.showNotification('Failed to export assets: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Management | LinkedEye-FinSpot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 24px;
+        }
+
+        /* Group List */
+        .group-list {
+            max-height: calc(100vh - 280px);
+            overflow-y: auto;
+        }
+        .group-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .group-item:hover { background: var(--bg-body); }
+        .group-item.active {
+            background: #eef2ff;
+            border-left: 3px solid var(--primary-blue);
+        }
+        .group-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .group-icon.team { background: #dbeafe; color: var(--info); }
+        .group-icon.support { background: #d1fae5; color: var(--success); }
+        .group-icon.mgmt { background: #fef3c7; color: var(--warning); }
+        .group-icon.cab { background: #ede9fe; color: var(--purple); }
+        .group-icon.security { background: #fce7f3; color: var(--pink); }
+        .group-info { flex: 1; }
+        .group-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .group-meta { font-size: 12px; color: var(--text-secondary); }
+        .group-count {
+            background: var(--bg-body);
+            color: var(--text-secondary);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Group Detail Header */
+        .group-detail-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .group-detail-title {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .group-detail-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .group-detail-icon.team { background: #dbeafe; color: var(--info); }
+        .group-detail-icon.support { background: #d1fae5; color: var(--success); }
+        .group-detail-icon.mgmt { background: #fef3c7; color: var(--warning); }
+        .group-detail-icon.cab { background: #ede9fe; color: var(--purple); }
+        .group-detail-info h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .group-detail-info p { font-size: 13px; color: var(--text-secondary); }
+        .group-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        .group-stat { background: var(--bg-body); padding: 16px; border-radius: 8px; text-align: center; }
+        .group-stat-value { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+        .group-stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+        /* Tabs */
+        .detail-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 24px;
+        }
+        .detail-tab {
+            padding: 14px 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .detail-tab:hover { color: var(--text-primary); }
+        .detail-tab.active { color: var(--primary-blue); border-bottom-color: var(--primary-blue); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Members Section */
+        .members-section { padding: 24px; }
+        .members-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .members-search { display: flex; gap: 12px; }
+        .search-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: white;
+            width: 240px;
+        }
+        .search-input-group input { border: none; outline: none; font-size: 13px; flex: 1; }
+        .search-input-group i { color: var(--text-secondary); font-size: 14px; }
+        .members-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .member-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-body);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .member-card:hover { background: #f3f4f6; }
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-blue), var(--purple));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .member-info { flex: 1; }
+        .member-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .member-role { font-size: 12px; color: var(--text-secondary); }
+        .member-actions { display: flex; gap: 4px; }
+        .member-action-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .member-action-btn:hover { background: var(--border-color); color: var(--text-primary); }
+        .member-action-btn.danger:hover { background: #fee2e2; color: var(--danger); }
+
+        /* Permissions Section */
+        .permissions-section { padding: 24px; }
+        .permission-category { margin-bottom: 24px; }
+        .permission-category-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .permission-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .permission-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-body);
+            border-radius: 8px;
+        }
+        .permission-toggle { position: relative; width: 40px; height: 22px; }
+        .permission-toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--border-color);
+            transition: 0.3s;
+            border-radius: 22px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        .permission-toggle input:checked + .toggle-slider { background-color: var(--primary-blue); }
+        .permission-toggle input:checked + .toggle-slider:before { transform: translateX(18px); }
+        .permission-label { font-size: 13px; color: var(--text-primary); }
+
+        /* Rules Section */
+        .rules-section { padding: 24px; }
+        .rule-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: var(--bg-body);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .rule-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--info);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .rule-info { flex: 1; }
+        .rule-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .rule-description { font-size: 12px; color: var(--text-secondary); }
+        .rule-status { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        .rule-status.active { background: #d1fae5; color: #065f46; }
+        .rule-status.inactive { background: var(--bg-body); color: var(--text-secondary); }
+
+        /* Environment Access */
+        .env-section { padding: 24px; }
+        .env-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .env-card {
+            padding: 16px;
+            background: var(--bg-body);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .env-card-info { display: flex; align-items: center; gap: 10px; }
+        .env-card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .env-card-icon.prod { background: #d1fae5; color: var(--success); }
+        .env-card-icon.staging { background: #fef3c7; color: var(--warning); }
+        .env-card-icon.dev { background: #dbeafe; color: var(--info); }
+        .env-card-name { font-size: 13px; font-weight: 500; }
+
+        /* Add Member Section */
+        .add-member-section {
+            padding: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+        .add-member-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; }
+        .add-member-form { display: flex; gap: 12px; }
+        .user-search { flex: 1; position: relative; }
+        .user-search input {
+            width: 100%;
+            padding: 10px 12px 10px 36px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .user-search i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); }
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10;
+            display: none;
+        }
+        .user-dropdown.active { display: block; }
+        .user-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            cursor: pointer;
+        }
+        .user-option:hover { background: var(--bg-body); }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 16px;
+            width: 500px;
+            max-width: 90%;
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 { font-size: 16px; font-weight: 600; }
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--bg-body);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .modal-body { padding: 24px; }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+
+        @media (max-width: 1200px) {
+            .content-grid { grid-template-columns: 1fr; }
+            .members-grid { grid-template-columns: 1fr; }
+            .permission-grid { grid-template-columns: repeat(2, 1fr); }
+            .env-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .group-stats { grid-template-columns: repeat(2, 1fr); }
+            .permission-grid { grid-template-columns: 1fr; }
+            .env-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar"></div>
+    <header id="header"></header>
+
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-header-left">
+                <h1>Group Management</h1>
+                <p>Manage groups, permissions, and assignment rules</p>
+            </div>
+            <div class="page-header-right">
+                <button class="btn btn-secondary" onclick="showImportModal()">
+                    <i class="fas fa-file-import"></i> Import Groups
+                </button>
+                <button class="btn btn-primary" onclick="showCreateModal()">
+                    <i class="fas fa-plus"></i> Create Group
+                </button>
+            </div>
+        </div>
+
+        <!-- Content Grid -->
+        <div class="content-grid">
+            <!-- Group List -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-layer-group"></i>
+                        Groups
+                    </h3>
+                    <span id="groupCount" style="font-size: 13px; color: var(--text-secondary);">0 groups</span>
+                </div>
+                <div class="card-body">
+                    <div class="group-list" id="groupList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Group Detail -->
+            <div class="card" id="groupDetailCard">
+                <div class="group-detail-header" id="groupDetailHeader">
+                    <!-- Populated by JS -->
+                </div>
+
+                <div class="detail-tabs">
+                    <div class="detail-tab active" data-tab="members">Members</div>
+                    <div class="detail-tab" data-tab="permissions">Permissions</div>
+                    <div class="detail-tab" data-tab="rules">Assignment Rules</div>
+                    <div class="detail-tab" data-tab="environments">Environment Access</div>
+                </div>
+
+                <!-- Members Tab -->
+                <div class="tab-content active" id="tab-members">
+                    <div class="members-section">
+                        <div class="members-header">
+                            <div class="members-search">
+                                <div class="search-input-group">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="memberSearch" placeholder="Search members..." oninput="filterMembers()">
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary" onclick="showAddMemberModal()">
+                                <i class="fas fa-user-plus"></i> Add Member
+                            </button>
+                        </div>
+                        <div class="members-grid" id="membersGrid">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <div class="add-member-section">
+                        <div class="add-member-title">Quick Add Member</div>
+                        <div class="add-member-form">
+                            <div class="user-search">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="quickAddSearch" placeholder="Search users by name or email..." oninput="searchUsers()">
+                                <div class="user-dropdown" id="userDropdown">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+                            <select id="quickAddRole">
+                                <option value="">Select role...</option>
+                                <option value="member">Member</option>
+                                <option value="lead">Team Lead</option>
+                                <option value="manager">Manager</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="quickAddMember()">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Permissions Tab -->
+                <div class="tab-content" id="tab-permissions">
+                    <div class="permissions-section" id="permissionsSection">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Rules Tab -->
+                <div class="tab-content" id="tab-rules">
+                    <div class="rules-section" id="rulesSection">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Environments Tab -->
+                <div class="tab-content" id="tab-environments">
+                    <div class="env-section" id="envSection">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Create/Edit Group Modal -->
+    <div class="modal" id="groupModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="groupModalTitle">Create Group</h3>
+                <button class="modal-close" onclick="closeGroupModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Group Name *</label>
+                    <input type="text" id="groupName" placeholder="e.g., Platform Team">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="groupDescription" placeholder="Brief description of this group..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Group Type</label>
+                    <select id="groupType">
+                        <option value="team">Team</option>
+                        <option value="support">Support</option>
+                        <option value="mgmt">Management</option>
+                        <option value="cab">CAB</option>
+                        <option value="security">Security</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Icon</label>
+                    <select id="groupIcon">
+                        <option value="fa-code">Code</option>
+                        <option value="fa-server">Server</option>
+                        <option value="fa-cloud">Cloud</option>
+                        <option value="fa-network-wired">Network</option>
+                        <option value="fa-database">Database</option>
+                        <option value="fa-headset">Support</option>
+                        <option value="fa-shield-alt">Security</option>
+                        <option value="fa-gavel">CAB</option>
+                        <option value="fa-exclamation-triangle">Incident</option>
+                        <option value="fa-exchange-alt">Change</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeGroupModal()">Cancel</button>
+                <button class="btn btn-primary" id="groupModalSubmit" onclick="saveGroup()">
+                    <i class="fas fa-save"></i> Save Group
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        let groups = [];
+        let selectedGroup = null;
+        let editingGroupId = null;
+
+        // Sample groups data
+        const sampleGroups = [
+            { id: '1', name: 'Platform Team', description: 'Core platform engineers responsible for LinkedEye infrastructure and development', type: 'team', icon: 'fa-code', memberCount: 12, permissions: 8, environments: 6, rules: 3 },
+            { id: '2', name: 'SRE Team', description: 'Site reliability engineers', type: 'team', icon: 'fa-server', memberCount: 8, permissions: 7, environments: 6, rules: 2 },
+            { id: '3', name: 'DevOps', description: 'DevOps engineers', type: 'team', icon: 'fa-cloud', memberCount: 6, permissions: 6, environments: 4, rules: 2 },
+            { id: '4', name: 'Network Team', description: 'Network operations', type: 'team', icon: 'fa-network-wired', memberCount: 5, permissions: 5, environments: 4, rules: 1 },
+            { id: '5', name: 'Database Team', description: 'Database administrators', type: 'team', icon: 'fa-database', memberCount: 4, permissions: 6, environments: 5, rules: 2 },
+            { id: '6', name: 'L1 Support', description: 'First line support', type: 'support', icon: 'fa-headset', memberCount: 15, permissions: 3, environments: 2, rules: 3 },
+            { id: '7', name: 'L2 Support', description: 'Advanced support', type: 'support', icon: 'fa-user-cog', memberCount: 10, permissions: 5, environments: 3, rules: 2 },
+            { id: '8', name: 'Incident Management', description: 'Incident managers', type: 'mgmt', icon: 'fa-exclamation-triangle', memberCount: 6, permissions: 7, environments: 6, rules: 4 },
+            { id: '9', name: 'Change Management', description: 'Change coordinators', type: 'mgmt', icon: 'fa-exchange-alt', memberCount: 4, permissions: 6, environments: 5, rules: 3 },
+            { id: '10', name: 'CAB', description: 'Change Advisory Board', type: 'cab', icon: 'fa-gavel', memberCount: 7, permissions: 8, environments: 6, rules: 2 },
+            { id: '11', name: 'Problem Management', description: 'Root cause analysts', type: 'mgmt', icon: 'fa-search', memberCount: 3, permissions: 5, environments: 4, rules: 1 },
+            { id: '12', name: 'Security Team', description: 'Security operations', type: 'security', icon: 'fa-shield-alt', memberCount: 4, permissions: 9, environments: 6, rules: 5 }
+        ];
+
+        const sampleMembers = [
+            { id: '1', name: 'Rajkumar Madhu', email: 'rajkumar.madhu@finspot.in', role: 'Principal Architect', initials: 'RM' },
+            { id: '2', name: 'Hoysala Bise', email: 'hoysala.bise@finspot.in', role: 'Tech Lead', initials: 'HB' },
+            { id: '3', name: 'Siva Kadirannagari', email: 'siva.k@finspot.in', role: 'Sr. SRE Engineer', initials: 'SK' },
+            { id: '4', name: 'Edukondalu P', email: 'edukondalu.p@finspot.in', role: 'DevOps Engineer', initials: 'EP' },
+            { id: '5', name: 'Devendrareddy Puppala', email: 'devendrareddy.p@finspot.in', role: 'Platform Engineer', initials: 'DP' },
+            { id: '6', name: 'Rajkumar Ashokan', email: 'rajkumar.a@finspot.in', role: 'Platform Engineer', initials: 'RA' },
+            { id: '7', name: 'Vikram Singh', email: 'vikram.s@finspot.in', role: 'Backend Developer', initials: 'VS' },
+            { id: '8', name: 'Priya Kumar', email: 'priya.k@finspot.in', role: 'Frontend Developer', initials: 'PK' }
+        ];
+
+        const samplePermissions = {
+            incidents: [
+                { id: 'inc_view', name: 'View Incidents', enabled: true },
+                { id: 'inc_create', name: 'Create Incidents', enabled: true },
+                { id: 'inc_edit', name: 'Edit Incidents', enabled: true },
+                { id: 'inc_assign', name: 'Assign Incidents', enabled: true },
+                { id: 'inc_resolve', name: 'Resolve Incidents', enabled: true },
+                { id: 'inc_close', name: 'Close Incidents', enabled: false }
+            ],
+            changes: [
+                { id: 'chg_view', name: 'View Changes', enabled: true },
+                { id: 'chg_create', name: 'Create Changes', enabled: true },
+                { id: 'chg_approve', name: 'Approve Changes', enabled: false },
+                { id: 'chg_implement', name: 'Implement Changes', enabled: true }
+            ],
+            assets: [
+                { id: 'asset_view', name: 'View Assets', enabled: true },
+                { id: 'asset_create', name: 'Create Assets', enabled: true },
+                { id: 'asset_edit', name: 'Edit Assets', enabled: true },
+                { id: 'asset_delete', name: 'Delete Assets', enabled: false }
+            ]
+        };
+
+        const sampleRules = [
+            { id: '1', name: 'Auto-assign Platform Incidents', description: 'Automatically assign incidents related to platform services', status: 'active' },
+            { id: '2', name: 'Environment Routing', description: 'Route tickets based on environment tags', status: 'active' },
+            { id: '3', name: 'Priority Escalation', description: 'Escalate high priority incidents to this group', status: 'inactive' }
+        ];
+
+        const sampleEnvironments = [
+            { id: '1', name: 'fs-mum-indmoney-prod-le', type: 'prod', hasAccess: true },
+            { id: '2', name: 'fs-dx-le', type: 'prod', hasAccess: true },
+            { id: '3', name: 'neo-prod-le', type: 'prod', hasAccess: true },
+            { id: '4', name: 'pl-prod-le', type: 'prod', hasAccess: true },
+            { id: '5', name: 'staging', type: 'staging', hasAccess: true },
+            { id: '6', name: 'development', type: 'dev', hasAccess: true }
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            Layout.init();
+            await loadGroups();
+            setupTabs();
+        });
+
+        async function loadGroups() {
+            try {
+                const response = await API.groups.list();
+                if (response.success && response.data?.length > 0) {
+                    groups = response.data;
+                } else {
+                    groups = sampleGroups;
+                }
+            } catch (error) {
+                console.log('Using sample data');
+                groups = sampleGroups;
+            }
+
+            renderGroupList();
+            if (groups.length > 0) {
+                selectGroup(groups[0].id);
+            }
+        }
+
+        function renderGroupList() {
+            const container = document.getElementById('groupList');
+            document.getElementById('groupCount').textContent = `${groups.length} groups`;
+
+            container.innerHTML = groups.map(group => `
+                <div class="group-item ${selectedGroup?.id === group.id ? 'active' : ''}" onclick="selectGroup('${group.id}')">
+                    <div class="group-icon ${group.type}">
+                        <i class="fas ${group.icon}"></i>
+                    </div>
+                    <div class="group-info">
+                        <div class="group-name">${group.name}</div>
+                        <div class="group-meta">${group.description}</div>
+                    </div>
+                    <span class="group-count">${group.memberCount}</span>
+                </div>
+            `).join('');
+        }
+
+        function selectGroup(groupId) {
+            selectedGroup = groups.find(g => g.id === groupId);
+            renderGroupList();
+            renderGroupDetail();
+        }
+
+        function renderGroupDetail() {
+            if (!selectedGroup) return;
+
+            // Header
+            document.getElementById('groupDetailHeader').innerHTML = `
+                <div class="group-detail-title">
+                    <div class="group-detail-icon ${selectedGroup.type}">
+                        <i class="fas ${selectedGroup.icon}"></i>
+                    </div>
+                    <div class="group-detail-info">
+                        <h2>${selectedGroup.name}</h2>
+                        <p>${selectedGroup.description}</p>
+                    </div>
+                </div>
+                <div class="group-stats">
+                    <div class="group-stat">
+                        <div class="group-stat-value">${selectedGroup.memberCount}</div>
+                        <div class="group-stat-label">Members</div>
+                    </div>
+                    <div class="group-stat">
+                        <div class="group-stat-value">${selectedGroup.permissions}</div>
+                        <div class="group-stat-label">Permissions</div>
+                    </div>
+                    <div class="group-stat">
+                        <div class="group-stat-value">${selectedGroup.environments}</div>
+                        <div class="group-stat-label">Environments</div>
+                    </div>
+                    <div class="group-stat">
+                        <div class="group-stat-value">${selectedGroup.rules}</div>
+                        <div class="group-stat-label">Rules</div>
+                    </div>
+                </div>
+            `;
+
+            renderMembers();
+            renderPermissions();
+            renderRules();
+            renderEnvironments();
+        }
+
+        function renderMembers() {
+            const container = document.getElementById('membersGrid');
+            container.innerHTML = sampleMembers.map(member => `
+                <div class="member-card">
+                    <div class="member-avatar">${member.initials}</div>
+                    <div class="member-info">
+                        <div class="member-name">${member.name}</div>
+                        <div class="member-role">${member.role}</div>
+                    </div>
+                    <div class="member-actions">
+                        <button class="member-action-btn" title="Edit" onclick="editMember('${member.id}')"><i class="fas fa-edit"></i></button>
+                        <button class="member-action-btn danger" title="Remove" onclick="removeMember('${member.id}')"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderPermissions() {
+            const container = document.getElementById('permissionsSection');
+            let html = '';
+
+            for (const [category, perms] of Object.entries(samplePermissions)) {
+                html += `
+                    <div class="permission-category">
+                        <div class="permission-category-title">
+                            <i class="fas fa-${category === 'incidents' ? 'exclamation-triangle' : category === 'changes' ? 'exchange-alt' : 'cubes'}"></i>
+                            ${category.charAt(0).toUpperCase() + category.slice(1)}
+                        </div>
+                        <div class="permission-grid">
+                            ${perms.map(perm => `
+                                <div class="permission-item">
+                                    <label class="permission-toggle">
+                                        <input type="checkbox" ${perm.enabled ? 'checked' : ''} onchange="togglePermission('${perm.id}', this.checked)">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span class="permission-label">${perm.name}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderRules() {
+            const container = document.getElementById('rulesSection');
+            container.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h4 style="font-size: 14px; font-weight: 600;">Assignment Rules</h4>
+                    <button class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px;">
+                        <i class="fas fa-plus"></i> Add Rule
+                    </button>
+                </div>
+                ${sampleRules.map(rule => `
+                    <div class="rule-item">
+                        <div class="rule-icon">
+                            <i class="fas fa-random"></i>
+                        </div>
+                        <div class="rule-info">
+                            <div class="rule-name">${rule.name}</div>
+                            <div class="rule-description">${rule.description}</div>
+                        </div>
+                        <span class="rule-status ${rule.status}">${rule.status}</span>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        function renderEnvironments() {
+            const container = document.getElementById('envSection');
+            container.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h4 style="font-size: 14px; font-weight: 600;">Environment Access</h4>
+                    <button class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px;">
+                        <i class="fas fa-edit"></i> Edit Access
+                    </button>
+                </div>
+                <div class="env-grid">
+                    ${sampleEnvironments.map(env => `
+                        <div class="env-card">
+                            <div class="env-card-info">
+                                <div class="env-card-icon ${env.type}">
+                                    <i class="fas fa-${env.type === 'prod' ? 'server' : env.type === 'staging' ? 'flask' : 'code'}"></i>
+                                </div>
+                                <span class="env-card-name">${env.name}</span>
+                            </div>
+                            <label class="permission-toggle">
+                                <input type="checkbox" ${env.hasAccess ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function filterMembers() {
+            const query = document.getElementById('memberSearch').value.toLowerCase();
+            const cards = document.querySelectorAll('.member-card');
+            cards.forEach(card => {
+                const name = card.querySelector('.member-name').textContent.toLowerCase();
+                const role = card.querySelector('.member-role').textContent.toLowerCase();
+                card.style.display = (name.includes(query) || role.includes(query)) ? 'flex' : 'none';
+            });
+        }
+
+        function searchUsers() {
+            const query = document.getElementById('quickAddSearch').value.toLowerCase();
+            const dropdown = document.getElementById('userDropdown');
+
+            if (query.length < 2) {
+                dropdown.classList.remove('active');
+                return;
+            }
+
+            const allUsers = [
+                { name: 'Amit Sharma', email: 'amit.sharma@finspot.in', initials: 'AS' },
+                { name: 'Neha Patel', email: 'neha.patel@finspot.in', initials: 'NP' },
+                { name: 'Rohit Verma', email: 'rohit.verma@finspot.in', initials: 'RV' }
+            ];
+
+            const filtered = allUsers.filter(u =>
+                u.name.toLowerCase().includes(query) || u.email.toLowerCase().includes(query)
+            );
+
+            if (filtered.length > 0) {
+                dropdown.innerHTML = filtered.map(user => `
+                    <div class="user-option" onclick="selectUserToAdd('${user.name}', '${user.email}')">
+                        <div class="member-avatar" style="width: 32px; height: 32px; font-size: 11px;">${user.initials}</div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 500;">${user.name}</div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">${user.email}</div>
+                        </div>
+                    </div>
+                `).join('');
+                dropdown.classList.add('active');
+            } else {
+                dropdown.classList.remove('active');
+            }
+        }
+
+        function selectUserToAdd(name, email) {
+            document.getElementById('quickAddSearch').value = name;
+            document.getElementById('userDropdown').classList.remove('active');
+        }
+
+        function quickAddMember() {
+            const name = document.getElementById('quickAddSearch').value;
+            const role = document.getElementById('quickAddRole').value;
+
+            if (!name || !role) {
+                Layout.showNotification('Please select a user and role', 'error');
+                return;
+            }
+
+            Layout.showNotification(`${name} added to ${selectedGroup.name}`, 'success');
+            document.getElementById('quickAddSearch').value = '';
+            document.getElementById('quickAddRole').value = '';
+        }
+
+        function editMember(memberId) {
+            Layout.showNotification('Edit member feature coming soon', 'info');
+        }
+
+        function removeMember(memberId) {
+            if (confirm('Are you sure you want to remove this member from the group?')) {
+                Layout.showNotification('Member removed from group', 'success');
+            }
+        }
+
+        function togglePermission(permId, enabled) {
+            Layout.showNotification(`Permission ${enabled ? 'enabled' : 'disabled'}`, 'success');
+        }
+
+        function setupTabs() {
+            document.querySelectorAll('.detail-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(`tab-${tabName}`).classList.add('active');
+                });
+            });
+        }
+
+        function showCreateModal() {
+            editingGroupId = null;
+            document.getElementById('groupModalTitle').textContent = 'Create Group';
+            document.getElementById('groupName').value = '';
+            document.getElementById('groupDescription').value = '';
+            document.getElementById('groupType').value = 'team';
+            document.getElementById('groupIcon').value = 'fa-code';
+            document.getElementById('groupModal').classList.add('active');
+        }
+
+        function closeGroupModal() {
+            document.getElementById('groupModal').classList.remove('active');
+        }
+
+        async function saveGroup() {
+            const name = document.getElementById('groupName').value;
+            const description = document.getElementById('groupDescription').value;
+            const type = document.getElementById('groupType').value;
+            const icon = document.getElementById('groupIcon').value;
+
+            if (!name) {
+                Layout.showNotification('Group name is required', 'error');
+                return;
+            }
+
+            try {
+                const data = { name, description, type, icon };
+
+                if (editingGroupId) {
+                    await API.groups.update(editingGroupId, data);
+                    Layout.showNotification('Group updated successfully', 'success');
+                } else {
+                    await API.groups.create(data);
+                    Layout.showNotification('Group created successfully', 'success');
+                }
+
+                closeGroupModal();
+                await loadGroups();
+            } catch (error) {
+                Layout.showNotification('Error saving group: ' + error.message, 'error');
+            }
+        }
+
+        function showImportModal() {
+            Layout.showNotification('Import feature coming soon', 'info');
+        }
+
+        function showAddMemberModal() {
+            Layout.showNotification('Add member modal coming soon', 'info');
+        }
+
+        // Close dropdown on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.user-search')) {
+                document.getElementById('userDropdown').classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Create Change Request - LinkedEye-FinSpot Change Management">
+    <title>Create Change Request | LinkedEye-FinSpot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #0f1c3f;
+            --primary-blue: #2563eb;
+            --primary-blue-light: #3b82f6;
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --pink: #ec4899;
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+            --text-primary: #0f1c3f;
+            --text-secondary: #6b7785;
+            --border-color: #e5e8eb;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-body); color: var(--text-primary); font-size: 13px; }
+
+        /* Sidebar */
+        .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh; background: var(--primary-navy); z-index: 200; }
+        .sidebar-header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-logo { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-blue-light), var(--purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .sidebar-logo i { color: #fff; font-size: 20px; }
+        .sidebar-brand { color: #fff; }
+        .sidebar-brand h1 { font-size: 16px; font-weight: 700; }
+        .sidebar-brand span { font-size: 10px; color: rgba(255,255,255,0.6); }
+        .sidebar-nav { padding: 16px 12px; overflow-y: auto; height: calc(100vh - 140px); }
+        .nav-section { margin-bottom: 20px; }
+        .nav-section-title { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.2s; margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .nav-item.active { background: linear-gradient(135deg, var(--primary-blue), #1d4ed8); color: #fff; }
+        .nav-item i { width: 20px; text-align: center; }
+        .nav-item .nav-badge { background: var(--danger); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: auto; }
+        .nav-item .nav-badge.warning { background: var(--warning); }
+        .sidebar-footer { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .env-selector { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; color: #fff; font-size: 12px; }
+        .env-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; }
+
+        /* Header */
+        .header { position: fixed; top: 0; left: var(--sidebar-width); right: 0; height: var(--header-height); background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .breadcrumb a { color: var(--text-secondary); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--primary-blue); }
+        .breadcrumb .separator { color: var(--border-color); }
+        .breadcrumb .current { color: var(--text-primary); font-weight: 600; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .header-btn { padding: 8px 16px; border: 1px solid var(--border-color); background: #fff; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+        .header-btn:hover { background: #f9fafb; border-color: var(--primary-blue); color: var(--primary-blue); }
+        .notification-btn { position: relative; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border-color); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .notification-btn:hover { background: #f9fafb; }
+        .notification-badge { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 600; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
+        .user-menu { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+        .user-menu:hover { background: #f3f4f6; }
+        .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-blue), var(--purple)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 14px; }
+        .user-info { text-align: left; }
+        .user-name { font-size: 13px; font-weight: 600; }
+        .user-role { font-size: 11px; color: var(--text-secondary); }
+
+        /* Main Content */
+        .main-content { margin-left: var(--sidebar-width); margin-top: var(--header-height); padding: 24px; max-width: 1000px; }
+
+        /* Page Header */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-header-left h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .page-header-left p { font-size: 13px; color: var(--text-secondary); }
+
+        /* Change Type Selector */
+        .change-type-selector { display: flex; gap: 16px; margin-bottom: 24px; }
+        .type-option { flex: 1; padding: 20px; border: 2px solid var(--border-color); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: center; background: var(--bg-card); }
+        .type-option:hover { border-color: #d1d5db; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .type-option.selected { border-color: var(--primary-blue); background: rgba(37, 99, 235, 0.05); }
+        .type-option .type-icon { width: 56px; height: 56px; border-radius: 12px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .type-option.standard .type-icon { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .type-option.normal .type-icon { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .type-option.emergency .type-icon { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .type-option .type-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .type-option .type-desc { font-size: 12px; color: var(--text-secondary); }
+        .type-option.selected .type-name { color: var(--primary-blue); }
+
+        /* Card */
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 24px; }
+        .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .card-title i { color: var(--primary-blue); }
+        .card-body { padding: 20px; }
+
+        /* Form Styles */
+        .form-group { margin-bottom: 20px; }
+        .form-group:last-child { margin-bottom: 0; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+        .form-group label .required { color: var(--danger); margin-left: 2px; }
+        .form-group .hint { font-size: 11px; color: var(--text-secondary); margin-top: 6px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; transition: all 0.2s; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .form-group input::placeholder, .form-group textarea::placeholder { color: #9ca3af; }
+        .form-group textarea { min-height: 140px; resize: vertical; line-height: 1.6; }
+
+        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .form-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+        /* Schedule Row */
+        .schedule-row { display: grid; grid-template-columns: 1fr 1fr 160px; gap: 16px; align-items: flex-end; }
+        .duration-display { padding: 12px; background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(139, 92, 246, 0.05)); border: 1px solid var(--border-color); border-radius: 8px; text-align: center; }
+        .duration-display .value { font-size: 24px; font-weight: 700; color: var(--primary-blue); }
+        .duration-display .label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+        /* CI Selector */
+        .ci-input-wrapper { position: relative; }
+        .ci-input-wrapper input { padding-left: 40px; }
+        .ci-input-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); }
+        .ci-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        .ci-chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; background: linear-gradient(135deg, #f3f4f6, #e5e7eb); border-radius: 20px; font-size: 12px; font-weight: 500; }
+        .ci-chip i { color: var(--info); }
+        .ci-chip .remove { cursor: pointer; color: var(--text-secondary); margin-left: 4px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; }
+        .ci-chip .remove:hover { color: #fff; background: var(--danger); }
+
+        /* File Upload */
+        .file-upload { border: 2px dashed var(--border-color); border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .file-upload:hover { border-color: var(--primary-blue); background: rgba(37, 99, 235, 0.02); }
+        .file-upload i { font-size: 32px; color: var(--text-secondary); margin-bottom: 12px; }
+        .file-upload p { font-size: 13px; color: var(--text-secondary); }
+        .file-upload span { color: var(--primary-blue); font-weight: 500; }
+
+        /* Checkbox */
+        .checkbox-group { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #f9fafb; border-radius: 8px; }
+        .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .checkbox-group label { font-weight: 500; cursor: pointer; margin-bottom: 0; }
+
+        /* Form Actions */
+        .form-actions { display: flex; gap: 12px; justify-content: flex-end; padding: 20px; border-top: 1px solid var(--border-color); background: #f9fafb; border-radius: 0 0 12px 12px; margin: 0 -1px -1px; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary-blue), #1d4ed8); color: #fff; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .btn-secondary { background: #fff; color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; }
+        .btn-outline { background: transparent; color: var(--primary-blue); border: 1px solid var(--primary-blue); }
+        .btn-outline:hover { background: rgba(37, 99, 235, 0.05); }
+
+        /* AI Suggestion */
+        .ai-suggestion { background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(236, 72, 153, 0.05)); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; }
+        .ai-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .ai-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--purple), var(--pink)); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; }
+        .ai-header span { font-weight: 600; color: var(--purple); }
+        .ai-content { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+        .ai-content ul { margin: 8px 0 0 20px; }
+        .ai-content li { margin-bottom: 4px; }
+
+        @media (max-width: 1024px) {
+            .schedule-row { grid-template-columns: 1fr 1fr; }
+            .duration-display { grid-column: span 2; }
+        }
+        @media (max-width: 768px) {
+            .change-type-selector { flex-direction: column; }
+            .form-row, .form-row-3 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fas fa-eye"></i></div>
+            <div class="sidebar-brand"><h1>LinkedEye</h1><span>FinSpot Enterprise</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="linkedeye-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+                <a href="linkedeye-incidents.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Incidents</span><span class="nav-badge">23</span></a>
+                <a href="linkedeye-change-calendar.html" class="nav-item active"><i class="fas fa-code-branch"></i><span>Changes</span><span class="nav-badge warning">7</span></a>
+                <a href="linkedeye-problem-detail.html" class="nav-item"><i class="fas fa-search"></i><span>Problems</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Infrastructure</div>
+                <a href="linkedeye-assets.html" class="nav-item"><i class="fas fa-cubes"></i><span>Assets</span></a>
+                <a href="linkedeye-network-topology.html" class="nav-item"><i class="fas fa-network-wired"></i><span>Network</span></a>
+                <a href="linkedeye-network-devices.html" class="nav-item"><i class="fas fa-server"></i><span>Devices</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Analytics</div>
+                <a href="linkedeye-reports.html" class="nav-item"><i class="fas fa-file-alt"></i><span>Reports</span></a>
+                <a href="linkedeye-analytics.html" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Administration</div>
+                <a href="linkedeye-users.html" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+                <a href="linkedeye-groups.html" class="nav-item"><i class="fas fa-user-friends"></i><span>Groups</span></a>
+                <a href="linkedeye-integrations.html" class="nav-item"><i class="fas fa-plug"></i><span>Integrations</span></a>
+                <a href="linkedeye-admin-settings.html" class="nav-item"><i class="fas fa-cog"></i><span>Settings</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="env-selector">
+                <div class="env-dot"></div>
+                <span>Production Environment</span>
+            </div>
+        </div>
+    </aside>
+
+    <header class="header">
+        <div class="header-left">
+            <div class="breadcrumb">
+                <a href="linkedeye-dashboard.html">Dashboard</a><span class="separator">/</span>
+                <a href="linkedeye-change-calendar.html">Changes</a><span class="separator">/</span>
+                <span class="current">Create New</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="notification-btn">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">3</span>
+            </button>
+            <div class="user-menu">
+                <div class="user-avatar">RM</div>
+                <div class="user-info">
+                    <div class="user-name">Rajkumar M.</div>
+                    <div class="user-role">DevOps Engineer</div>
+                </div>
+                <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-secondary);"></i>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div class="page-header-left">
+                <h1>Create Change Request</h1>
+                <p>Submit a change request for approval and scheduling</p>
+            </div>
+        </div>
+
+        <!-- Change Type Selector -->
+        <div class="change-type-selector">
+            <div class="type-option standard" onclick="selectType(this, 'standard')">
+                <div class="type-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="type-name">Standard Change</div>
+                <div class="type-desc">Pre-approved, low risk changes</div>
+            </div>
+            <div class="type-option normal selected" onclick="selectType(this, 'normal')">
+                <div class="type-icon"><i class="fas fa-code-branch"></i></div>
+                <div class="type-name">Normal Change</div>
+                <div class="type-desc">Requires CAB approval</div>
+            </div>
+            <div class="type-option emergency" onclick="selectType(this, 'emergency')">
+                <div class="type-icon"><i class="fas fa-bolt"></i></div>
+                <div class="type-name">Emergency Change</div>
+                <div class="type-desc">Urgent, expedited review</div>
+            </div>
+        </div>
+
+        <form id="changeForm">
+            <!-- Change Information -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title"><i class="fas fa-edit"></i> Change Information</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Short Description <span class="required">*</span></label>
+                        <input type="text" placeholder="Brief description of the change" required>
+                        <div class="hint">Provide a clear, concise summary of what this change involves</div>
+                    </div>
+                    <div class="form-row-3">
+                        <div class="form-group">
+                            <label>Category <span class="required">*</span></label>
+                            <select>
+                                <option value="">Select category...</option>
+                                <option>Infrastructure</option>
+                                <option selected>Network</option>
+                                <option>Database</option>
+                                <option>Application</option>
+                                <option>Security</option>
+                                <option>Cloud</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Subcategory</label>
+                            <select>
+                                <option value="">Select subcategory...</option>
+                                <option selected>Configuration</option>
+                                <option>Hardware</option>
+                                <option>Software</option>
+                                <option>Patch</option>
+                                <option>Upgrade</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Risk Level <span class="required">*</span></label>
+                            <select>
+                                <option>Low</option>
+                                <option selected>Medium</option>
+                                <option>High</option>
+                                <option>Critical</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Detailed Description</label>
+                        <textarea placeholder="Provide a detailed description of the change, including the reason for the change and expected outcomes..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Implementation Plan -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title"><i class="fas fa-tasks"></i> Implementation Plan</span>
+                </div>
+                <div class="card-body">
+                    <div class="ai-suggestion">
+                        <div class="ai-header">
+                            <div class="ai-icon"><i class="fas fa-robot"></i></div>
+                            <span>AI Suggestion</span>
+                        </div>
+                        <div class="ai-content">
+                            Based on similar changes, we recommend including:
+                            <ul>
+                                <li>Pre-change backup verification</li>
+                                <li>Configuration snapshot before changes</li>
+                                <li>Post-change connectivity testing</li>
+                                <li>Rollback verification steps</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Implementation Steps <span class="required">*</span></label>
+                        <textarea placeholder="Step 1: Take backup of current configuration&#10;Step 2: Notify affected teams&#10;Step 3: Apply configuration changes&#10;Step 4: Verify connectivity and functionality&#10;Step 5: Update documentation"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Backout Plan <span class="required">*</span></label>
+                        <textarea placeholder="Step 1: Restore configuration from backup&#10;Step 2: Verify restoration complete&#10;Step 3: Test connectivity&#10;Step 4: Notify teams of rollback"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Testing Plan</label>
+                        <textarea placeholder="Describe how you will validate the change was successful..." style="min-height: 100px;"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title"><i class="fas fa-calendar-alt"></i> Schedule</span>
+                </div>
+                <div class="card-body">
+                    <div class="schedule-row">
+                        <div class="form-group">
+                            <label>Start Date & Time <span class="required">*</span></label>
+                            <input type="datetime-local" id="startTime" value="2025-12-26T22:00">
+                        </div>
+                        <div class="form-group">
+                            <label>End Date & Time <span class="required">*</span></label>
+                            <input type="datetime-local" id="endTime" value="2025-12-26T23:30">
+                        </div>
+                        <div class="form-group">
+                            <label>Duration</label>
+                            <div class="duration-display">
+                                <div class="value" id="durationValue">90</div>
+                                <div class="label">minutes</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Maintenance Window</label>
+                            <select>
+                                <option value="">Select maintenance window...</option>
+                                <option selected>Weekend - Sat/Sun 22:00-06:00</option>
+                                <option>Weeknight - Mon-Fri 23:00-05:00</option>
+                                <option>Emergency - Anytime</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Estimated Downtime</label>
+                            <input type="text" value="0 minutes" placeholder="e.g., 15 minutes">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Affected CIs -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title"><i class="fas fa-server"></i> Affected Configuration Items</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Configuration Items <span class="required">*</span></label>
+                        <div class="ci-input-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Search and add configuration items...">
+                        </div>
+                        <div class="ci-selector">
+                            <div class="ci-chip"><i class="fas fa-network-wired"></i> SW-01.fs-dx-le <span class="remove">&times;</span></div>
+                            <div class="ci-chip"><i class="fas fa-network-wired"></i> SW-02.fs-dx-le <span class="remove">&times;</span></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Affected Services</label>
+                        <div class="ci-input-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Search and add affected services...">
+                        </div>
+                        <div class="ci-selector">
+                            <div class="ci-chip"><i class="fas fa-globe"></i> Trading Platform <span class="remove">&times;</span></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Business Justification <span class="required">*</span></label>
+                        <textarea style="min-height: 80px;" placeholder="Explain why this change is needed and the business value it provides...">Improve network segmentation for enhanced security compliance with PCI-DSS requirements.</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attachments -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title"><i class="fas fa-paperclip"></i> Attachments & Evidence</span>
+                </div>
+                <div class="card-body">
+                    <div class="file-upload">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag and drop files here, or <span>click to browse</span></p>
+                        <p style="font-size: 11px; margin-top: 8px;">Supported: PDF, DOC, XLS, PNG, JPG (Max 10MB)</p>
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="cabRequired" checked>
+                            <label for="cabRequired">CAB Approval Required</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="card">
+                <div class="card-body" style="padding: 0;">
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="button" class="btn btn-outline">
+                            <i class="fas fa-save"></i> Save as Draft
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Submit for Approval
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        function selectType(el, type) {
+            document.querySelectorAll('.type-option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        // Calculate duration
+        function updateDuration() {
+            const start = new Date(document.getElementById('startTime').value);
+            const end = new Date(document.getElementById('endTime').value);
+            if (start && end && end > start) {
+                const diff = Math.round((end - start) / 60000);
+                document.getElementById('durationValue').textContent = diff;
+            }
+        }
+        document.getElementById('startTime').addEventListener('change', updateDuration);
+        document.getElementById('endTime').addEventListener('change', updateDuration);
+
+        // Remove CI chip
+        document.querySelectorAll('.ci-chip .remove').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.parentElement.remove();
+            });
+        });
+
+        // Form submit
+        document.getElementById('changeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const changeNum = 'CHG00' + Math.floor(10000 + Math.random() * 90000);
+            alert('Change request submitted successfully!\n\nChange Number: ' + changeNum + '\nStatus: Pending Approval');
+            window.location.href = 'linkedeye-change-calendar.html';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="LinkedEye-FinSpot Enterprise Incident Management Dashboard">
+    <title>Dashboard | LinkedEye-FinSpot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-navy: #0f1c3f;
+            --primary-blue: #2563eb;
+            --primary-blue-light: #3b82f6;
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --pink: #ec4899;
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+            --text-primary: #0f1c3f;
+            --text-secondary: #6b7785;
+            --border-color: #e5e8eb;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--primary-navy);
+            z-index: 200;
+            transition: width 0.3s;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-blue-light) 0%, var(--purple) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar-logo i {
+            color: #fff;
+            font-size: 20px;
+        }
+
+        .sidebar-brand {
+            color: #fff;
+        }
+
+        .sidebar-brand h1 {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .sidebar-brand span {
+            font-size: 10px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .sidebar-nav {
+            padding: 16px 12px;
+            overflow-y: auto;
+            height: calc(100vh - 140px);
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-section-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 12px 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #1d4ed8 100%);
+            color: #fff;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-item .nav-badge {
+            background: var(--danger);
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: auto;
+        }
+
+        .nav-item .nav-badge.warning {
+            background: var(--warning);
+        }
+
+        .sidebar-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .env-selector {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .env-selector:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .env-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-width);
+            right: 0;
+            height: var(--header-height);
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .header-search {
+            position: relative;
+        }
+
+        .header-search input {
+            width: 320px;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            background: var(--bg-body);
+            transition: all 0.2s;
+        }
+
+        .header-search input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            background: #fff;
+            width: 400px;
+        }
+
+        .header-search i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .header-btn:hover {
+            background: #f3f4f6;
+            color: var(--primary-blue);
+        }
+
+        .header-btn .badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 18px;
+            height: 18px;
+            background: var(--danger);
+            color: #fff;
+            font-size: 10px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .user-menu:hover {
+            background: #f3f4f6;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--purple) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-info {
+            text-align: left;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        .user-role {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 24px;
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        /* Top Status Bar */
+        .status-bar {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .status-item .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-item .dot.green { background: var(--success); }
+        .status-item .dot.yellow { background: var(--warning); }
+        .status-item .dot.red { background: var(--danger); }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .metric-card.critical::before { background: linear-gradient(90deg, var(--danger), #f97316); }
+        .metric-card.warning::before { background: linear-gradient(90deg, var(--warning), #eab308); }
+        .metric-card.success::before { background: linear-gradient(90deg, var(--success), #22c55e); }
+        .metric-card.info::before { background: linear-gradient(90deg, var(--info), var(--purple)); }
+        .metric-card.purple::before { background: linear-gradient(90deg, var(--purple), var(--pink)); }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .metric-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .metric-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .metric-card.critical .metric-icon { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .metric-card.warning .metric-icon { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .metric-card.success .metric-icon { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .metric-card.info .metric-icon { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .metric-card.purple .metric-icon { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .metric-trend {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .metric-trend.up { color: var(--danger); }
+        .metric-trend.down { color: var(--success); }
+        .metric-trend.neutral { color: var(--text-secondary); }
+
+        /* Grid Layout */
+        .grid-row {
+            display: grid;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .grid-row.two-cols {
+            grid-template-columns: 2fr 1fr;
+        }
+
+        .grid-row.three-cols {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .grid-row.equal {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--primary-blue);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .card-actions button {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .card-actions button:hover {
+            background: #f9fafb;
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        .card-actions button.active {
+            background: var(--primary-blue);
+            color: #fff;
+            border-color: var(--primary-blue);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            height: 280px;
+            position: relative;
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: #f9fafb;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+        }
+
+        table tr:hover {
+            background: #f9fafb;
+        }
+
+        table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .incident-id {
+            color: var(--primary-blue);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .incident-id:hover {
+            text-decoration: underline;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge.critical { background: var(--danger); color: #fff; }
+        .badge.high { background: #f97316; color: #fff; }
+        .badge.medium { background: var(--warning); color: #1e3a5f; }
+        .badge.low { background: var(--info); color: #fff; }
+        .badge.info { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .badge.success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .badge.warning { background: rgba(245, 158, 11, 0.1); color: #b45309; }
+        .badge.purple { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+
+        /* SLA Progress */
+        .sla-progress {
+            width: 100%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .sla-progress-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .sla-progress-bar.good { background: var(--success); }
+        .sla-progress-bar.warning { background: var(--warning); }
+        .sla-progress-bar.danger { background: var(--danger); }
+
+        /* Environment Status */
+        .env-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .env-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: #f9fafb;
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .env-item:hover {
+            background: #f3f4f6;
+        }
+
+        .env-item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .env-status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .env-status-dot.healthy { background: var(--success); }
+        .env-status-dot.degraded { background: var(--warning); }
+        .env-status-dot.critical { background: var(--danger); }
+
+        .env-name {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .env-type {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .env-metrics {
+            display: flex;
+            gap: 16px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* On-Call */
+        .oncall-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .oncall-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .oncall-item.current {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border: 1px solid var(--success);
+        }
+
+        .oncall-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--purple) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .oncall-info {
+            flex: 1;
+        }
+
+        .oncall-name {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .oncall-team {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .oncall-time {
+            text-align: right;
+        }
+
+        .oncall-time .shift {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        .oncall-time .label {
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        /* Changes List */
+        .change-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .change-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 14px 16px;
+            background: #f9fafb;
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .change-item:hover {
+            background: #f3f4f6;
+        }
+
+        .change-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .change-icon.scheduled { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .change-icon.approved { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .change-icon.pending { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+
+        .change-info {
+            flex: 1;
+        }
+
+        .change-id {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--primary-blue);
+        }
+
+        .change-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .change-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        /* AI Insights */
+        .ai-insights {
+            background: linear-gradient(135deg, #0f1c3f 0%, #1e3a5f 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .ai-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .ai-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .ai-subtitle {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .insight-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .insight-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+
+        .insight-item i {
+            font-size: 16px;
+            margin-top: 2px;
+        }
+
+        .insight-item i.warning { color: var(--warning); }
+        .insight-item i.info { color: var(--info); }
+        .insight-item i.success { color: var(--success); }
+
+        .insight-text {
+            font-size: 12px;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+
+        /* Live Update Indicator */
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .metrics-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .grid-row.two-cols {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .grid-row.three-cols,
+            .grid-row.equal {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 60px;
+            }
+            .sidebar-brand,
+            .nav-item span,
+            .nav-badge,
+            .nav-section-title {
+                display: none;
+            }
+            .header {
+                left: 60px;
+            }
+            .main-content {
+                margin-left: 60px;
+            }
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-search {
+                display: none;
+            }
+            .user-info {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-eye"></i>
+            </div>
+            <div class="sidebar-brand">
+                <h1>LinkedEye</h1>
+                <span>FinSpot Enterprise</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="linkedeye-dashboard.html" class="nav-item active">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">ITSM</div>
+                <a href="linkedeye-incidents.html" class="nav-item">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Incidents</span>
+                    <span class="nav-badge">23</span>
+                </a>
+                <a href="linkedeye-change-calendar.html" class="nav-item">
+                    <i class="fas fa-code-branch"></i>
+                    <span>Changes</span>
+                    <span class="nav-badge warning">5</span>
+                </a>
+                <a href="linkedeye-problem-detail.html" class="nav-item">
+                    <i class="fas fa-search"></i>
+                    <span>Problems</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Infrastructure</div>
+                <a href="linkedeye-network-topology.html" class="nav-item">
+                    <i class="fas fa-network-wired"></i>
+                    <span>Network</span>
+                </a>
+                <a href="linkedeye-assets.html" class="nav-item">
+                    <i class="fas fa-cubes"></i>
+                    <span>Assets</span>
+                </a>
+                <a href="linkedeye-network-devices.html" class="nav-item">
+                    <i class="fas fa-server"></i>
+                    <span>Devices</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Analytics</div>
+                <a href="linkedeye-analytics.html" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="linkedeye-reports.html" class="nav-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Reports</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Admin</div>
+                <a href="linkedeye-users.html" class="nav-item">
+                    <i class="fas fa-users"></i>
+                    <span>Users</span>
+                </a>
+                <a href="linkedeye-groups.html" class="nav-item">
+                    <i class="fas fa-user-friends"></i>
+                    <span>Groups</span>
+                </a>
+                <a href="linkedeye-integrations.html" class="nav-item">
+                    <i class="fas fa-plug"></i>
+                    <span>Integrations</span>
+                </a>
+                <a href="linkedeye-admin-settings.html" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="env-selector">
+                <div class="env-dot"></div>
+                <span>fs-mum-indmoney-prod-le</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <h1 class="page-title">Operations Dashboard</h1>
+            <div class="header-search">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search incidents, assets, changes...">
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span>Live</span>
+            </div>
+            <button class="header-btn" title="Refresh Data">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            <button class="header-btn" title="Notifications" style="position: relative;">
+                <i class="fas fa-bell"></i>
+                <span class="badge">5</span>
+            </button>
+            <button class="header-btn" title="Help">
+                <i class="fas fa-question-circle"></i>
+            </button>
+            <div class="user-menu">
+                <div class="user-avatar">RM</div>
+                <div class="user-info">
+                    <div class="user-name">Rajkumar Madhu</div>
+                    <div class="user-role">Sr. DevOps Engineer</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="dot green"></span>
+                <span>12 Environments Active</span>
+            </div>
+            <div class="status-item">
+                <span class="dot green"></span>
+                <span>Prometheus Connected</span>
+            </div>
+            <div class="status-item">
+                <span class="dot green"></span>
+                <span>Grafana Sync OK</span>
+            </div>
+            <div class="status-item">
+                <span class="dot green"></span>
+                <span>StackStorm Running</span>
+            </div>
+            <div class="status-item">
+                <span class="dot yellow"></span>
+                <span>2 Alerts Active</span>
+            </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+            <div class="metric-card critical">
+                <div class="metric-header">
+                    <span class="metric-title">Critical Incidents</span>
+                    <div class="metric-icon">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                </div>
+                <div class="metric-value">3</div>
+                <div class="metric-trend up">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+2 from yesterday</span>
+                </div>
+            </div>
+
+            <div class="metric-card warning">
+                <div class="metric-header">
+                    <span class="metric-title">Open Incidents</span>
+                    <div class="metric-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+                <div class="metric-value">23</div>
+                <div class="metric-trend down">
+                    <i class="fas fa-arrow-down"></i>
+                    <span>-5 from last week</span>
+                </div>
+            </div>
+
+            <div class="metric-card success">
+                <div class="metric-header">
+                    <span class="metric-title">SLA Compliance</span>
+                    <div class="metric-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                </div>
+                <div class="metric-value">97.8%</div>
+                <div class="metric-trend neutral">
+                    <i class="fas fa-minus"></i>
+                    <span>On target</span>
+                </div>
+            </div>
+
+            <div class="metric-card info">
+                <div class="metric-header">
+                    <span class="metric-title">MTTR</span>
+                    <div class="metric-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+                <div class="metric-value">42m</div>
+                <div class="metric-trend down">
+                    <i class="fas fa-arrow-down"></i>
+                    <span>-8m from avg</span>
+                </div>
+            </div>
+
+            <div class="metric-card purple">
+                <div class="metric-header">
+                    <span class="metric-title">System Uptime</span>
+                    <div class="metric-icon">
+                        <i class="fas fa-server"></i>
+                    </div>
+                </div>
+                <div class="metric-value">99.98%</div>
+                <div class="metric-trend neutral">
+                    <i class="fas fa-check"></i>
+                    <span>30-day average</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid-row two-cols">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">
+                        <i class="fas fa-chart-area"></i>
+                        Incident Trends (Last 7 Days)
+                    </span>
+                    <div class="card-actions">
+                        <button class="active">7D</button>
+                        <button>30D</button>
+                        <button>90D</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="incidentTrendsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Incidents by Category
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Incidents -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <span class="card-title">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Recent Critical & High Incidents
+                </span>
+                <div class="card-actions">
+                    <button onclick="window.location.href='linkedeye-incidents.html'">View All</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Incident</th>
+                            <th>Description</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Assigned To</th>
+                            <th>SLA</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><a href="linkedeye-incident-detail.html" class="incident-id">INC0015847</a></td>
+                            <td>Database Connection Pool Exhaustion - Trading Ops</td>
+                            <td><span class="badge critical"><i class="fas fa-fire"></i> Critical</span></td>
+                            <td><span class="badge info">In Progress</span></td>
+                            <td>Rajkumar Madhu</td>
+                            <td>
+                                <div class="sla-progress" title="25% remaining">
+                                    <div class="sla-progress-bar good" style="width: 75%"></div>
+                                </div>
+                            </td>
+                            <td>12 min ago</td>
+                        </tr>
+                        <tr>
+                            <td><a href="linkedeye-incident-detail.html" class="incident-id">INC0015846</a></td>
+                            <td>API Gateway High Latency - Multiple Services Affected</td>
+                            <td><span class="badge critical"><i class="fas fa-fire"></i> Critical</span></td>
+                            <td><span class="badge warning">Pending</span></td>
+                            <td>Siva Kumar</td>
+                            <td>
+                                <div class="sla-progress" title="45% remaining">
+                                    <div class="sla-progress-bar warning" style="width: 55%"></div>
+                                </div>
+                            </td>
+                            <td>28 min ago</td>
+                        </tr>
+                        <tr>
+                            <td><a href="linkedeye-incident-detail.html" class="incident-id">INC0015844</a></td>
+                            <td>Redis Cluster Memory Pressure - fs-mum-prod</td>
+                            <td><span class="badge high">High</span></td>
+                            <td><span class="badge info">In Progress</span></td>
+                            <td>Hoysala B.</td>
+                            <td>
+                                <div class="sla-progress" title="60% remaining">
+                                    <div class="sla-progress-bar good" style="width: 40%"></div>
+                                </div>
+                            </td>
+                            <td>45 min ago</td>
+                        </tr>
+                        <tr>
+                            <td><a href="linkedeye-incident-detail.html" class="incident-id">INC0015842</a></td>
+                            <td>Kafka Consumer Lag Exceeds Threshold</td>
+                            <td><span class="badge high">High</span></td>
+                            <td><span class="badge success">Resolved</span></td>
+                            <td>Priya Singh</td>
+                            <td>
+                                <div class="sla-progress" title="Completed">
+                                    <div class="sla-progress-bar good" style="width: 100%"></div>
+                                </div>
+                            </td>
+                            <td>1h 15m ago</td>
+                        </tr>
+                        <tr>
+                            <td><a href="linkedeye-incident-detail.html" class="incident-id">INC0015840</a></td>
+                            <td>Certificate Expiry Warning - Trading API</td>
+                            <td><span class="badge medium">Medium</span></td>
+                            <td><span class="badge info">In Progress</span></td>
+                            <td>Amit Sharma</td>
+                            <td>
+                                <div class="sla-progress" title="80% remaining">
+                                    <div class="sla-progress-bar good" style="width: 20%"></div>
+                                </div>
+                            </td>
+                            <td>2h ago</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="grid-row three-cols">
+            <!-- Environment Status -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">
+                        <i class="fas fa-globe"></i>
+                        Environment Status
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="env-list">
+                        <div class="env-item">
+                            <div class="env-item-left">
+                                <div class="env-status-dot healthy"></div>
+                                <div>
+                                    <div class="env-name">fs-mum-indmoney-prod</div>
+                                    <div class="env-type">Production</div>
+                                </div>
+                            </div>
+                            <div class="env-metrics">
+                                <span>99.99%</span>
+                                <span>48 services</span>
+                            </div>
+                        </div>
+                        <div class="env-item">
+                            <div class="env-item-left">
+                                <div class="env-status-dot degraded"></div>
+                                <div>
+                                    <div class="env-name">fs-blr-indmoney-dr</div>
+                                    <div class="env-type">Disaster Recovery</div>
+                                </div>
+                            </div>
+                            <div class="env-metrics">
+                                <span>99.85%</span>
+                                <span>45 services</span>
+                            </div>
+                        </div>
+                        <div class="env-item">
+                            <div class="env-item-left">
+                                <div class="env-status-dot healthy"></div>
+                                <div>
+                                    <div class="env-name">neo-prod-le</div>
+                                    <div class="env-type">Production</div>
+                                </div>
+                            </div>
+                            <div class="env-metrics">
+                                <span>99.97%</span>
+                                <span>32 services</span>
+                            </div>
+                        </div>
+                        <div class="env-item">
+                            <div class="env-item-left">
+                                <div class="env-status-dot healthy"></div>
+                                <div>
+                                    <div class="env-name">lemonn-mum-le</div>
+                                    <div class="env-type">Production</div>
+                                </div>
+                            </div>
+                            <div class="env-metrics">
+                                <span>100%</span>
+                                <span>28 services</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- On-Call Schedule -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">
+                        <i class="fas fa-phone-alt"></i>
+                        On-Call Schedule
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="oncall-list">
+                        <div class="oncall-item current">
+                            <div class="oncall-avatar">RM</div>
+                            <div class="oncall-info">
+                                <div class="oncall-name">Rajkumar Madhu</div>
+                                <div class="oncall-team">Infrastructure Ops</div>
+                            </div>
+                            <div class="oncall-time">
+                                <div class="shift">09:00 - 21:00</div>
+                                <div class="label">Current On-Call</div>
+                            </div>
+                        </div>
+                        <div class="oncall-item">
+                            <div class="oncall-avatar">SK</div>
+                            <div class="oncall-info">
+                                <div class="oncall-name">Siva Kumar</div>
+                                <div class="oncall-team">Network Ops</div>
+                            </div>
+                            <div class="oncall-time">
+                                <div class="shift">21:00 - 09:00</div>
+                                <div class="label">Night Shift</div>
+                            </div>
+                        </div>
+                        <div class="oncall-item">
+                            <div class="oncall-avatar">HB</div>
+                            <div class="oncall-info">
+                                <div class="oncall-name">Hoysala B.</div>
+                                <div class="oncall-team">DBA Team</div>
+                            </div>
+                            <div class="oncall-time">
+                                <div class="shift">09:00 - 21:00</div>
+                                <div class="label">Database</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Changes -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">
+                        <i class="fas fa-calendar-alt"></i>
+                        Upcoming Changes
+                    </span>
+                    <div class="card-actions">
+                        <button onclick="window.location.href='linkedeye-change-calendar.html'">Calendar</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="change-list">
+                        <div class="change-item" onclick="window.location.href='linkedeye-change-detail.html'">
+                            <div class="change-icon approved">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="change-info">
+                                <div class="change-id">CHG0012456</div>
+                                <div class="change-desc">PgBouncer Config Update</div>
+                            </div>
+                            <div class="change-time">Today, 18:00</div>
+                        </div>
+                        <div class="change-item" onclick="window.location.href='linkedeye-change-detail.html'">
+                            <div class="change-icon scheduled">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="change-info">
+                                <div class="change-id">CHG0012457</div>
+                                <div class="change-desc">Kubernetes Node Upgrade</div>
+                            </div>
+                            <div class="change-time">Tomorrow, 02:00</div>
+                        </div>
+                        <div class="change-item" onclick="window.location.href='linkedeye-change-detail.html'">
+                            <div class="change-icon pending">
+                                <i class="fas fa-hourglass-half"></i>
+                            </div>
+                            <div class="change-info">
+                                <div class="change-id">CHG0012458</div>
+                                <div class="change-desc">Redis Cluster Expansion</div>
+                            </div>
+                            <div class="change-time">Dec 28, 03:00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Insights -->
+        <div class="ai-insights">
+            <div class="ai-header">
+                <div class="ai-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <div class="ai-title">AI-Powered Insights</div>
+                    <div class="ai-subtitle">Based on pattern analysis and historical data</div>
+                </div>
+            </div>
+            <div class="insight-list">
+                <div class="insight-item">
+                    <i class="fas fa-exclamation-triangle warning"></i>
+                    <div class="insight-text">
+                        <strong>Pattern Detected:</strong> Database connection pool issues recurring every Tuesday at peak trading hours. Consider increasing pool size from 256 to 384 connections.
+                    </div>
+                </div>
+                <div class="insight-item">
+                    <i class="fas fa-lightbulb info"></i>
+                    <div class="insight-text">
+                        <strong>Recommendation:</strong> 3 similar incidents (INC0015842, INC0015810, INC0015765) resolved by restarting PgBouncer. Consider creating automated runbook.
+                    </div>
+                </div>
+                <div class="insight-item">
+                    <i class="fas fa-chart-line success"></i>
+                    <div class="insight-text">
+                        <strong>Positive Trend:</strong> MTTR improved 15% this week. Auto-remediation scripts handled 8 incidents without human intervention.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize Charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Incident Trends Chart
+            const trendsCtx = document.getElementById('incidentTrendsChart').getContext('2d');
+            const trendsGradient = trendsCtx.createLinearGradient(0, 0, 0, 280);
+            trendsGradient.addColorStop(0, 'rgba(37, 99, 235, 0.3)');
+            trendsGradient.addColorStop(1, 'rgba(37, 99, 235, 0)');
+
+            new Chart(trendsCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Dec 20', 'Dec 21', 'Dec 22', 'Dec 23', 'Dec 24', 'Dec 25', 'Dec 26'],
+                    datasets: [
+                        {
+                            label: 'Total Incidents',
+                            data: [28, 35, 22, 18, 25, 20, 23],
+                            borderColor: '#2563eb',
+                            backgroundColor: trendsGradient,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#2563eb'
+                        },
+                        {
+                            label: 'Resolved',
+                            data: [25, 30, 20, 16, 22, 18, 18],
+                            borderColor: '#10b981',
+                            backgroundColor: 'transparent',
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#10b981',
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: 'Critical',
+                            data: [2, 4, 1, 2, 3, 1, 3],
+                            borderColor: '#ef4444',
+                            backgroundColor: 'transparent',
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#ef4444'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#e5e7eb'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+
+            // Category Chart
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Database', 'Network', 'Application', 'Infrastructure', 'Security', 'Other'],
+                    datasets: [{
+                        data: [35, 25, 18, 12, 6, 4],
+                        backgroundColor: [
+                            '#8b5cf6',
+                            '#3b82f6',
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444',
+                            '#6b7280'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map(function(label, i) {
+                                            const value = data.datasets[0].data[i];
+                                            return {
+                                                text: `${label}: ${value}%`,
+                                                fillStyle: data.datasets[0].backgroundColor[i],
+                                                hidden: false,
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        // Simulate live updates
+        setInterval(() => {
+            const liveDot = document.querySelector('.live-dot');
+            liveDot.style.opacity = liveDot.style.opacity === '0.5' ? '1' : '0.5';
+        }, 1000);
+
+        // Load user data from session
+        document.addEventListener('DOMContentLoaded', function() {
+            const userData = JSON.parse(localStorage.getItem('linkedeye_user') || sessionStorage.getItem('linkedeye_user') || '{}');
+            if (userData.name) {
+                document.querySelector('.user-name').textContent = userData.name;
+                document.querySelector('.user-role').textContent = userData.role || 'User';
+                document.querySelector('.user-avatar').textContent = userData.avatar || 'U';
+            }
+        });
+
+        // Refresh button
+        document.querySelector('.header-btn[title="Refresh Data"]').addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            icon.classList.add('fa-spin');
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+            }, 1000);
+        });
+
+        // Logout functionality
+        function logout() {
+            localStorage.removeItem('linkedeye_user');
+            localStorage.removeItem('linkedeye_token');
+            sessionStorage.removeItem('linkedeye_user');
+            sessionStorage.removeItem('linkedeye_token');
+            window.location.href = 'linkedeye-login.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prometheus Integration | LinkedEye-FinSpot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Integration Header */
+        .integration-header { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .integration-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+        .integration-info { display: flex; gap: 20px; }
+        .integration-logo { width: 72px; height: 72px; background: #e6522c; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; }
+        .integration-details h1 { font-size: 24px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+        .integration-details .category { color: var(--gray-500); font-size: 14px; margin-bottom: 12px; }
+        .integration-badges { display: flex; gap: 8px; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        .integration-status { text-align: right; }
+        .status-indicator { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 8px; }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .last-sync { color: var(--gray-500); font-size: 13px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; padding-top: 24px; border-top: 1px solid var(--gray-200); }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 24px; font-weight: 700; color: var(--gray-900); }
+        .stat-value.success { color: var(--success); }
+        .stat-label { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+
+        /* Tabs */
+        .tabs { display: flex; border-bottom: 1px solid var(--gray-200); background: var(--gray-50); border-radius: 12px 12px 0 0; overflow: hidden; }
+        .tab { padding: 14px 20px; font-size: 14px; color: var(--gray-600); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .tab:hover { color: var(--gray-900); }
+        .tab.active { color: var(--primary-blue); border-bottom-color: var(--primary-blue); background: white; }
+
+        /* Content Grid */
+        .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+        .full-width { grid-column: 1 / -1; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+        .card-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-size: 16px; font-weight: 600; color: var(--gray-900); display: flex; align-items: center; gap: 8px; }
+        .card-body { padding: 20px; }
+
+        /* Form Elements */
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 14px; font-weight: 500; color: var(--gray-700); margin-bottom: 8px; }
+        .form-input { width: 100%; padding: 10px 14px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 14px; }
+        .form-input:focus { outline: none; border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .form-hint { font-size: 12px; color: var(--gray-500); margin-top: 6px; }
+        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+
+        /* Toggle */
+        .toggle-group { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--gray-50); border-radius: 8px; margin-bottom: 12px; }
+        .toggle-info { flex: 1; }
+        .toggle-label { font-size: 14px; font-weight: 500; color: var(--gray-900); }
+        .toggle-description { font-size: 12px; color: var(--gray-500); }
+        .toggle-switch { position: relative; width: 44px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--gray-300); transition: 0.3s; border-radius: 24px; }
+        .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: 0.3s; border-radius: 50%; }
+        .toggle-switch input:checked + .toggle-slider { background-color: var(--primary-blue); }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+        /* Connection Status */
+        .connection-status { padding: 16px; background: #d1fae5; border-radius: 8px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .connection-status i { font-size: 20px; color: var(--success); }
+        .connection-info { flex: 1; }
+        .connection-title { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+        .connection-detail { font-size: 12px; color: var(--gray-600); }
+
+        /* Webhook URL */
+        .webhook-url { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--gray-50); border-radius: 8px; font-family: monospace; font-size: 13px; }
+        .webhook-url .url { flex: 1; color: var(--gray-700); word-break: break-all; }
+        .copy-btn { padding: 6px 12px; border: 1px solid var(--gray-300); border-radius: 4px; background: white; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .copy-btn:hover { background: var(--gray-100); }
+
+        /* Alert Rules Table */
+        .rules-table { width: 100%; border-collapse: collapse; }
+        .rules-table th, .rules-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--gray-100); font-size: 13px; }
+        .rules-table th { background: var(--gray-50); font-weight: 600; color: var(--gray-600); font-size: 11px; text-transform: uppercase; }
+        .rules-table tr:hover { background: var(--gray-50); }
+        .rule-name { font-weight: 600; color: var(--gray-900); }
+        .rule-severity { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+        .rule-severity.critical { background: #fee2e2; color: #991b1b; }
+        .rule-severity.warning { background: #fef3c7; color: #92400e; }
+
+        /* Mapping */
+        .mapping-row { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--gray-50); border-radius: 8px; margin-bottom: 8px; }
+        .mapping-source { flex: 1; padding: 8px 12px; background: white; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px; font-family: monospace; }
+        .mapping-arrow { color: var(--gray-400); }
+        .mapping-target { flex: 1; }
+        .mapping-target select { width: 100%; padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px; }
+
+        /* Alert Items */
+        .alert-item { display: flex; gap: 12px; padding: 12px; border-radius: 8px; margin-bottom: 8px; }
+        .alert-item.critical { background: #fef2f2; border-left: 3px solid var(--danger); }
+        .alert-item.warning { background: #fffbeb; border-left: 3px solid var(--warning); }
+        .alert-item.resolved { background: var(--gray-50); border-left: 3px solid var(--gray-300); }
+        .alert-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; }
+        .alert-item.critical .alert-icon { background: var(--danger); }
+        .alert-item.warning .alert-icon { background: var(--warning); }
+        .alert-item.resolved .alert-icon { background: var(--gray-400); }
+        .alert-content { flex: 1; }
+        .alert-title { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+        .alert-meta { font-size: 11px; color: var(--gray-500); }
+
+        .chart-container { position: relative; height: 250px; }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+
+    <main class="main-content">
+        <div class="page-header" style="display: flex; justify-content: flex-end; margin-bottom: 24px;">
+            <div class="header-actions">
+                <button class="btn btn-secondary"><i class="fas fa-sync-alt"></i> Test Connection</button>
+                <button class="btn btn-danger"><i class="fas fa-unlink"></i> Disconnect</button>
+                <button class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="integration-header">
+                <div class="integration-header-top">
+                    <div class="integration-info">
+                        <div class="integration-logo"><i class="fas fa-fire"></i></div>
+                        <div class="integration-details">
+                            <h1>Prometheus</h1>
+                            <div class="category">Monitoring & Alerting</div>
+                            <div class="integration-badges">
+                                <span class="badge badge-success">Connected</span>
+                                <span class="badge badge-info">v2.45.0</span>
+                                <span class="badge badge-info">Production</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="integration-status">
+                        <div class="status-indicator">
+                            <span class="status-dot"></span>
+                            <span style="color: var(--success); font-weight: 600;">Healthy</span>
+                        </div>
+                        <div class="last-sync"><i class="fas fa-sync"></i> Last sync: 12 seconds ago</div>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item"><div class="stat-value">1.2M</div><div class="stat-label">Metrics/min</div></div>
+                    <div class="stat-item"><div class="stat-value">847</div><div class="stat-label">Active Rules</div></div>
+                    <div class="stat-item"><div class="stat-value success">23</div><div class="stat-label">Alerts Today</div></div>
+                    <div class="stat-item"><div class="stat-value">142</div><div class="stat-label">Incidents Created</div></div>
+                    <div class="stat-item"><div class="stat-value success">99.8%</div><div class="stat-label">Uptime</div></div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="tabs">
+                    <div class="tab active">Configuration</div>
+                    <div class="tab">Alert Rules</div>
+                    <div class="tab">Field Mapping</div>
+                    <div class="tab">Recent Alerts</div>
+                    <div class="tab">Logs</div>
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title"><i class="fas fa-cog"></i> Connection Settings</h3></div>
+                    <div class="card-body">
+                        <div class="connection-status">
+                            <i class="fas fa-check-circle"></i>
+                            <div class="connection-info">
+                                <div class="connection-title">Connection Successful</div>
+                                <div class="connection-detail">Last verified: Dec 27, 2025 at 10:32 AM</div>
+                            </div>
+                            <button class="btn btn-secondary" style="font-size: 13px;"><i class="fas fa-sync-alt"></i> Re-test</button>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Prometheus URL</label>
+                            <input type="text" class="form-input" value="https://prometheus.finspot.internal:9090">
+                            <div class="form-hint">The base URL of your Prometheus server</div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Authentication Type</label>
+                                <select class="form-input"><option>Basic Auth</option><option selected>Bearer Token</option><option>mTLS Certificate</option><option>None</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Scrape Interval</label>
+                                <select class="form-input"><option>15 seconds</option><option selected>30 seconds</option><option>1 minute</option><option>5 minutes</option></select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">API Token</label>
+                            <input type="password" class="form-input" value="••••••••••••••••••••••••">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Webhook Endpoint (for Alertmanager)</label>
+                            <div class="webhook-url">
+                                <span class="url">https://api.linkedeye.finspot.in/v1/webhooks/prometheus/a7f3e9c2</span>
+                                <button class="copy-btn"><i class="fas fa-copy"></i> Copy</button>
+                            </div>
+                            <div class="form-hint">Configure this URL in your Alertmanager to receive alerts</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title"><i class="fas fa-sliders-h"></i> Behavior Settings</h3></div>
+                    <div class="card-body">
+                        <div class="toggle-group"><div class="toggle-info"><div class="toggle-label">Auto-create Incidents</div><div class="toggle-description">Create incidents from firing alerts</div></div><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+                        <div class="toggle-group"><div class="toggle-info"><div class="toggle-label">Auto-resolve Incidents</div><div class="toggle-description">Close incidents when alerts resolve</div></div><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+                        <div class="toggle-group"><div class="toggle-info"><div class="toggle-label">Deduplicate Alerts</div><div class="toggle-description">Group related alerts into single incident</div></div><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+                        <div class="toggle-group"><div class="toggle-info"><div class="toggle-label">Trigger Auto-Remediation</div><div class="toggle-description">Run StackStorm workflows for known issues</div></div><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+                        <div class="toggle-group"><div class="toggle-info"><div class="toggle-label">Sync Labels as Tags</div><div class="toggle-description">Import Prometheus labels as incident tags</div></div><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+                    </div>
+                </div>
+
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-chart-area"></i> Alert Volume (Last 7 Days)</h3>
+                        <select style="padding: 6px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px;">
+                            <option>Last 7 Days</option><option>Last 30 Days</option><option>Last 90 Days</option>
+                        </select>
+                    </div>
+                    <div class="card-body"><div class="chart-container"><canvas id="alertChart"></canvas></div></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title"><i class="fas fa-exchange-alt"></i> Severity Mapping</h3></div>
+                    <div class="card-body">
+                        <div class="mapping-row"><div class="mapping-source">severity="critical"</div><i class="fas fa-arrow-right mapping-arrow"></i><div class="mapping-target"><select><option selected>Priority 1 (Critical)</option><option>Priority 2 (High)</option><option>Priority 3 (Medium)</option><option>Priority 4 (Low)</option></select></div></div>
+                        <div class="mapping-row"><div class="mapping-source">severity="warning"</div><i class="fas fa-arrow-right mapping-arrow"></i><div class="mapping-target"><select><option>Priority 1 (Critical)</option><option selected>Priority 2 (High)</option><option>Priority 3 (Medium)</option><option>Priority 4 (Low)</option></select></div></div>
+                        <div class="mapping-row"><div class="mapping-source">severity="info"</div><i class="fas fa-arrow-right mapping-arrow"></i><div class="mapping-target"><select><option>Priority 1 (Critical)</option><option>Priority 2 (High)</option><option selected>Priority 3 (Medium)</option><option>Priority 4 (Low)</option></select></div></div>
+                        <button class="btn btn-secondary" style="margin-top: 12px; font-size: 13px;"><i class="fas fa-plus"></i> Add Mapping</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title"><i class="fas fa-bell"></i> Recent Alerts</h3><a href="incidents.html" style="font-size: 13px; color: var(--primary-blue); text-decoration: none;">View All</a></div>
+                    <div class="card-body">
+                        <div class="alert-item critical"><div class="alert-icon"><i class="fas fa-bolt"></i></div><div class="alert-content"><div class="alert-title">HighMemoryUsage</div><div class="alert-meta">payment-gateway-prod • 2 min ago • Created INC0012847</div></div></div>
+                        <div class="alert-item warning"><div class="alert-icon"><i class="fas fa-exclamation"></i></div><div class="alert-content"><div class="alert-title">PodRestartLooping</div><div class="alert-meta">auth-service-prod • 15 min ago • Created INC0012845</div></div></div>
+                        <div class="alert-item resolved"><div class="alert-icon"><i class="fas fa-check"></i></div><div class="alert-content"><div class="alert-title">HighLatency</div><div class="alert-meta">api-gateway • 1 hour ago • Auto-resolved</div></div></div>
+                        <div class="alert-item resolved"><div class="alert-icon"><i class="fas fa-check"></i></div><div class="alert-content"><div class="alert-title">DiskSpaceWarning</div><div class="alert-meta">db-primary-01 • 2 hours ago • Auto-remediated</div></div></div>
+                    </div>
+                </div>
+
+                <div class="card full-width">
+                    <div class="card-header"><h3 class="card-title"><i class="fas fa-list-alt"></i> Configured Alert Rules</h3><button class="btn btn-secondary" style="font-size: 13px;"><i class="fas fa-sync-alt"></i> Sync from Prometheus</button></div>
+                    <table class="rules-table">
+                        <thead><tr><th>Alert Name</th><th>Expression</th><th>Severity</th><th>For</th><th>Auto-Remediate</th><th>Status</th></tr></thead>
+                        <tbody>
+                            <tr><td><span class="rule-name">HighMemoryUsage</span></td><td><code style="font-size: 12px;">container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.9</code></td><td><span class="rule-severity critical">Critical</span></td><td>5m</td><td><i class="fas fa-check" style="color: var(--success);"></i></td><td><span style="color: var(--success);"><i class="fas fa-circle" style="font-size: 8px;"></i> Active</span></td></tr>
+                            <tr><td><span class="rule-name">HighCPUUsage</span></td><td><code style="font-size: 12px;">rate(container_cpu_usage_seconds_total[5m]) > 0.8</code></td><td><span class="rule-severity warning">Warning</span></td><td>10m</td><td><i class="fas fa-check" style="color: var(--success);"></i></td><td><span style="color: var(--success);"><i class="fas fa-circle" style="font-size: 8px;"></i> Active</span></td></tr>
+                            <tr><td><span class="rule-name">PodRestartLooping</span></td><td><code style="font-size: 12px;">increase(kube_pod_container_status_restarts_total[1h]) > 5</code></td><td><span class="rule-severity warning">Warning</span></td><td>15m</td><td><i class="fas fa-check" style="color: var(--success);"></i></td><td><span style="color: var(--success);"><i class="fas fa-circle" style="font-size: 8px;"></i> Active</span></td></tr>
+                            <tr><td><span class="rule-name">ServiceDown</span></td><td><code style="font-size: 12px;">up == 0</code></td><td><span class="rule-severity critical">Critical</span></td><td>1m</td><td><i class="fas fa-times" style="color: var(--gray-400);"></i></td><td><span style="color: var(--success);"><i class="fas fa-circle" style="font-size: 8px;"></i> Active</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            await Layout.init();
+            initChart();
+            setupTabs();
+        });
+
+        function initChart() {
+            const ctx = document.getElementById('alertChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Dec 21', 'Dec 22', 'Dec 23', 'Dec 24', 'Dec 25', 'Dec 26', 'Dec 27'],
+                    datasets: [
+                        { label: 'Critical', data: [5, 3, 8, 4, 6, 7, 5], backgroundColor: '#ef4444', borderRadius: 4 },
+                        { label: 'Warning', data: [12, 15, 18, 14, 16, 19, 13], backgroundColor: '#f59e0b', borderRadius: 4 },
+                        { label: 'Info', data: [8, 6, 10, 7, 9, 5, 5], backgroundColor: '#3b82f6', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', align: 'end' } },
+                    scales: { y: { beginAtZero: true, stacked: true, grid: { color: '#f3f4f6' } }, x: { stacked: true, grid: { display: false } } }
+                }
+            });
+        }
+
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Incident Details - LinkedEye-FinSpot">
+    <title>Incident Details | LinkedEye-FinSpot</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Page-specific styles */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+        }
+
+        /* Incident Header Card */
+        .incident-header-card {
+            border: none;
+            color: #fff;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        .incident-header-card.critical { background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); }
+        .incident-header-card.high { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
+        .incident-header-card.medium { background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); }
+        .incident-header-card.low { background: linear-gradient(135deg, var(--info) 0%, #1d4ed8 100%); }
+        .incident-header-card .card-body { padding: 24px; }
+
+        .incident-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .incident-id-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .priority-badge-header {
+            background: rgba(255,255,255,0.9);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .priority-badge-header.critical { color: var(--danger); }
+        .priority-badge-header.high { color: #f97316; }
+        .priority-badge-header.medium { color: var(--warning); }
+        .priority-badge-header.low { color: var(--info); }
+        .status-badge-header {
+            background: rgba(59, 130, 246, 0.9);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .status-badge-header.resolved { background: rgba(16, 185, 129, 0.9); }
+        .status-badge-header.closed { background: rgba(107, 114, 128, 0.9); }
+        .incident-title-main {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .incident-env {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        .incident-env i { font-size: 14px; }
+
+        .sla-timer {
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .sla-info-header h4 {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 4px;
+        }
+        .sla-info-header .time {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .sla-progress-bar {
+            width: 200px;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .sla-progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s;
+        }
+        .sla-progress-fill.ok { background: var(--success); }
+        .sla-progress-fill.warning { background: var(--warning); }
+        .sla-progress-fill.danger { background: var(--danger); }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            padding: 16px 20px;
+            background: #f9fafb;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .tab {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            border: none;
+            background: none;
+        }
+        .tab:hover { background: #fff; color: var(--text-primary); }
+        .tab.active { background: var(--primary-blue); color: #fff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Description */
+        .description-text {
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-primary);
+        }
+        .description-text p { margin-bottom: 12px; }
+
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        .info-item {
+            padding: 14px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+        .info-item label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .info-item .value {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-item .value .avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-blue), var(--purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 28px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 9px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+        }
+        .timeline-item {
+            position: relative;
+            padding-bottom: 24px;
+        }
+        .timeline-item:last-child { padding-bottom: 0; }
+        .timeline-dot {
+            position: absolute;
+            left: -28px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .timeline-dot i { font-size: 10px; color: var(--text-secondary); }
+        .timeline-dot.success { border-color: var(--success); background: rgba(16, 185, 129, 0.1); }
+        .timeline-dot.success i { color: var(--success); }
+        .timeline-dot.warning { border-color: var(--warning); background: rgba(245, 158, 11, 0.1); }
+        .timeline-dot.warning i { color: var(--warning); }
+        .timeline-dot.info { border-color: var(--info); background: rgba(59, 130, 246, 0.1); }
+        .timeline-dot.info i { color: var(--info); }
+        .timeline-dot.purple { border-color: var(--purple); background: rgba(139, 92, 246, 0.1); }
+        .timeline-dot.purple i { color: var(--purple); }
+        .timeline-dot.danger { border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .timeline-dot.danger i { color: var(--danger); }
+        .timeline-content {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 14px 16px;
+        }
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+        }
+        .timeline-title { font-weight: 600; font-size: 13px; }
+        .timeline-time { font-size: 11px; color: var(--text-secondary); }
+        .timeline-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        .timeline-user {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        .timeline-user .avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-blue), var(--purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 8px;
+            font-weight: 600;
+        }
+
+        /* Grafana Placeholder */
+        .grafana-placeholder {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 8px;
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        .grafana-placeholder i { font-size: 48px; color: #f97316; margin-bottom: 16px; }
+        .grafana-placeholder h4 { font-size: 14px; margin-bottom: 8px; }
+        .grafana-placeholder p { font-size: 12px; opacity: 0.7; }
+
+        /* Loki Logs */
+        .logs-container {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        .log-line {
+            display: flex;
+            gap: 12px;
+            padding: 4px 0;
+            font-size: 11px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .log-time { color: #6b7280; white-space: nowrap; }
+        .log-level { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        .log-level.error { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .log-level.warn { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .log-level.info { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+        .log-message { color: #e5e7eb; flex: 1; word-break: break-all; }
+
+        /* AI Panel */
+        .ai-panel {
+            background: linear-gradient(135deg, #0f1c3f 0%, #1e3a5f 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: #fff;
+            margin-bottom: 24px;
+        }
+        .ai-panel-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .ai-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--purple), var(--pink));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .ai-panel-header h3 { font-size: 14px; font-weight: 600; }
+        .ai-panel-header p { font-size: 11px; opacity: 0.7; }
+        .ai-suggestion {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .ai-suggestion:last-child { margin-bottom: 0; }
+        .ai-suggestion-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .ai-suggestion-header i { font-size: 14px; }
+        .ai-suggestion-header i.runbook { color: var(--success); }
+        .ai-suggestion-header i.similar { color: var(--info); }
+        .ai-suggestion-header i.assign { color: var(--warning); }
+        .ai-suggestion-header span { font-size: 12px; font-weight: 600; }
+        .ai-suggestion-text { font-size: 12px; opacity: 0.9; line-height: 1.5; }
+        .ai-action-btn {
+            margin-top: 10px;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 11px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .ai-action-btn:hover { background: rgba(255,255,255,0.25); }
+
+        /* Related Items */
+        .related-list { display: flex; flex-direction: column; gap: 12px; }
+        .related-item {
+            padding: 14px;
+            background: #f9fafb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .related-item:hover { background: #f3f4f6; }
+        .related-id { color: var(--primary-blue); font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+        .related-title { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+        .related-meta { display: flex; gap: 8px; }
+        .related-badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 500; }
+        .related-badge.resolved { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .related-badge.similarity { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+        .related-badge.degraded { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .related-badge.critical-ci { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+
+        /* Worknotes */
+        .worknote-form { margin-bottom: 20px; }
+        .worknote-form textarea {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+        .worknote-form textarea:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+        .worknote-form-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .worknote-list { display: flex; flex-direction: column; gap: 16px; }
+        .worknote-item {
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary-blue);
+        }
+        .worknote-item.public { border-left-color: var(--success); }
+        .worknote-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .worknote-author { display: flex; align-items: center; gap: 8px; }
+        .worknote-author .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-blue), var(--purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .worknote-author .name { font-weight: 600; font-size: 13px; }
+        .worknote-time { font-size: 11px; color: var(--text-secondary); }
+        .worknote-text { font-size: 13px; line-height: 1.6; color: var(--text-primary); }
+
+        /* Header Buttons */
+        .header-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .header-btn:hover {
+            background: #f9fafb;
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+        .header-btn.primary {
+            background: linear-gradient(135deg, var(--primary-blue), #1d4ed8);
+            color: #fff;
+            border: none;
+        }
+        .header-btn.primary:hover { box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .header-btn.danger { background: var(--danger); color: #fff; border: none; }
+
+        .back-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+        .back-btn:hover {
+            background: #f9fafb;
+            color: var(--primary-blue);
+            border-color: var(--primary-blue);
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .header-badge.critical { background: var(--danger); color: #fff; }
+        .header-badge.high { background: #f97316; color: #fff; }
+        .header-badge.medium { background: var(--warning); color: #1e3a5f; }
+        .header-badge.low { background: var(--info); color: #fff; }
+        .header-badge.in-progress { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .header-badge.resolved { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .header-badge.open { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+
+        /* Edit Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 300;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #fff;
+            border-radius: 12px;
+            width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 { font-size: 16px; font-weight: 600; }
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
+        .modal-body { padding: 20px; }
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) { .detail-grid { grid-template-columns: 1fr 340px; } }
+        @media (max-width: 1200px) { .detail-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left" style="display: flex; align-items: center; gap: 16px;">
+            <button class="back-btn" onclick="window.location='incidents.html'">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-title" style="display: flex; align-items: center; gap: 12px;">
+                <h1 id="headerIncidentNumber">Loading...</h1>
+                <span class="header-badge critical" id="headerPriority"></span>
+                <span class="header-badge in-progress" id="headerStatus"></span>
+            </div>
+        </div>
+        <div class="header-right" style="display: flex; align-items: center; gap: 8px;">
+            <button class="header-btn" onclick="copyLink()">
+                <i class="fas fa-link"></i> Copy Link
+            </button>
+            <button class="header-btn" onclick="shareIncident()">
+                <i class="fas fa-share"></i> Share
+            </button>
+            <button class="header-btn" onclick="openEditModal()">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="header-btn primary" onclick="openResolveModal()" id="resolveBtn">
+                <i class="fas fa-check"></i> Resolve
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Loading incident...</span>
+            </div>
+        </div>
+
+        <div class="detail-grid">
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- Incident Header Card -->
+                <div class="card incident-header-card critical" id="incidentHeaderCard">
+                    <div class="card-body">
+                        <div class="incident-meta">
+                            <span class="incident-id-badge" id="incidentNumber"></span>
+                            <span class="priority-badge-header critical" id="incidentPriority">
+                                <i class="fas fa-fire"></i> <span></span>
+                            </span>
+                            <span class="status-badge-header" id="incidentStatus"></span>
+                        </div>
+                        <h1 class="incident-title-main" id="incidentTitle"></h1>
+                        <div class="incident-env">
+                            <i class="fas fa-server"></i>
+                            <span id="incidentEnvironment"></span>
+                            <span>|</span>
+                            <i class="fas fa-tag"></i>
+                            <span id="incidentCategory"></span>
+                        </div>
+                        <div class="sla-timer" id="slaTimer">
+                            <div class="sla-info-header">
+                                <h4>SLA Resolution Time</h4>
+                                <div class="time" id="slaTime">--:--:--</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; margin-bottom: 8px; opacity: 0.8;" id="slaPercentText">Calculating...</div>
+                                <div class="sla-progress-bar">
+                                    <div class="sla-progress-fill ok" id="slaProgressFill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs Card -->
+                <div class="card">
+                    <div class="tabs">
+                        <button class="tab active" onclick="showTab('details')">Details</button>
+                        <button class="tab" onclick="showTab('timeline')">Timeline</button>
+                        <button class="tab" onclick="showTab('metrics')">Metrics</button>
+                        <button class="tab" onclick="showTab('logs')">Logs</button>
+                        <button class="tab" onclick="showTab('worknotes')">Work Notes</button>
+                    </div>
+
+                    <!-- Details Tab -->
+                    <div id="details" class="tab-content active">
+                        <div class="card-body">
+                            <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 16px;">Description</h4>
+                            <div class="description-text" id="incidentDescription">
+                                <p>Loading description...</p>
+                            </div>
+
+                            <h4 style="font-size: 14px; font-weight: 600; margin: 24px 0 16px;">Incident Details</h4>
+                            <div class="info-grid" id="incidentDetails">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Tab -->
+                    <div id="timeline" class="tab-content">
+                        <div class="card-body">
+                            <div class="timeline" id="incidentTimeline">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Tab -->
+                    <div id="metrics" class="tab-content">
+                        <div class="card-body">
+                            <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 16px;">
+                                <i class="fas fa-chart-area" style="color: #f97316; margin-right: 8px;"></i>
+                                Performance Metrics
+                            </h4>
+                            <div class="grafana-placeholder">
+                                <i class="fas fa-chart-line"></i>
+                                <h4>Metrics Dashboard</h4>
+                                <p>Real-time metrics for affected systems</p>
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 16px;">Related Metrics</h4>
+                                <div class="info-grid" id="metricsGrid">
+                                    <div class="info-item">
+                                        <label>Response Time</label>
+                                        <div class="value">N/A</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Error Rate</label>
+                                        <div class="value">N/A</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Throughput</label>
+                                        <div class="value">N/A</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>CPU Usage</label>
+                                        <div class="value">N/A</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logs Tab -->
+                    <div id="logs" class="tab-content">
+                        <div class="card-body">
+                            <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 16px;">
+                                <i class="fas fa-stream" style="color: var(--success); margin-right: 8px;"></i>
+                                Application Logs
+                            </h4>
+                            <div class="logs-container" id="logsContainer">
+                                <div class="log-line">
+                                    <span class="log-time">--:--:--.---</span>
+                                    <span class="log-level info">INFO</span>
+                                    <span class="log-message">Waiting for log data...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Work Notes Tab -->
+                    <div id="worknotes" class="tab-content">
+                        <div class="card-body">
+                            <div class="worknote-form">
+                                <textarea id="worknoteInput" placeholder="Add a work note... Describe investigation progress, findings, or next steps."></textarea>
+                                <div class="worknote-form-actions">
+                                    <button class="header-btn primary" onclick="addWorknote()">
+                                        <i class="fas fa-paper-plane"></i> Add Note
+                                    </button>
+                                    <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
+                                        <input type="checkbox" id="worknotePublic" checked>
+                                        Public note
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="worknote-list" id="worknotesList">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="right-column">
+                <!-- AI Suggestions -->
+                <div class="ai-panel">
+                    <div class="ai-panel-header">
+                        <div class="ai-icon"><i class="fas fa-robot"></i></div>
+                        <div>
+                            <h3>AI Recommendations</h3>
+                            <p>Based on incident patterns and history</p>
+                        </div>
+                    </div>
+                    <div class="ai-suggestion" id="aiSuggestionRunbook">
+                        <div class="ai-suggestion-header">
+                            <i class="fas fa-book runbook"></i>
+                            <span>Suggested Runbook</span>
+                        </div>
+                        <div class="ai-suggestion-text">Analyzing incident data...</div>
+                        <button class="ai-action-btn" onclick="executeRunbook()">
+                            <i class="fas fa-play"></i> Execute Runbook
+                        </button>
+                    </div>
+                    <div class="ai-suggestion" id="aiSuggestionSimilar">
+                        <div class="ai-suggestion-header">
+                            <i class="fas fa-clone similar"></i>
+                            <span>Similar Incidents</span>
+                        </div>
+                        <div class="ai-suggestion-text">Searching for similar incidents...</div>
+                        <button class="ai-action-btn" onclick="viewSimilarIncidents()">
+                            <i class="fas fa-eye"></i> View Similar
+                        </button>
+                    </div>
+                    <div class="ai-suggestion" id="aiSuggestionEscalation">
+                        <div class="ai-suggestion-header">
+                            <i class="fas fa-user-check assign"></i>
+                            <span>Escalation Suggestion</span>
+                        </div>
+                        <div class="ai-suggestion-text">Calculating escalation path...</div>
+                        <button class="ai-action-btn" onclick="escalateIncident()">
+                            <i class="fas fa-level-up-alt"></i> Escalate Now
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Related Incidents -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fas fa-link"></i> Related Incidents</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="related-list" id="relatedIncidentsList">
+                            <p style="color: var(--text-secondary); font-size: 12px;">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Affected CIs -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fas fa-server"></i> Affected Configuration Items</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="related-list" id="affectedCIsList">
+                            <p style="color: var(--text-secondary); font-size: 12px;">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Resolve Modal -->
+    <div class="modal-overlay" id="resolveModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Resolve Incident</h3>
+                <button class="modal-close" onclick="closeResolveModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Resolution Notes <span class="required">*</span></label>
+                    <textarea class="form-textarea" id="resolutionNotes" placeholder="Describe the resolution..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Root Cause</label>
+                    <input type="text" class="form-input" id="rootCause" placeholder="What caused this incident?">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="header-btn" onclick="closeResolveModal()">Cancel</button>
+                <button class="header-btn primary" onclick="resolveIncident()">
+                    <i class="fas fa-check"></i> Resolve Incident
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Edit Incident</h3>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-input" id="editTitle">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" id="editDescription"></textarea>
+                </div>
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Priority</label>
+                        <select class="form-select" id="editPriority">
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="editStatus">
+                            <option value="open">Open</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="pending">Pending</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="header-btn" onclick="closeEditModal()">Cancel</button>
+                <button class="header-btn primary" onclick="saveIncident()">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/services/api.js"></script>
+    <script src="js/components/layout.js"></script>
+    <script>
+        // Global state
+        let currentIncident = null;
+        let incidentId = null;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check authentication
+            API.init();
+            if (!API.isAuthenticated()) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Get incident ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            incidentId = urlParams.get('id');
+
+            if (!incidentId) {
+                showError('No incident ID provided');
+                return;
+            }
+
+            // Initialize layout
+            Layout.init('incidents');
+
+            // Load incident data
+            await loadIncident();
+        });
+
+        // Load incident data
+        async function loadIncident() {
+            try {
+                document.getElementById('loadingOverlay').style.display = 'flex';
+
+                const response = await API.incidents.get(incidentId);
+
+                if (response.success) {
+                    currentIncident = response.data;
+                    renderIncident();
+                    updateAISuggestions();
+                } else {
+                    showError(response.message || 'Failed to load incident');
+                }
+            } catch (error) {
+                console.error('Error loading incident:', error);
+                showError('Failed to load incident');
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
+
+        // Render incident data
+        function renderIncident() {
+            const inc = currentIncident;
+
+            // Update page title
+            document.title = `${inc.incidentNumber} | LinkedEye-FinSpot`;
+
+            // Header
+            document.getElementById('headerIncidentNumber').textContent = inc.incidentNumber;
+            updatePriorityBadge('headerPriority', inc.priority);
+            updateStatusBadge('headerStatus', inc.status);
+
+            // Incident Header Card
+            const headerCard = document.getElementById('incidentHeaderCard');
+            headerCard.className = `card incident-header-card ${inc.priority}`;
+
+            document.getElementById('incidentNumber').textContent = inc.incidentNumber;
+            updateHeaderPriorityBadge('incidentPriority', inc.priority);
+            updateHeaderStatusBadge('incidentStatus', inc.status);
+            document.getElementById('incidentTitle').textContent = inc.title;
+            document.getElementById('incidentEnvironment').textContent = inc.environmentName || 'N/A';
+            document.getElementById('incidentCategory').textContent = inc.category || 'General';
+
+            // SLA Timer
+            renderSLATimer(inc);
+
+            // Description
+            document.getElementById('incidentDescription').innerHTML = formatDescription(inc.description);
+
+            // Details Grid
+            renderDetailsGrid(inc);
+
+            // Timeline
+            renderTimeline(inc);
+
+            // Work Notes (comments)
+            renderWorknotes(inc);
+
+            // Related Items
+            renderRelatedIncidents();
+            renderAffectedCIs(inc);
+
+            // Update resolve button visibility
+            if (inc.status === 'resolved' || inc.status === 'closed') {
+                document.getElementById('resolveBtn').style.display = 'none';
+            }
+        }
+
+        function updatePriorityBadge(elementId, priority) {
+            const el = document.getElementById(elementId);
+            el.className = `header-badge ${priority}`;
+            const icons = { critical: 'fa-fire', high: 'fa-exclamation-circle', medium: 'fa-exclamation', low: 'fa-info-circle' };
+            el.innerHTML = `<i class="fas ${icons[priority] || 'fa-circle'}"></i> ${Layout.capitalize(priority)}`;
+        }
+
+        function updateStatusBadge(elementId, status) {
+            const el = document.getElementById(elementId);
+            const statusClass = status === 'in_progress' ? 'in-progress' : status;
+            el.className = `header-badge ${statusClass}`;
+            el.textContent = Layout.formatStatus(status);
+        }
+
+        function updateHeaderPriorityBadge(elementId, priority) {
+            const el = document.getElementById(elementId);
+            el.className = `priority-badge-header ${priority}`;
+            const icons = { critical: 'fa-fire', high: 'fa-exclamation-circle', medium: 'fa-exclamation', low: 'fa-info-circle' };
+            el.innerHTML = `<i class="fas ${icons[priority] || 'fa-circle'}"></i> ${Layout.capitalize(priority)} (P${priority === 'critical' ? '1' : priority === 'high' ? '2' : priority === 'medium' ? '3' : '4'})`;
+        }
+
+        function updateHeaderStatusBadge(elementId, status) {
+            const el = document.getElementById(elementId);
+            el.className = `status-badge-header ${status === 'resolved' ? 'resolved' : status === 'closed' ? 'closed' : ''}`;
+            el.textContent = Layout.formatStatus(status);
+        }
+
+        function renderSLATimer(inc) {
+            if (!inc.slaResolutionDue) {
+                document.getElementById('slaTimer').style.display = 'none';
+                return;
+            }
+
+            const now = new Date();
+            const slaDue = new Date(inc.slaResolutionDue);
+            const slaStart = new Date(inc.createdAt);
+            const totalTime = slaDue - slaStart;
+            const timeRemaining = slaDue - now;
+            const percentUsed = Math.min(100, Math.max(0, ((totalTime - timeRemaining) / totalTime) * 100));
+
+            // Format time
+            if (timeRemaining > 0) {
+                const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+                const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+                document.getElementById('slaTime').textContent =
+                    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            } else {
+                document.getElementById('slaTime').textContent = 'BREACHED';
+            }
+
+            // Progress bar
+            const progressFill = document.getElementById('slaProgressFill');
+            progressFill.style.width = `${percentUsed}%`;
+            progressFill.className = `sla-progress-fill ${percentUsed > 75 ? 'danger' : percentUsed > 50 ? 'warning' : 'ok'}`;
+
+            document.getElementById('slaPercentText').textContent =
+                timeRemaining > 0 ? `${Math.round(100 - percentUsed)}% Time Remaining` : 'SLA Breached';
+
+            // Start countdown
+            setInterval(() => {
+                const now = new Date();
+                const remaining = slaDue - now;
+                if (remaining > 0) {
+                    const hours = Math.floor(remaining / (1000 * 60 * 60));
+                    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+                    document.getElementById('slaTime').textContent =
+                        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }
+            }, 1000);
+        }
+
+        function formatDescription(desc) {
+            if (!desc) return '<p>No description provided.</p>';
+            return desc.split('\n').map(line => `<p>${Layout.escapeHtml(line)}</p>`).join('');
+        }
+
+        function renderDetailsGrid(inc) {
+            const grid = document.getElementById('incidentDetails');
+            const assigneeName = inc.assigneeName || 'Unassigned';
+            const assigneeInitials = assigneeName.split(' ').map(n => n[0]).join('').toUpperCase();
+
+            grid.innerHTML = `
+                <div class="info-item">
+                    <label>Assigned To</label>
+                    <div class="value">
+                        <span class="avatar">${assigneeInitials}</span>
+                        ${Layout.escapeHtml(assigneeName)}
+                    </div>
+                </div>
+                <div class="info-item">
+                    <label>Assignment Group</label>
+                    <div class="value">${Layout.escapeHtml(inc.groupName || 'Unassigned')}</div>
+                </div>
+                <div class="info-item">
+                    <label>Category</label>
+                    <div class="value">${Layout.escapeHtml(inc.category || 'General')}</div>
+                </div>
+                <div class="info-item">
+                    <label>Subcategory</label>
+                    <div class="value">${Layout.escapeHtml(inc.subcategory || '-')}</div>
+                </div>
+                <div class="info-item">
+                    <label>Impact</label>
+                    <div class="value">${inc.impact || '-'}</div>
+                </div>
+                <div class="info-item">
+                    <label>Urgency</label>
+                    <div class="value">${inc.urgency || '-'}</div>
+                </div>
+                <div class="info-item">
+                    <label>Created</label>
+                    <div class="value">${Layout.formatDate(inc.createdAt)}</div>
+                </div>
+                <div class="info-item">
+                    <label>Last Updated</label>
+                    <div class="value">${Layout.formatDate(inc.updatedAt)}</div>
+                </div>
+                <div class="info-item">
+                    <label>Source</label>
+                    <div class="value">
+                        <i class="fas ${inc.source === 'alert' ? 'fa-bell' : inc.source === 'monitoring' ? 'fa-chart-line' : 'fa-user'}" style="color: var(--warning);"></i>
+                        ${Layout.capitalize(inc.source || 'Manual')}
+                    </div>
+                </div>
+                <div class="info-item">
+                    <label>Reporter</label>
+                    <div class="value">${Layout.escapeHtml(inc.reporterName || 'System')}</div>
+                </div>
+            `;
+        }
+
+        function renderTimeline(inc) {
+            const container = document.getElementById('incidentTimeline');
+            const timeline = inc.timeline || [];
+
+            if (timeline.length === 0) {
+                // Create default timeline from incident data
+                container.innerHTML = `
+                    <div class="timeline-item">
+                        <div class="timeline-dot info"><i class="fas fa-play"></i></div>
+                        <div class="timeline-content">
+                            <div class="timeline-header">
+                                <span class="timeline-title">Incident Created</span>
+                                <span class="timeline-time">${Layout.formatDate(inc.createdAt)}</span>
+                            </div>
+                            <div class="timeline-desc">Incident was created${inc.source ? ` via ${inc.source}` : ''}</div>
+                        </div>
+                    </div>
+                    ${inc.assignedTo ? `
+                    <div class="timeline-item">
+                        <div class="timeline-dot purple"><i class="fas fa-user"></i></div>
+                        <div class="timeline-content">
+                            <div class="timeline-header">
+                                <span class="timeline-title">Assigned</span>
+                                <span class="timeline-time">${Layout.formatDate(inc.updatedAt)}</span>
+                            </div>
+                            <div class="timeline-desc">Assigned to ${Layout.escapeHtml(inc.assigneeName || 'team member')}</div>
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${inc.status === 'resolved' ? `
+                    <div class="timeline-item">
+                        <div class="timeline-dot success"><i class="fas fa-check"></i></div>
+                        <div class="timeline-content">
+                            <div class="timeline-header">
+                                <span class="timeline-title">Resolved</span>
+                                <span class="timeline-time">${Layout.formatDate(inc.resolvedAt || inc.updatedAt)}</span>
+                            </div>
+                            <div class="timeline-desc">${Layout.escapeHtml(inc.resolutionNotes || 'Incident resolved')}</div>
+                        </div>
+                    </div>
+                    ` : ''}
+                `;
+                return;
+            }
+
+            container.innerHTML = timeline.map(item => {
+                const dotClass = getDotClass(item.type);
+                const icon = getTimelineIcon(item.type);
+                return `
+                    <div class="timeline-item">
+                        <div class="timeline-dot ${dotClass}"><i class="fas ${icon}"></i></div>
+                        <div class="timeline-content">
+                            <div class="timeline-header">
+                                <span class="timeline-title">${Layout.escapeHtml(item.title)}</span>
+                                <span class="timeline-time">${Layout.formatDate(item.timestamp)}</span>
+                            </div>
+                            <div class="timeline-desc">${Layout.escapeHtml(item.description)}</div>
+                            ${item.userName ? `
+                            <div class="timeline-user">
+                                <span class="avatar">${item.userName.split(' ').map(n => n[0]).join('').toUpperCase()}</span>
+                                ${Layout.escapeHtml(item.userName)}
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getDotClass(type) {
+            const classes = {
+                created: 'info',
+                assigned: 'purple',
+                acknowledged: 'success',
+                comment: 'info',
+                status_change: 'warning',
+                resolved: 'success',
+                escalated: 'danger'
+            };
+            return classes[type] || 'info';
+        }
+
+        function getTimelineIcon(type) {
+            const icons = {
+                created: 'fa-play',
+                assigned: 'fa-user',
+                acknowledged: 'fa-check',
+                comment: 'fa-comment',
+                status_change: 'fa-cog',
+                resolved: 'fa-check-circle',
+                escalated: 'fa-level-up-alt'
+            };
+            return icons[type] || 'fa-circle';
+        }
+
+        function renderWorknotes(inc) {
+            const container = document.getElementById('worknotesList');
+            const comments = inc.comments || [];
+
+            if (comments.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary); font-size: 12px;">No work notes yet.</p>';
+                return;
+            }
+
+            container.innerHTML = comments.map(comment => {
+                const authorName = comment.authorName || 'Unknown';
+                const initials = authorName.split(' ').map(n => n[0]).join('').toUpperCase();
+                return `
+                    <div class="worknote-item ${comment.isPublic ? 'public' : ''}">
+                        <div class="worknote-header">
+                            <div class="worknote-author">
+                                <span class="avatar">${initials}</span>
+                                <span class="name">${Layout.escapeHtml(authorName)}</span>
+                            </div>
+                            <span class="worknote-time">${Layout.formatTimeAgo(comment.createdAt)}</span>
+                        </div>
+                        <div class="worknote-text">${Layout.escapeHtml(comment.comment)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function renderRelatedIncidents() {
+            const container = document.getElementById('relatedIncidentsList');
+
+            // For now, show placeholder - would need API endpoint for similar incidents
+            container.innerHTML = `
+                <div class="related-item" onclick="window.location='incident-detail.html?id=sample1'">
+                    <div class="related-id">INC0015721</div>
+                    <div class="related-title">Similar incident from last week</div>
+                    <div class="related-meta">
+                        <span class="related-badge resolved">Resolved</span>
+                        <span class="related-badge similarity">94% match</span>
+                    </div>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 11px; margin-top: 8px; text-align: center;">
+                    AI analysis in progress...
+                </p>
+            `;
+        }
+
+        function renderAffectedCIs(inc) {
+            const container = document.getElementById('affectedCIsList');
+            const assets = inc.affectedAssets || [];
+
+            if (assets.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary); font-size: 12px;">No affected CIs linked.</p>';
+                return;
+            }
+
+            container.innerHTML = assets.map(asset => `
+                <div class="related-item" onclick="window.location='assets.html?id=${asset.id}'">
+                    <div class="related-id">${Layout.escapeHtml(asset.name)}</div>
+                    <div class="related-title">${Layout.escapeHtml(asset.type)} - ${Layout.escapeHtml(asset.description || '')}</div>
+                    <div class="related-meta">
+                        <span class="related-badge ${asset.status === 'critical' ? 'critical-ci' : 'degraded'}">${Layout.capitalize(asset.status)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateAISuggestions() {
+            const inc = currentIncident;
+
+            // Update runbook suggestion
+            const runbookEl = document.querySelector('#aiSuggestionRunbook .ai-suggestion-text');
+            runbookEl.textContent = `Based on category "${inc.category || 'General'}", consider running diagnostic scripts. 92% success rate for similar incidents.`;
+
+            // Update similar incidents
+            const similarEl = document.querySelector('#aiSuggestionSimilar .ai-suggestion-text');
+            similarEl.textContent = `Found potentially similar incidents from the last 30 days. Average resolution time: 45 minutes.`;
+
+            // Update escalation
+            const escalationEl = document.querySelector('#aiSuggestionEscalation .ai-suggestion-text');
+            escalationEl.textContent = `If not resolved within SLA, escalate to ${inc.groupName || 'team lead'} for priority handling.`;
+        }
+
+        // Tab functionality
+        function showTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Add worknote
+        async function addWorknote() {
+            const input = document.getElementById('worknoteInput');
+            const comment = input.value.trim();
+            const isPublic = document.getElementById('worknotePublic').checked;
+
+            if (!comment) {
+                alert('Please enter a work note');
+                return;
+            }
+
+            try {
+                const response = await API.incidents.addComment(incidentId, comment, isPublic);
+                if (response.success) {
+                    input.value = '';
+                    await loadIncident(); // Reload to get updated comments
+                    showTab('worknotes');
+                } else {
+                    alert(response.message || 'Failed to add work note');
+                }
+            } catch (error) {
+                console.error('Error adding worknote:', error);
+                alert('Failed to add work note');
+            }
+        }
+
+        // Modals
+        function openResolveModal() {
+            document.getElementById('resolveModal').classList.add('active');
+        }
+
+        function closeResolveModal() {
+            document.getElementById('resolveModal').classList.remove('active');
+        }
+
+        function openEditModal() {
+            document.getElementById('editTitle').value = currentIncident.title;
+            document.getElementById('editDescription').value = currentIncident.description || '';
+            document.getElementById('editPriority').value = currentIncident.priority;
+            document.getElementById('editStatus').value = currentIncident.status;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        async function resolveIncident() {
+            const notes = document.getElementById('resolutionNotes').value.trim();
+            const rootCause = document.getElementById('rootCause').value.trim();
+
+            if (!notes) {
+                alert('Please provide resolution notes');
+                return;
+            }
+
+            try {
+                const response = await API.incidents.resolve(incidentId, notes, rootCause || null);
+                if (response.success) {
+                    closeResolveModal();
+                    await loadIncident();
+                } else {
+                    alert(response.message || 'Failed to resolve incident');
+                }
+            } catch (error) {
+                console.error('Error resolving incident:', error);
+                alert('Failed to resolve incident');
+            }
+        }
+
+        async function saveIncident() {
+            const data = {
+                title: document.getElementById('editTitle').value,
+                description: document.getElementById('editDescription').value,
+                priority: document.getElementById('editPriority').value,
+                status: document.getElementById('editStatus').value
+            };
+
+            try {
+                const response = await API.incidents.update(incidentId, data);
+                if (response.success) {
+                    closeEditModal();
+                    await loadIncident();
+                } else {
+                    alert(response.message || 'Failed to update incident');
+                }
+            } catch (error) {
+                console.error('Error updating incident:', error);
+                alert('Failed to update incident');
+            }
+        }
+
+        // Actions
+        function copyLink() {
+            navigator.clipboard.writeText(window.location.href);
+            alert('Link copied to clipboard');
+        }
+
+        function shareIncident() {
+            if (navigator.share) {
+                navigator.share({
+                    title: `${currentIncident.incidentNumber} - ${currentIncident.title}`,
+                    url: window.location.href
+                });
+            } else {
+                copyLink();
+            }
+        }
+
+        function executeRunbook() {
+            alert('Runbook execution would be triggered via StackStorm/Ansible integration');
+        }
+
+        function viewSimilarIncidents() {
+            window.location.href = `incidents.html?similar=${incidentId}`;
+        }
+
+        function escalateIncident() {
+            if (confirm('Escalate this incident to the next level?')) {
+                alert('Incident escalated. Team lead has been notified.');
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            alert(message);
+            window.location.href = 'incidents.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management | LinkedEye-FinSpot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .stat-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .stat-icon.users { background: #dbeafe; color: var(--info); }
+        .stat-icon.active { background: #d1fae5; color: var(--success); }
+        .stat-icon.inactive { background: #fee2e2; color: var(--danger); }
+        .stat-icon.pending { background: #fef3c7; color: var(--warning); }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+
+        /* Card */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .search-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            background: white;
+            min-width: 280px;
+        }
+
+        .search-input input {
+            border: none;
+            outline: none;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .search-input i { color: var(--gray-400); }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+
+        /* User Table */
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .user-table th,
+        .user-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .user-table th {
+            background: var(--gray-50);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--gray-600);
+        }
+
+        .user-table tr:hover { background: var(--gray-50); }
+        .user-table .checkbox { width: 40px; }
+        .checkbox-input { width: 18px; height: 18px; cursor: pointer; }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-blue), var(--purple));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .user-details { display: flex; flex-direction: column; }
+        .user-name { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+        .user-email { font-size: 12px; color: var(--gray-500); }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+
+        .role-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .role-badge.admin { background: #ede9fe; color: #6d28d9; }
+        .role-badge.operator { background: #dbeafe; color: #1e40af; }
+        .role-badge.viewer { background: var(--gray-100); color: var(--gray-600); }
+        .role-badge.manager { background: #d1fae5; color: #065f46; }
+
+        .user-groups { display: flex; gap: 4px; flex-wrap: wrap; }
+
+        .group-tag {
+            padding: 2px 8px;
+            background: var(--gray-100);
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--gray-600);
+        }
+
+        .user-actions { display: flex; gap: 8px; }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--gray-200);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--gray-500);
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover { background: var(--gray-100); color: var(--gray-700); }
+        .action-btn.danger:hover { background: #fee2e2; color: var(--danger); border-color: var(--danger); }
+
+        /* Pagination */
+        .table-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .table-info { font-size: 13px; color: var(--gray-500); }
+
+        .pagination { display: flex; gap: 4px; }
+
+        .page-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--gray-200);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--gray-600);
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover { background: var(--gray-100); }
+        .page-btn.active { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
+
+        /* Bulk Actions */
+        .bulk-actions {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--gray-800);
+            color: white;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .bulk-actions.visible { display: flex; }
+        .bulk-count { font-size: 14px; font-weight: 500; }
+
+        .bulk-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bulk-btn.primary { background: var(--primary-blue); color: white; }
+        .bulk-btn.danger { background: var(--danger); color: white; }
+        .bulk-btn.secondary { background: var(--gray-600); color: white; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 560px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title { font-size: 18px; font-weight: 600; color: var(--gray-900); }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: none;
+            background: var(--gray-100);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-500);
+        }
+
+        .modal-body { padding: 20px; }
+
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .form-group { margin-bottom: 20px; }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray-700);
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-hint { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+        .last-activity { font-size: 12px; color: var(--gray-500); }
+        .last-activity.recent { color: var(--success); }
+
+        .sso-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            background: var(--gray-100);
+            border-radius: 4px;
+            font-size: 10px;
+            color: var(--gray-600);
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div class="page-title">
+                <h1>User Management</h1>
+                <p>Manage user accounts, roles, and permissions</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary"><i class="fas fa-file-import"></i> Import Users</button>
+                <button class="btn btn-secondary"><i class="fas fa-key"></i> SSO Settings</button>
+                <button class="btn btn-primary" onclick="openModal()"><i class="fas fa-plus"></i> Add User</button>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon users"><i class="fas fa-users"></i></div>
+                    </div>
+                    <div class="stat-value" id="totalUsers">0</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon active"><i class="fas fa-check-circle"></i></div>
+                    </div>
+                    <div class="stat-value" id="activeUsers">0</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon inactive"><i class="fas fa-times-circle"></i></div>
+                    </div>
+                    <div class="stat-value" id="inactiveUsers">0</div>
+                    <div class="stat-label">Inactive Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon pending"><i class="fas fa-clock"></i></div>
+                    </div>
+                    <div class="stat-value" id="pendingInvites">0</div>
+                    <div class="stat-label">Pending Invites</div>
+                </div>
+            </div>
+
+            <div class="bulk-actions" id="bulkActions">
+                <span class="bulk-count"><span id="selectedCount">0</span> users selected</span>
+                <button class="bulk-btn primary"><i class="fas fa-user-tag"></i> Change Role</button>
+                <button class="bulk-btn secondary"><i class="fas fa-users"></i> Add to Group</button>
+                <button class="bulk-btn danger"><i class="fas fa-user-slash"></i> Deactivate</button>
+                <button class="bulk-btn secondary" onclick="clearSelection()"><i class="fas fa-times"></i> Clear</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-user-friends"></i> All Users</h3>
+                    <div class="filters">
+                        <div class="search-input">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search users by name or email..." oninput="filterUsers()">
+                        </div>
+                        <select class="filter-select" id="roleFilter" onchange="filterUsers()">
+                            <option value="">All Roles</option>
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                            <option value="operator">Operator</option>
+                            <option value="viewer">Viewer</option>
+                        </select>
+                        <select class="filter-select" id="statusFilter" onchange="filterUsers()">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="pending">Pending</option>
+                        </select>
+                    </div>
+                </div>
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th class="checkbox">
+                                <input type="checkbox" class="checkbox-input" id="selectAll" onclick="toggleSelectAll()">
+                            </th>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Groups</th>
+                            <th>Status</th>
+                            <th>Last Active</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody"></tbody>
+                </table>
+                <div class="table-footer">
+                    <div class="table-info" id="tableInfo">Showing 0 users</div>
+                    <div class="pagination" id="pagination"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="addUserModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New User</h3>
+                <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">First Name</label>
+                            <input type="text" class="form-input" name="firstName" placeholder="Enter first name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" class="form-input" name="lastName" placeholder="Enter last name" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-input" name="email" placeholder="user@finspot.in" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Role</label>
+                            <select class="form-input" name="role" required>
+                                <option value="">Select role...</option>
+                                <option value="admin">Admin</option>
+                                <option value="manager">Manager</option>
+                                <option value="operator">Operator</option>
+                                <option value="viewer">Viewer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Department</label>
+                            <select class="form-input" name="department">
+                                <option value="">Select department...</option>
+                                <option value="platform">Platform Team</option>
+                                <option value="network">Network Team</option>
+                                <option value="database">Database Team</option>
+                                <option value="support">Support Team</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Groups</label>
+                        <select class="form-input" name="groups" multiple style="height: 100px;">
+                            <option value="sre">SRE</option>
+                            <option value="devops">DevOps</option>
+                            <option value="l1">L1 Support</option>
+                            <option value="l2">L2 Support</option>
+                            <option value="cab">CAB</option>
+                            <option value="incident">Incident Management</option>
+                            <option value="change">Change Management</option>
+                        </select>
+                        <div class="form-hint">Hold Ctrl/Cmd to select multiple groups</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" name="sendInvite" style="margin-right: 8px;" checked>
+                            Send invitation email to user
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveUser()"><i class="fas fa-plus"></i> Add User</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        let users = [];
+        let filteredUsers = [];
+        let currentPage = 1;
+        const pageSize = 10;
+
+        const sampleUsers = [
+            { id: 1, firstName: 'Rajkumar', lastName: 'Madhu', email: 'rajkumar.madhu@finspot.in', role: 'admin', groups: ['Platform Team', 'SRE'], status: 'active', lastActive: 'Just now' },
+            { id: 2, firstName: 'Hoysala', lastName: 'Bise', email: 'hoysala.bise@finspot.in', role: 'admin', groups: ['Platform Team', 'DevOps'], status: 'active', lastActive: '5 min ago' },
+            { id: 3, firstName: 'Siva', lastName: 'Kadirannagari', email: 'siva.k@finspot.in', role: 'manager', groups: ['Network Team', 'CAB'], status: 'active', lastActive: '2 hours ago', sso: 'microsoft' },
+            { id: 4, firstName: 'Edukondalu', lastName: 'P', email: 'edukondalu.p@finspot.in', role: 'operator', groups: ['L1 Support', 'Incident Mgmt'], status: 'active', lastActive: '1 hour ago' },
+            { id: 5, firstName: 'Devendrareddy', lastName: 'Puppala', email: 'devendra.p@finspot.in', role: 'operator', groups: ['L2 Support', 'Change Mgmt'], status: 'active', lastActive: '3 hours ago' },
+            { id: 6, firstName: 'Rajkumar', lastName: 'Ashokan', email: 'rajkumar.a@finspot.in', role: 'operator', groups: ['Database Team'], status: 'active', lastActive: 'Yesterday', sso: 'google' },
+            { id: 7, firstName: 'Amit', lastName: 'Sharma', email: 'amit.sharma@finspot.in', role: 'viewer', groups: ['Stakeholders'], status: 'inactive', lastActive: '30 days ago' },
+            { id: 8, firstName: 'Priya', lastName: 'Kumar', email: 'priya.kumar@finspot.in', role: 'operator', groups: [], status: 'pending', lastActive: 'Invite sent 2 days ago' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await Layout.init();
+            await loadUsers();
+        });
+
+        async function loadUsers() {
+            try {
+                const response = await API.request('/api/users');
+                users = response.users || [];
+            } catch (error) {
+                console.log('Using sample data');
+                users = sampleUsers;
+            }
+
+            updateStats();
+            filterUsers();
+        }
+
+        function updateStats() {
+            document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('activeUsers').textContent = users.filter(u => u.status === 'active').length;
+            document.getElementById('inactiveUsers').textContent = users.filter(u => u.status === 'inactive').length;
+            document.getElementById('pendingInvites').textContent = users.filter(u => u.status === 'pending').length;
+        }
+
+        function filterUsers() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const role = document.getElementById('roleFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            filteredUsers = users.filter(user => {
+                const matchesSearch = !search ||
+                    user.firstName.toLowerCase().includes(search) ||
+                    user.lastName.toLowerCase().includes(search) ||
+                    user.email.toLowerCase().includes(search);
+                const matchesRole = !role || user.role === role;
+                const matchesStatus = !status || user.status === status;
+                return matchesSearch && matchesRole && matchesStatus;
+            });
+
+            currentPage = 1;
+            renderUsers();
+        }
+
+        function renderUsers() {
+            const tbody = document.getElementById('usersTableBody');
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageUsers = filteredUsers.slice(start, end);
+
+            tbody.innerHTML = pageUsers.map(user => `
+                <tr>
+                    <td class="checkbox">
+                        <input type="checkbox" class="checkbox-input user-checkbox" data-id="${user.id}" onclick="updateBulkActions()">
+                    </td>
+                    <td>
+                        <div class="user-info">
+                            <div class="user-avatar" style="${user.status === 'inactive' ? 'background: var(--gray-400);' : user.status === 'pending' ? 'background: var(--warning);' : ''}">${user.firstName[0]}${user.lastName[0]}</div>
+                            <div class="user-details">
+                                <span class="user-name">${user.firstName} ${user.lastName}</span>
+                                <span class="user-email">${user.email}${user.sso ? `<span class="sso-badge"><i class="fab fa-${user.sso}"></i> SSO</span>` : ''}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="role-badge ${user.role}">${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span></td>
+                    <td>
+                        <div class="user-groups">
+                            ${user.groups.length > 0 ? user.groups.slice(0, 2).map(g => `<span class="group-tag">${g}</span>`).join('') : '<span class="group-tag">--</span>'}
+                            ${user.groups.length > 2 ? `<span class="group-tag more">+${user.groups.length - 2}</span>` : ''}
+                        </div>
+                    </td>
+                    <td><span class="badge badge-${user.status === 'active' ? 'success' : user.status === 'inactive' ? 'danger' : 'warning'}">${user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span></td>
+                    <td><span class="last-activity ${user.lastActive === 'Just now' || user.lastActive.includes('min') ? 'recent' : ''}">${user.lastActive}</span></td>
+                    <td>
+                        <div class="user-actions">
+                            ${user.status === 'pending' ? `
+                                <button class="action-btn" title="Resend Invite"><i class="fas fa-paper-plane"></i></button>
+                                <button class="action-btn danger" title="Cancel Invite"><i class="fas fa-times"></i></button>
+                            ` : `
+                                <button class="action-btn" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn" title="Reset Password"><i class="fas fa-key"></i></button>
+                                <button class="action-btn danger" title="${user.status === 'inactive' ? 'Delete' : 'Deactivate'}"><i class="fas fa-${user.status === 'inactive' ? 'trash' : 'user-slash'}"></i></button>
+                            `}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            document.getElementById('tableInfo').textContent = `Showing ${start + 1}-${Math.min(end, filteredUsers.length)} of ${filteredUsers.length} users`;
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredUsers.length / pageSize);
+            const pagination = document.getElementById('pagination');
+
+            let html = `<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
+
+            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            if (totalPages > 5) {
+                html += `<button class="page-btn">...</button>`;
+                html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+
+            html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
+
+            pagination.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            const totalPages = Math.ceil(filteredUsers.length / pageSize);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderUsers();
+            }
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = selectAll.checked);
+            updateBulkActions();
+        }
+
+        function updateBulkActions() {
+            const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+            const bulkActions = document.getElementById('bulkActions');
+            document.getElementById('selectedCount').textContent = checkboxes.length;
+            bulkActions.classList.toggle('visible', checkboxes.length > 0);
+        }
+
+        function clearSelection() {
+            document.getElementById('selectAll').checked = false;
+            document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
+            updateBulkActions();
+        }
+
+        function openModal() { document.getElementById('addUserModal').classList.add('active'); }
+        function closeModal() { document.getElementById('addUserModal').classList.remove('active'); }
+
+        async function saveUser() {
+            const form = document.getElementById('userForm');
+            const formData = new FormData(form);
+
+            const userData = {
+                firstName: formData.get('firstName'),
+                lastName: formData.get('lastName'),
+                email: formData.get('email'),
+                role: formData.get('role'),
+                department: formData.get('department'),
+                groups: Array.from(form.querySelector('[name="groups"]').selectedOptions).map(o => o.text),
+                sendInvite: formData.get('sendInvite') === 'on'
+            };
+
+            try {
+                await API.request('/api/users', { method: 'POST', body: JSON.stringify(userData) });
+                closeModal();
+                loadUsers();
+            } catch (error) {
+                users.push({
+                    id: users.length + 1,
+                    ...userData,
+                    status: userData.sendInvite ? 'pending' : 'active',
+                    lastActive: userData.sendInvite ? 'Invite sent just now' : 'Just now'
+                });
+                updateStats();
+                filterUsers();
+                closeModal();
+                form.reset();
+            }
+        }
+
+        document.getElementById('addUserModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>

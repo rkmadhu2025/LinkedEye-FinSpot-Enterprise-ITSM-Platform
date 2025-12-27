@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrations | LinkedEye-FinSpot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        /* Category Tabs */
+        .category-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+        .category-tab { padding: 8px 16px; background: white; border: 1px solid var(--gray-200); border-radius: 20px; font-size: 14px; color: var(--gray-600); cursor: pointer; transition: all 0.2s; }
+        .category-tab:hover { border-color: var(--primary-blue); color: var(--primary-blue); }
+        .category-tab.active { background: var(--primary-blue); border-color: var(--primary-blue); color: white; }
+
+        /* Stats Row */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .stat-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .stat-icon.total { background: #dbeafe; color: var(--info); }
+        .stat-icon.active { background: #d1fae5; color: var(--success); }
+        .stat-icon.error { background: #fee2e2; color: var(--danger); }
+        .stat-icon.pending { background: #fef3c7; color: var(--warning); }
+        .stat-value { font-size: 28px; font-weight: 700; color: var(--gray-900); }
+        .stat-label { font-size: 13px; color: var(--gray-500); margin-top: 4px; }
+
+        /* Integration Grid */
+        .integration-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .section-title { font-size: 18px; font-weight: 600; color: var(--gray-900); margin: 32px 0 16px; }
+
+        .integration-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; transition: all 0.2s; }
+        .integration-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .integration-card.available { border: 2px dashed var(--gray-300); background: var(--gray-50); }
+        .integration-card.available:hover { border-color: var(--primary-blue); background: white; }
+
+        .integration-card-header { padding: 20px; display: flex; align-items: flex-start; gap: 16px; }
+        .integration-logo { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; color: white; }
+        .integration-logo.prometheus { background: #e6522c; }
+        .integration-logo.grafana { background: #f46800; }
+        .integration-logo.loki { background: #f4a900; }
+        .integration-logo.stackstorm { background: #22c55e; }
+        .integration-logo.slack { background: #4a154b; }
+        .integration-logo.pagerduty { background: #06ac38; }
+        .integration-logo.keycloak { background: #4d4d4d; }
+        .integration-logo.kubernetes { background: #326ce5; }
+        .integration-logo.postgresql { background: #336791; }
+        .integration-logo.jira { background: #0052cc; }
+        .integration-logo.github { background: #24292e; }
+        .integration-logo.servicenow { background: #81b5a1; }
+
+        .integration-info { flex: 1; }
+        .integration-name { font-size: 16px; font-weight: 600; color: var(--gray-900); margin-bottom: 4px; }
+        .integration-category { font-size: 12px; color: var(--gray-500); }
+
+        .integration-status { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; }
+        .integration-status.connected { color: var(--success); }
+        .integration-status.error { color: var(--danger); }
+        .integration-status.available { color: var(--gray-400); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .status-dot.connected { background: var(--success); }
+        .status-dot.error { background: var(--danger); }
+        .status-dot.available { background: var(--gray-300); }
+
+        .integration-card-body { padding: 0 20px 20px; }
+        .integration-description { font-size: 13px; color: var(--gray-600); line-height: 1.5; margin-bottom: 16px; }
+
+        .integration-stats { display: flex; gap: 16px; padding: 12px; background: var(--gray-50); border-radius: 8px; margin-bottom: 16px; }
+        .integration-stat { flex: 1; text-align: center; }
+        .integration-stat-value { font-size: 18px; font-weight: 700; color: var(--gray-900); }
+        .integration-stat-label { font-size: 11px; color: var(--gray-500); }
+
+        .integration-actions { display: flex; gap: 8px; }
+        .integration-btn { flex: 1; padding: 8px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--gray-300); background: white; color: var(--gray-700); display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; text-decoration: none; }
+        .integration-btn:hover { background: var(--gray-100); }
+        .integration-btn.primary { background: var(--primary-blue); border-color: var(--primary-blue); color: white; }
+        .integration-btn.primary:hover { background: #1d4ed8; }
+
+        .integration-card-footer { padding: 12px 20px; border-top: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center; }
+        .last-sync { font-size: 12px; color: var(--gray-500); }
+        .last-sync.error { color: var(--danger); }
+        .health-indicator { display: flex; gap: 4px; }
+        .health-bar { width: 4px; height: 16px; border-radius: 2px; background: var(--success); }
+        .health-bar.error { background: var(--danger); }
+        .health-bar.inactive { background: var(--gray-200); }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div class="page-title">
+                <h1>Integrations</h1>
+                <p>Connect and manage third-party tools and services</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary"><i class="fas fa-plus"></i> Add Integration</button>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="category-tabs">
+                <div class="category-tab active" data-category="all">All</div>
+                <div class="category-tab" data-category="monitoring">Monitoring</div>
+                <div class="category-tab" data-category="alerting">Alerting</div>
+                <div class="category-tab" data-category="automation">Automation</div>
+                <div class="category-tab" data-category="authentication">Authentication</div>
+                <div class="category-tab" data-category="ticketing">Ticketing</div>
+                <div class="category-tab" data-category="communication">Communication</div>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-card"><div class="stat-card-header"><div class="stat-icon total"><i class="fas fa-plug"></i></div></div><div class="stat-value" id="totalIntegrations">0</div><div class="stat-label">Total Integrations</div></div>
+                <div class="stat-card"><div class="stat-card-header"><div class="stat-icon active"><i class="fas fa-check-circle"></i></div></div><div class="stat-value" id="activeConnections">0</div><div class="stat-label">Active Connections</div></div>
+                <div class="stat-card"><div class="stat-card-header"><div class="stat-icon error"><i class="fas fa-exclamation-circle"></i></div></div><div class="stat-value" id="needsAttention">0</div><div class="stat-label">Needs Attention</div></div>
+                <div class="stat-card"><div class="stat-card-header"><div class="stat-icon pending"><i class="fas fa-clock"></i></div></div><div class="stat-value" id="pendingSetup">0</div><div class="stat-label">Pending Setup</div></div>
+            </div>
+
+            <h3 class="section-title" style="margin-top: 0;">Connected Integrations</h3>
+            <div class="integration-grid" id="connectedGrid"></div>
+
+            <h3 class="section-title">Available Integrations</h3>
+            <div class="integration-grid" id="availableGrid"></div>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        const connectedIntegrations = [
+            { id: 'prometheus', name: 'Prometheus', category: 'monitoring', icon: 'fas fa-fire', status: 'connected', description: 'Time-series metrics collection and alerting. Auto-creates incidents from Prometheus alerts.', stats: [{ value: '1.2M', label: 'Metrics/min' }, { value: '847', label: 'Active Rules' }, { value: '23', label: 'Alerts Today' }], lastSync: '12 sec ago' },
+            { id: 'grafana', name: 'Grafana', category: 'monitoring', icon: 'fas fa-chart-area', status: 'connected', description: 'Embedded dashboards and charts. Provides real-time metrics visualization in incident details.', stats: [{ value: '42', label: 'Dashboards' }, { value: '156', label: 'Panels' }, { value: '8', label: 'Datasources' }], lastSync: '5 min ago' },
+            { id: 'loki', name: 'Loki', category: 'monitoring', icon: 'fas fa-scroll', status: 'connected', description: 'Log aggregation and querying. Shows contextual logs in incident timeline view.', stats: [{ value: '2.4TB', label: 'Logs/Day' }, { value: '12', label: 'Streams' }, { value: '30d', label: 'Retention' }], lastSync: '8 sec ago' },
+            { id: 'stackstorm', name: 'StackStorm', category: 'automation', icon: 'fas fa-robot', status: 'connected', description: 'Event-driven automation platform. Executes auto-remediation workflows for incidents.', stats: [{ value: '24', label: 'Workflows' }, { value: '492', label: 'Runs Today' }, { value: '94%', label: 'Success' }], lastSync: '2 min ago' },
+            { id: 'slack', name: 'Slack', category: 'communication', icon: 'fab fa-slack', status: 'connected', description: 'Real-time notifications and incident channels. Enables ChatOps workflows.', stats: [{ value: '12', label: 'Channels' }, { value: '847', label: 'Msgs/Week' }, { value: '5', label: 'Bots' }], lastSync: '1 min ago' },
+            { id: 'pagerduty', name: 'PagerDuty', category: 'alerting', icon: 'fas fa-pager', status: 'error', description: 'On-call scheduling and escalation. Routes critical incidents to on-call engineers.', stats: [{ value: '--', label: 'Schedules' }, { value: '--', label: 'Escalations' }, { value: '--', label: 'Alerts' }], lastSync: 'Connection failed 2h ago', error: true },
+            { id: 'keycloak', name: 'Keycloak', category: 'authentication', icon: 'fas fa-key', status: 'connected', description: 'SSO and identity management. Handles user authentication and RBAC.', stats: [{ value: '247', label: 'Users' }, { value: '18', label: 'Roles' }, { value: '3', label: 'Realms' }], lastSync: '30 sec ago' },
+            { id: 'kubernetes', name: 'Kubernetes', category: 'automation', icon: 'fas fa-dharmachakra', status: 'connected', description: 'Container orchestration integration. Syncs pod status and enables auto-remediation.', stats: [{ value: '6', label: 'Clusters' }, { value: '1,247', label: 'Pods' }, { value: '89', label: 'Services' }], lastSync: '15 sec ago' },
+            { id: 'postgresql', name: 'PostgreSQL', category: 'monitoring', icon: 'fas fa-database', status: 'connected', description: 'Primary database for CMDB and incident data. Stores all operational records.', stats: [{ value: '2', label: 'Clusters' }, { value: '45GB', label: 'Data Size' }, { value: '99.9%', label: 'Uptime' }], lastSync: '5 sec ago' }
+        ];
+
+        const availableIntegrations = [
+            { id: 'jira', name: 'Jira', category: 'ticketing', icon: 'fab fa-jira', description: 'Sync incidents with Jira issues. Bidirectional updates between LinkedEye and Jira.' },
+            { id: 'github', name: 'GitHub', category: 'ticketing', icon: 'fab fa-github', description: 'Link deployments to changes. Track commits and PRs associated with incidents.' },
+            { id: 'servicenow', name: 'ServiceNow', category: 'ticketing', icon: 'fas fa-ticket-alt', description: 'Bidirectional CMDB sync. Import assets and CIs from ServiceNow instance.' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await Layout.init();
+            updateStats();
+            renderIntegrations();
+            setupTabs();
+        });
+
+        function updateStats() {
+            document.getElementById('totalIntegrations').textContent = connectedIntegrations.length + availableIntegrations.length;
+            document.getElementById('activeConnections').textContent = connectedIntegrations.filter(i => i.status === 'connected').length;
+            document.getElementById('needsAttention').textContent = connectedIntegrations.filter(i => i.status === 'error').length;
+            document.getElementById('pendingSetup').textContent = availableIntegrations.length;
+        }
+
+        function renderIntegrations() {
+            document.getElementById('connectedGrid').innerHTML = connectedIntegrations.map(int => `
+                <div class="integration-card" data-category="${int.category}">
+                    <div class="integration-card-header">
+                        <div class="integration-logo ${int.id}"><i class="${int.icon}"></i></div>
+                        <div class="integration-info">
+                            <div class="integration-name">${int.name}</div>
+                            <div class="integration-category">${int.category.charAt(0).toUpperCase() + int.category.slice(1)}</div>
+                        </div>
+                        <div class="integration-status ${int.status}">
+                            <span class="status-dot ${int.status}"></span>
+                            ${int.status === 'connected' ? 'Connected' : 'Auth Error'}
+                        </div>
+                    </div>
+                    <div class="integration-card-body">
+                        <div class="integration-description">${int.description}</div>
+                        <div class="integration-stats">${int.stats.map(s => `<div class="integration-stat"><div class="integration-stat-value">${s.value}</div><div class="integration-stat-label">${s.label}</div></div>`).join('')}</div>
+                        <div class="integration-actions">
+                            ${int.status === 'error' ? `<button class="integration-btn primary"><i class="fas fa-key"></i> Re-authenticate</button>` : `
+                            <a href="integration-detail.html?id=${int.id}" class="integration-btn"><i class="fas fa-cog"></i> Configure</a>
+                            <button class="integration-btn"><i class="fas fa-sync-alt"></i> Test</button>`}
+                        </div>
+                    </div>
+                    <div class="integration-card-footer">
+                        <span class="last-sync ${int.error ? 'error' : ''}">${int.error ? int.lastSync : 'Last sync: ' + int.lastSync}</span>
+                        <div class="health-indicator">${[1,2,3,4,5].map(i => `<div class="health-bar ${int.error ? (i <= 3 ? 'error' : 'inactive') : ''}"></div>`).join('')}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('availableGrid').innerHTML = availableIntegrations.map(int => `
+                <div class="integration-card available" data-category="${int.category}">
+                    <div class="integration-card-header">
+                        <div class="integration-logo ${int.id}"><i class="${int.icon}"></i></div>
+                        <div class="integration-info">
+                            <div class="integration-name">${int.name}</div>
+                            <div class="integration-category">${int.category.charAt(0).toUpperCase() + int.category.slice(1)}</div>
+                        </div>
+                        <div class="integration-status available"><span class="status-dot available"></span> Available</div>
+                    </div>
+                    <div class="integration-card-body">
+                        <div class="integration-description">${int.description}</div>
+                        <div class="integration-actions">
+                            <button class="integration-btn primary"><i class="fas fa-plug"></i> Connect</button>
+                            <button class="integration-btn"><i class="fas fa-info-circle"></i> Learn More</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setupTabs() {
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    const category = this.dataset.category;
+                    document.querySelectorAll('.integration-card').forEach(card => {
+                        card.style.display = category === 'all' || card.dataset.category === category ? 'block' : 'none';
+                    });
+                });
+            });
+        }
+    </script>
+</body>
+</html>

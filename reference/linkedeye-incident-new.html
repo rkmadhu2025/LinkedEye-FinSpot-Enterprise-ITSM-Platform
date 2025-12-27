@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Create New Incident - LinkedEye-FinSpot">
+    <title>Create Incident | LinkedEye-FinSpot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #0f1c3f;
+            --primary-blue: #2563eb;
+            --primary-blue-light: #3b82f6;
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+            --text-primary: #0f1c3f;
+            --text-secondary: #6b7785;
+            --border-color: #e5e8eb;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-body); color: var(--text-primary); font-size: 13px; }
+
+        /* Sidebar */
+        .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh; background: var(--primary-navy); z-index: 200; }
+        .sidebar-header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-logo { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-blue-light), var(--purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .sidebar-logo i { color: #fff; font-size: 20px; }
+        .sidebar-brand { color: #fff; }
+        .sidebar-brand h1 { font-size: 16px; font-weight: 700; }
+        .sidebar-brand span { font-size: 10px; color: rgba(255,255,255,0.6); }
+        .sidebar-nav { padding: 16px 12px; overflow-y: auto; height: calc(100vh - 140px); }
+        .nav-section { margin-bottom: 20px; }
+        .nav-section-title { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.2s; margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .nav-item.active { background: linear-gradient(135deg, var(--primary-blue), #1d4ed8); color: #fff; }
+        .nav-item i { width: 20px; text-align: center; }
+        .nav-item .nav-badge { background: var(--danger); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: auto; }
+        .sidebar-footer { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .env-selector { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; color: #fff; font-size: 12px; }
+        .env-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; }
+
+        /* Header */
+        .header { position: fixed; top: 0; left: var(--sidebar-width); right: 0; height: var(--header-height); background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .back-btn { width: 36px; height: 36px; border: 1px solid var(--border-color); background: #fff; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); }
+        .back-btn:hover { background: #f9fafb; color: var(--primary-blue); border-color: var(--primary-blue); }
+        .header-title h1 { font-size: 18px; font-weight: 600; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .header-btn { padding: 10px 20px; border: 1px solid var(--border-color); background: #fff; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+        .header-btn:hover { background: #f9fafb; border-color: var(--primary-blue); color: var(--primary-blue); }
+        .header-btn.primary { background: linear-gradient(135deg, var(--primary-blue), #1d4ed8); color: #fff; border: none; }
+        .header-btn.primary:hover { box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .header-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Main Content */
+        .main-content { margin-left: var(--sidebar-width); margin-top: var(--header-height); padding: 24px; min-height: calc(100vh - var(--header-height)); }
+
+        /* Form Grid */
+        .form-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+
+        /* Card */
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 24px; }
+        .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border-color); }
+        .card-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .card-title i { color: var(--primary-blue); }
+        .card-body { padding: 20px; }
+
+        /* Form Groups */
+        .form-group { margin-bottom: 20px; }
+        .form-group:last-child { margin-bottom: 0; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+        .form-label .required { color: var(--danger); }
+        .form-label .optional { color: var(--text-secondary); font-weight: 400; font-size: 11px; }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: #fff; transition: all 0.2s; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .form-textarea { min-height: 120px; resize: vertical; font-family: inherit; }
+        .form-input::placeholder { color: #9ca3af; }
+        .form-hint { font-size: 11px; color: var(--text-secondary); margin-top: 6px; }
+
+        /* Priority Calculator */
+        .priority-calculator { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; }
+        .priority-calculator h4 { font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .priority-calculator h4 i { color: var(--purple); }
+        .priority-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .priority-result { background: #fff; border-radius: 8px; padding: 16px; text-align: center; border: 2px solid var(--border-color); }
+        .priority-result .label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .priority-result .value { font-size: 24px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .priority-result.critical .value { color: var(--danger); }
+        .priority-result.high .value { color: #f97316; }
+        .priority-result.medium .value { color: var(--warning); }
+        .priority-result.low .value { color: var(--info); }
+
+        /* CI Selector */
+        .ci-selector { display: flex; flex-wrap: wrap; gap: 8px; }
+        .ci-chip { padding: 8px 14px; background: #f9fafb; border: 1px solid var(--border-color); border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+        .ci-chip:hover { border-color: var(--primary-blue); }
+        .ci-chip.selected { background: rgba(37, 99, 235, 0.1); border-color: var(--primary-blue); color: var(--primary-blue); }
+        .ci-chip i { font-size: 10px; }
+
+        /* Environment Pills */
+        .env-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+        .env-pill { padding: 10px 16px; background: #f9fafb; border: 2px solid var(--border-color); border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .env-pill:hover { border-color: var(--primary-blue); }
+        .env-pill.selected { background: var(--primary-blue); border-color: var(--primary-blue); color: #fff; }
+
+        /* File Upload */
+        .file-upload { border: 2px dashed var(--border-color); border-radius: 10px; padding: 30px; text-align: center; transition: all 0.2s; cursor: pointer; }
+        .file-upload:hover { border-color: var(--primary-blue); background: rgba(37, 99, 235, 0.02); }
+        .file-upload i { font-size: 32px; color: var(--text-secondary); margin-bottom: 12px; }
+        .file-upload h4 { font-size: 14px; margin-bottom: 4px; }
+        .file-upload p { font-size: 12px; color: var(--text-secondary); }
+
+        /* AI Suggestion Panel */
+        .ai-panel { background: linear-gradient(135deg, #0f1c3f 0%, #1e3a5f 100%); border-radius: 12px; padding: 20px; color: #fff; }
+        .ai-panel-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .ai-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--purple), #ec4899); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .ai-panel-header h3 { font-size: 14px; font-weight: 600; }
+        .ai-panel-header p { font-size: 11px; opacity: 0.7; }
+        .ai-suggestion { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 14px; margin-bottom: 12px; cursor: pointer; transition: background 0.2s; }
+        .ai-suggestion:hover { background: rgba(255,255,255,0.15); }
+        .ai-suggestion:last-child { margin-bottom: 0; }
+        .ai-suggestion-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+        .ai-suggestion-title i { color: var(--success); }
+        .ai-suggestion-text { font-size: 11px; opacity: 0.8; }
+
+        /* Template Selector */
+        .template-list { display: flex; flex-direction: column; gap: 10px; }
+        .template-item { padding: 14px; background: #f9fafb; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .template-item:hover { border-color: var(--primary-blue); background: #fff; }
+        .template-item.selected { border-color: var(--primary-blue); background: rgba(37, 99, 235, 0.05); }
+        .template-name { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+        .template-desc { font-size: 11px; color: var(--text-secondary); }
+
+        /* SLA Info */
+        .sla-info { background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%); border: 1px solid var(--success); border-radius: 10px; padding: 16px; }
+        .sla-info h4 { font-size: 13px; font-weight: 600; color: var(--success); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .sla-info p { font-size: 12px; color: var(--text-primary); }
+        .sla-times { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+        .sla-time-item { text-align: center; padding: 10px; background: #fff; border-radius: 6px; }
+        .sla-time-item .label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; }
+        .sla-time-item .value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+
+        /* Responsive */
+        @media (max-width: 1200px) { .form-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 992px) { .sidebar { width: 60px; } .sidebar-brand, .nav-item span, .nav-badge, .nav-section-title { display: none; } .header { left: 60px; } .main-content { margin-left: 60px; } .form-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fas fa-eye"></i></div>
+            <div class="sidebar-brand"><h1>LinkedEye</h1><span>FinSpot Enterprise</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="linkedeye-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">ITSM</div>
+                <a href="linkedeye-incidents.html" class="nav-item active"><i class="fas fa-exclamation-triangle"></i><span>Incidents</span><span class="nav-badge">23</span></a>
+                <a href="linkedeye-change-calendar.html" class="nav-item"><i class="fas fa-code-branch"></i><span>Changes</span></a>
+                <a href="linkedeye-problem-detail.html" class="nav-item"><i class="fas fa-search"></i><span>Problems</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Infrastructure</div>
+                <a href="linkedeye-network-topology.html" class="nav-item"><i class="fas fa-network-wired"></i><span>Network</span></a>
+                <a href="linkedeye-assets.html" class="nav-item"><i class="fas fa-cubes"></i><span>Assets</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="env-selector"><div class="env-dot"></div><span>fs-mum-indmoney-prod-le</span></div>
+        </div>
+    </aside>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <button class="back-btn" onclick="window.location='linkedeye-incidents.html'"><i class="fas fa-arrow-left"></i></button>
+            <div class="header-title"><h1>Create New Incident</h1></div>
+        </div>
+        <div class="header-right">
+            <button class="header-btn" onclick="saveDraft()"><i class="fas fa-save"></i> Save Draft</button>
+            <button class="header-btn primary" onclick="submitIncident()" id="submitBtn"><i class="fas fa-paper-plane"></i> Submit Incident</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <form id="incidentForm">
+            <div class="form-grid">
+                <!-- Left Column -->
+                <div class="left-column">
+                    <!-- Basic Information -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fas fa-info-circle"></i> Basic Information</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Short Description <span class="required">*</span></label>
+                                <input type="text" class="form-input" id="shortDesc" placeholder="Brief summary of the incident" required>
+                                <div class="form-hint">Max 160 characters. Be specific and actionable.</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Detailed Description <span class="required">*</span></label>
+                                <textarea class="form-textarea" id="detailDesc" placeholder="Provide detailed information about the incident including symptoms, error messages, and affected systems..." required></textarea>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Category <span class="required">*</span></label>
+                                    <select class="form-select" id="category" required onchange="updateSubcategory()">
+                                        <option value="">Select category...</option>
+                                        <option value="database">Database</option>
+                                        <option value="network">Network</option>
+                                        <option value="application">Application</option>
+                                        <option value="infrastructure">Infrastructure</option>
+                                        <option value="security">Security</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Subcategory</label>
+                                    <select class="form-select" id="subcategory">
+                                        <option value="">Select subcategory...</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Environment <span class="required">*</span></label>
+                                <div class="env-pills">
+                                    <span class="env-pill selected" data-env="fs-mum-indmoney-prod">fs-mum-indmoney-prod</span>
+                                    <span class="env-pill" data-env="fs-blr-indmoney-dr">fs-blr-indmoney-dr</span>
+                                    <span class="env-pill" data-env="neo-prod-le">neo-prod-le</span>
+                                    <span class="env-pill" data-env="lemonn-mum-le">lemonn-mum-le</span>
+                                    <span class="env-pill" data-env="indmoney-ifsc-le">indmoney-ifsc-le</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Priority & Impact -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fas fa-exclamation-triangle"></i> Priority & Impact</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="priority-calculator">
+                                <h4><i class="fas fa-calculator"></i> Priority Calculator</h4>
+                                <div class="priority-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Impact <span class="required">*</span></label>
+                                        <select class="form-select" id="impact" onchange="calculatePriority()">
+                                            <option value="">Select impact...</option>
+                                            <option value="1">1 - High (Widespread outage)</option>
+                                            <option value="2">2 - Medium (Multiple users affected)</option>
+                                            <option value="3">3 - Low (Single user/service)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Urgency <span class="required">*</span></label>
+                                        <select class="form-select" id="urgency" onchange="calculatePriority()">
+                                            <option value="">Select urgency...</option>
+                                            <option value="1">1 - High (Business critical)</option>
+                                            <option value="2">2 - Medium (Degraded service)</option>
+                                            <option value="3">3 - Low (Minimal impact)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="priority-result" id="priorityResult">
+                                    <div class="label">Calculated Priority</div>
+                                    <div class="value"><i class="fas fa-question-circle"></i> Select Impact & Urgency</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Affected Configuration Items -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fas fa-server"></i> Affected Configuration Items</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Select Affected CIs <span class="optional">(Optional)</span></label>
+                                <div class="ci-selector" id="ciSelector">
+                                    <span class="ci-chip" data-ci="pgbouncer-trading-01"><i class="fas fa-database"></i> pgbouncer-trading-01</span>
+                                    <span class="ci-chip" data-ci="trading-db-primary"><i class="fas fa-database"></i> trading-db-primary</span>
+                                    <span class="ci-chip" data-ci="trading-db-replica"><i class="fas fa-database"></i> trading-db-replica</span>
+                                    <span class="ci-chip" data-ci="order-service"><i class="fas fa-cube"></i> order-service</span>
+                                    <span class="ci-chip" data-ci="quote-engine"><i class="fas fa-cube"></i> quote-engine</span>
+                                    <span class="ci-chip" data-ci="api-gateway"><i class="fas fa-network-wired"></i> api-gateway</span>
+                                    <span class="ci-chip" data-ci="redis-cluster"><i class="fas fa-memory"></i> redis-cluster</span>
+                                    <span class="ci-chip" data-ci="kafka-broker-01"><i class="fas fa-stream"></i> kafka-broker-01</span>
+                                </div>
+                                <div class="form-hint">Click to select multiple affected configuration items</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Attachments -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fas fa-paperclip"></i> Attachments</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <h4>Drop files here or click to upload</h4>
+                                <p>Screenshots, logs, or documentation (Max 10MB each)</p>
+                                <input type="file" id="fileInput" multiple hidden>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="right-column">
+                    <!-- AI Suggestions -->
+                    <div class="ai-panel">
+                        <div class="ai-panel-header">
+                            <div class="ai-icon"><i class="fas fa-robot"></i></div>
+                            <div>
+                                <h3>AI Assistant</h3>
+                                <p>Smart suggestions based on your input</p>
+                            </div>
+                        </div>
+                        <div class="ai-suggestion" onclick="applySuggestion('similar')">
+                            <div class="ai-suggestion-title"><i class="fas fa-lightbulb"></i> Similar Incident Detected</div>
+                            <div class="ai-suggestion-text">INC0015721 (Resolved) has 87% similarity. Click to view resolution steps.</div>
+                        </div>
+                        <div class="ai-suggestion" onclick="applySuggestion('assign')">
+                            <div class="ai-suggestion-title"><i class="fas fa-user-check"></i> Recommended Assignment</div>
+                            <div class="ai-suggestion-text">Rajkumar Madhu (Infrastructure Ops) - Expert in PostgreSQL, PgBouncer</div>
+                        </div>
+                        <div class="ai-suggestion" onclick="applySuggestion('runbook')">
+                            <div class="ai-suggestion-title"><i class="fas fa-book"></i> Suggested Runbook</div>
+                            <div class="ai-suggestion-text">"pgbouncer_connection_recovery" - Auto-remediation script available</div>
+                        </div>
+                    </div>
+
+                    <!-- Assignment -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fas fa-user-cog"></i> Assignment</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Assignment Group</label>
+                                <select class="form-select" id="assignGroup">
+                                    <option value="">Auto-assign based on category</option>
+                                    <option value="infra-ops">Infrastructure Operations</option>
+                                    <option value="network-ops">Network Operations</option>
+                                    <option value="dba-team">DBA Team</option>
+                                    <option value="devops">DevOps Engineering</option>
+                                    <option value="security-ops">Security Operations</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Assign To <span class="optional">(Optional)</span></label>
+                                <select class="form-select" id="assignTo">
+                                    <option value="">Auto-assign to on-call</option>
+                                    <option value="rajkumar">Rajkumar Madhu</option>
+                                    <option value="siva">Siva Kumar</option>
+                                    <option value="hoysala">Hoysala B.</option>
+                                    <option value="priya">Priya Singh</option>
+                                    <option value="amit">Amit Sharma</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SLA Information -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fas fa-clock"></i> SLA Information</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="sla-info">
+                                <h4><i class="fas fa-shield-alt"></i> Based on Priority</h4>
+                                <p>SLA targets will be calculated after priority is determined.</p>
+                                <div class="sla-times" id="slaTimes" style="display: none;">
+                                    <div class="sla-time-item">
+                                        <div class="label">Response</div>
+                                        <div class="value" id="slaResponse">--</div>
+                                    </div>
+                                    <div class="sla-time-item">
+                                        <div class="label">Resolution</div>
+                                        <div class="value" id="slaResolution">--</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Templates -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fas fa-file-alt"></i> Quick Templates</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="template-list">
+                                <div class="template-item" onclick="applyTemplate('db-connection')">
+                                    <div class="template-name">Database Connection Issue</div>
+                                    <div class="template-desc">Pre-filled for connection pool, timeout, or replication issues</div>
+                                </div>
+                                <div class="template-item" onclick="applyTemplate('high-latency')">
+                                    <div class="template-name">High Latency Alert</div>
+                                    <div class="template-desc">For API response time or network latency issues</div>
+                                </div>
+                                <div class="template-item" onclick="applyTemplate('pod-crash')">
+                                    <div class="template-name">Kubernetes Pod Failure</div>
+                                    <div class="template-desc">CrashLoopBackOff, OOMKilled, or deployment issues</div>
+                                </div>
+                                <div class="template-item" onclick="applyTemplate('disk-space')">
+                                    <div class="template-name">Disk Space Alert</div>
+                                    <div class="template-desc">Storage capacity or cleanup required</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        // Subcategory options
+        const subcategories = {
+            database: ['Connection Pooling', 'Replication', 'Performance', 'Backup/Recovery', 'Schema Issues'],
+            network: ['Connectivity', 'Latency', 'DNS', 'Load Balancer', 'Firewall'],
+            application: ['Crash/Error', 'Performance', 'Memory Leak', 'Configuration', 'Deployment'],
+            infrastructure: ['Kubernetes', 'Docker', 'Storage', 'Compute', 'Monitoring'],
+            security: ['Access Control', 'Certificate', 'Vulnerability', 'Audit', 'Compliance']
+        };
+
+        function updateSubcategory() {
+            const category = document.getElementById('category').value;
+            const subcatSelect = document.getElementById('subcategory');
+            subcatSelect.innerHTML = '<option value="">Select subcategory...</option>';
+            if (category && subcategories[category]) {
+                subcategories[category].forEach(sub => {
+                    subcatSelect.innerHTML += `<option value="${sub.toLowerCase().replace(' ', '-')}">${sub}</option>`;
+                });
+            }
+        }
+
+        // Priority Matrix
+        const priorityMatrix = {
+            '1-1': { priority: 'Critical', icon: 'fa-fire', class: 'critical', response: '15 min', resolution: '1 hour' },
+            '1-2': { priority: 'Critical', icon: 'fa-fire', class: 'critical', response: '15 min', resolution: '2 hours' },
+            '1-3': { priority: 'High', icon: 'fa-exclamation-circle', class: 'high', response: '30 min', resolution: '4 hours' },
+            '2-1': { priority: 'Critical', icon: 'fa-fire', class: 'critical', response: '15 min', resolution: '2 hours' },
+            '2-2': { priority: 'High', icon: 'fa-exclamation-circle', class: 'high', response: '30 min', resolution: '4 hours' },
+            '2-3': { priority: 'Medium', icon: 'fa-exclamation', class: 'medium', response: '1 hour', resolution: '8 hours' },
+            '3-1': { priority: 'High', icon: 'fa-exclamation-circle', class: 'high', response: '30 min', resolution: '4 hours' },
+            '3-2': { priority: 'Medium', icon: 'fa-exclamation', class: 'medium', response: '1 hour', resolution: '8 hours' },
+            '3-3': { priority: 'Low', icon: 'fa-info-circle', class: 'low', response: '4 hours', resolution: '48 hours' }
+        };
+
+        function calculatePriority() {
+            const impact = document.getElementById('impact').value;
+            const urgency = document.getElementById('urgency').value;
+            const resultDiv = document.getElementById('priorityResult');
+            const slaTimes = document.getElementById('slaTimes');
+
+            if (impact && urgency) {
+                const key = `${impact}-${urgency}`;
+                const result = priorityMatrix[key];
+                resultDiv.className = `priority-result ${result.class}`;
+                resultDiv.innerHTML = `
+                    <div class="label">Calculated Priority</div>
+                    <div class="value"><i class="fas ${result.icon}"></i> ${result.priority}</div>
+                `;
+                slaTimes.style.display = 'grid';
+                document.getElementById('slaResponse').textContent = result.response;
+                document.getElementById('slaResolution').textContent = result.resolution;
+            }
+        }
+
+        // Environment selection
+        document.querySelectorAll('.env-pill').forEach(pill => {
+            pill.addEventListener('click', function() {
+                document.querySelectorAll('.env-pill').forEach(p => p.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+
+        // CI selection
+        document.querySelectorAll('.ci-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                this.classList.toggle('selected');
+            });
+        });
+
+        // Template selection
+        function applyTemplate(template) {
+            document.querySelectorAll('.template-item').forEach(t => t.classList.remove('selected'));
+            event.target.closest('.template-item').classList.add('selected');
+
+            const templates = {
+                'db-connection': {
+                    shortDesc: 'Database Connection Pool Exhaustion',
+                    detailDesc: 'PgBouncer connection pool reached maximum capacity. Services experiencing connection timeouts.\n\nSymptoms:\n- Connection timeout errors\n- Elevated error rates\n- Service degradation\n\nAffected Services:\n- ',
+                    category: 'database',
+                    impact: '1',
+                    urgency: '1'
+                },
+                'high-latency': {
+                    shortDesc: 'API Response Time Degradation',
+                    detailDesc: 'API endpoints experiencing elevated response times above threshold.\n\nSymptoms:\n- P99 latency exceeds SLA\n- Timeout errors increasing\n- User experience impacted',
+                    category: 'network',
+                    impact: '2',
+                    urgency: '1'
+                },
+                'pod-crash': {
+                    shortDesc: 'Kubernetes Pod CrashLoopBackOff',
+                    detailDesc: 'Pod experiencing repeated restarts with CrashLoopBackOff status.\n\nSymptoms:\n- Pod restart count increasing\n- Service unavailable\n- Container exit code: ',
+                    category: 'infrastructure',
+                    impact: '1',
+                    urgency: '1'
+                },
+                'disk-space': {
+                    shortDesc: 'Disk Space Alert - Critical Threshold',
+                    detailDesc: 'Disk utilization exceeded warning threshold.\n\nDetails:\n- Current usage: %\n- Available space: \n- Affected mount: ',
+                    category: 'infrastructure',
+                    impact: '2',
+                    urgency: '2'
+                }
+            };
+
+            const t = templates[template];
+            document.getElementById('shortDesc').value = t.shortDesc;
+            document.getElementById('detailDesc').value = t.detailDesc;
+            document.getElementById('category').value = t.category;
+            updateSubcategory();
+            document.getElementById('impact').value = t.impact;
+            document.getElementById('urgency').value = t.urgency;
+            calculatePriority();
+        }
+
+        function applySuggestion(type) {
+            if (type === 'assign') {
+                document.getElementById('assignGroup').value = 'infra-ops';
+                document.getElementById('assignTo').value = 'rajkumar';
+            }
+        }
+
+        function saveDraft() {
+            alert('Draft saved successfully!');
+        }
+
+        function submitIncident() {
+            const form = document.getElementById('incidentForm');
+            const shortDesc = document.getElementById('shortDesc').value;
+            const impact = document.getElementById('impact').value;
+            const urgency = document.getElementById('urgency').value;
+
+            if (!shortDesc || !impact || !urgency) {
+                alert('Please fill in all required fields:\n- Short Description\n- Impact\n- Urgency');
+                return;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+            setTimeout(() => {
+                alert('Incident INC0015848 created successfully!\n\nAssigned to: Rajkumar Madhu\nPriority: Critical\nSLA Response: 15 minutes');
+                window.location.href = 'linkedeye-incident-detail.html';
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTR-CORE-MUM-01 | Network Devices | LinkedEye</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --sidebar-width: 256px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--gray-100);
+            color: var(--gray-800);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--gray-900);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--gray-700);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: white;
+        }
+
+        .sidebar-logo i {
+            font-size: 28px;
+            color: var(--primary);
+        }
+
+        .sidebar-logo span {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .sidebar-nav {
+            padding: 16px 0;
+        }
+
+        .nav-section {
+            margin-bottom: 8px;
+        }
+
+        .nav-section-title {
+            padding: 8px 20px;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--gray-500);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            color: var(--gray-400);
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background: var(--gray-800);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--gray-500);
+        }
+
+        .breadcrumb a {
+            color: var(--gray-500);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--primary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        /* Page Content */
+        .page-content {
+            padding: 24px;
+        }
+
+        /* Device Header Card */
+        .device-header-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .device-info {
+            display: flex;
+            gap: 20px;
+        }
+
+        .device-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 36px;
+        }
+
+        .device-details h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .device-details .device-type {
+            color: var(--gray-500);
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .device-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-secondary {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        .device-status {
+            text-align: right;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.online {
+            background: var(--success);
+        }
+
+        .status-dot.offline {
+            background: var(--danger);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .uptime {
+            color: var(--gray-500);
+            font-size: 13px;
+        }
+
+        /* Quick Stats Row */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .quick-stat {
+            text-align: center;
+        }
+
+        .quick-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .quick-stat-value.success {
+            color: var(--success);
+        }
+
+        .quick-stat-value.warning {
+            color: var(--warning);
+        }
+
+        .quick-stat-value.danger {
+            color: var(--danger);
+        }
+
+        .quick-stat-label {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Performance Charts */
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin-bottom: 20px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .chart-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .chart-value span {
+            font-size: 12px;
+            color: var(--gray-500);
+            font-weight: normal;
+        }
+
+        /* Interface Table */
+        .interface-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .interface-table th,
+        .interface-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 13px;
+        }
+
+        .interface-table th {
+            background: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+        .interface-table tr:hover {
+            background: var(--gray-50);
+        }
+
+        .interface-name {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .interface-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .interface-status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .interface-status.up::before {
+            background: var(--success);
+        }
+
+        .interface-status.down::before {
+            background: var(--danger);
+        }
+
+        .interface-status.admin-down::before {
+            background: var(--gray-400);
+        }
+
+        .traffic-bar {
+            width: 100px;
+            height: 6px;
+            background: var(--gray-200);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .traffic-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+        }
+
+        .traffic-bar-fill.low {
+            background: var(--success);
+        }
+
+        .traffic-bar-fill.medium {
+            background: var(--warning);
+        }
+
+        .traffic-bar-fill.high {
+            background: var(--danger);
+        }
+
+        /* Device Information Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .info-item {
+            padding: 12px;
+            background: var(--gray-50);
+            border-radius: 8px;
+        }
+
+        .info-item-label {
+            font-size: 11px;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .info-item-value {
+            font-size: 14px;
+            color: var(--gray-900);
+            font-weight: 500;
+        }
+
+        /* SNMP Metrics */
+        .snmp-metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .snmp-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--gray-50);
+            border-radius: 8px;
+        }
+
+        .snmp-metric-name {
+            font-size: 13px;
+            color: var(--gray-600);
+        }
+
+        .snmp-metric-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        /* Recent Alerts */
+        .alert-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .alert-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .alert-item.critical {
+            background: #fef2f2;
+            border-left: 3px solid var(--danger);
+        }
+
+        .alert-item.warning {
+            background: #fffbeb;
+            border-left: 3px solid var(--warning);
+        }
+
+        .alert-item.info {
+            background: #eff6ff;
+            border-left: 3px solid var(--info);
+        }
+
+        .alert-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .alert-item.critical .alert-icon {
+            background: var(--danger);
+            color: white;
+        }
+
+        .alert-item.warning .alert-icon {
+            background: var(--warning);
+            color: white;
+        }
+
+        .alert-item.info .alert-icon {
+            background: var(--info);
+            color: white;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 2px;
+        }
+
+        .alert-time {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+        }
+
+        .tab {
+            padding: 12px 20px;
+            font-size: 14px;
+            color: var(--gray-600);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: var(--gray-900);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: white;
+        }
+
+        /* Config Preview */
+        .config-preview {
+            background: var(--gray-900);
+            color: #e5e7eb;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .config-preview .comment {
+            color: #6b7280;
+        }
+
+        .config-preview .keyword {
+            color: #818cf8;
+        }
+
+        .config-preview .value {
+            color: #34d399;
+        }
+
+        /* Neighbors Table */
+        .neighbor-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            background: var(--gray-50);
+            margin-bottom: 8px;
+        }
+
+        .neighbor-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gray-200);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-600);
+        }
+
+        .neighbor-info {
+            flex: 1;
+        }
+
+        .neighbor-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .neighbor-details {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .neighbor-interface {
+            font-size: 12px;
+            color: var(--gray-600);
+            background: var(--gray-200);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        /* Full Width Section */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="linkedeye-dashboard.html" class="sidebar-logo">
+                <i class="fas fa-eye"></i>
+                <span>LinkedEye</span>
+            </a>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="linkedeye-dashboard.html" class="nav-item">
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Operations</div>
+                <a href="linkedeye-incidents.html" class="nav-item">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Incidents</span>
+                </a>
+                <a href="linkedeye-change-calendar.html" class="nav-item">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Changes</span>
+                </a>
+                <a href="linkedeye-problem-detail.html" class="nav-item">
+                    <i class="fas fa-search"></i>
+                    <span>Problems</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Assets</div>
+                <a href="linkedeye-assets.html" class="nav-item">
+                    <i class="fas fa-server"></i>
+                    <span>Asset Inventory</span>
+                </a>
+                <a href="linkedeye-network-topology.html" class="nav-item">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>Network Topology</span>
+                </a>
+                <a href="linkedeye-network-devices.html" class="nav-item active">
+                    <i class="fas fa-network-wired"></i>
+                    <span>Network Devices</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Analytics</div>
+                <a href="linkedeye-reports.html" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </a>
+                <a href="linkedeye-analytics.html" class="nav-item">
+                    <i class="fas fa-brain"></i>
+                    <span>AI Insights</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Administration</div>
+                <a href="linkedeye-users.html" class="nav-item">
+                    <i class="fas fa-users"></i>
+                    <span>Users</span>
+                </a>
+                <a href="linkedeye-groups.html" class="nav-item">
+                    <i class="fas fa-user-friends"></i>
+                    <span>Groups</span>
+                </a>
+                <a href="linkedeye-admin-settings.html" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                <a href="linkedeye-integrations.html" class="nav-item">
+                    <i class="fas fa-plug"></i>
+                    <span>Integrations</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <nav class="breadcrumb">
+                    <a href="linkedeye-dashboard.html">Home</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <a href="linkedeye-network-devices.html">Network Devices</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span>RTR-CORE-MUM-01</span>
+                </nav>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary">
+                    <i class="fas fa-terminal"></i>
+                    SSH Connect
+                </button>
+                <button class="btn btn-secondary">
+                    <i class="fas fa-history"></i>
+                    Config History
+                </button>
+                <button class="btn btn-primary">
+                    <i class="fas fa-sync-alt"></i>
+                    Refresh Metrics
+                </button>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <!-- Device Header Card -->
+            <div class="device-header-card">
+                <div class="device-header">
+                    <div class="device-info">
+                        <div class="device-icon">
+                            <i class="fas fa-router"></i>
+                        </div>
+                        <div class="device-details">
+                            <h1>RTR-CORE-MUM-01</h1>
+                            <div class="device-type">Cisco Nexus 9300 Series • Core Router</div>
+                            <div class="device-badges">
+                                <span class="badge badge-success">Online</span>
+                                <span class="badge badge-info">Production</span>
+                                <span class="badge badge-secondary">fs-mum-indmoney-prod-le</span>
+                                <span class="badge badge-secondary">Layer 3</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="device-status">
+                        <div class="status-indicator">
+                            <span class="status-dot online"></span>
+                            <span style="color: var(--success); font-weight: 600;">Operational</span>
+                        </div>
+                        <div class="uptime">
+                            <i class="fas fa-clock"></i> Uptime: 127 days, 14:32:18
+                        </div>
+                        <div class="uptime" style="margin-top: 4px;">
+                            <i class="fas fa-sync"></i> Last polled: 23 seconds ago
+                        </div>
+                    </div>
+                </div>
+                <div class="quick-stats">
+                    <div class="quick-stat">
+                        <div class="quick-stat-value">23%</div>
+                        <div class="quick-stat-label">CPU Utilization</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat-value">67%</div>
+                        <div class="quick-stat-label">Memory Usage</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat-value success">48</div>
+                        <div class="quick-stat-label">Interfaces Up</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat-value danger">2</div>
+                        <div class="quick-stat-label">Interfaces Down</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat-value">2.4 Tbps</div>
+                        <div class="quick-stat-label">Total Throughput</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="quick-stat-value warning">3</div>
+                        <div class="quick-stat-label">Active Alerts</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <!-- Performance Metrics -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-area"></i>
+                            Performance Metrics
+                        </h3>
+                        <select style="padding: 6px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px;">
+                            <option>Last 1 Hour</option>
+                            <option selected>Last 6 Hours</option>
+                            <option>Last 24 Hours</option>
+                            <option>Last 7 Days</option>
+                        </select>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-header">
+                            <div class="chart-title">CPU Utilization</div>
+                            <div class="chart-value">23% <span>avg: 18%</span></div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="cpuChart"></canvas>
+                        </div>
+
+                        <div class="chart-header">
+                            <div class="chart-title">Memory Usage</div>
+                            <div class="chart-value">67% <span>of 64GB</span></div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="memoryChart"></canvas>
+                        </div>
+
+                        <div class="chart-header">
+                            <div class="chart-title">Interface Traffic</div>
+                            <div class="chart-value">2.4 Tbps <span>peak: 3.1 Tbps</span></div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="trafficChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <!-- Device Information -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-info-circle"></i>
+                                Device Information
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-item-label">IP Address</div>
+                                    <div class="info-item-value">10.128.1.1</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-item-label">MAC Address</div>
+                                    <div class="info-item-value">00:1A:2B:3C:4D:5E</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-item-label">Serial Number</div>
+                                    <div class="info-item-value">FXS2342Q0V8</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-item-label">Model</div>
+                                    <div class="info-item-value">N9K-C93180YC-FX</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-item-label">Software Version</div>
+                                    <div class="info-item-value">NX-OS 10.2(3)</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-item-label">Location</div>
+                                    <div class="info-item-value">DC Mumbai - Rack A12</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-item-label">SNMP Community</div>
+                                    <div class="info-item-value">••••••••</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-item-label">Owner</div>
+                                    <div class="info-item-value">Siva Kadirannagari</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Alerts -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-bell"></i>
+                                Recent Alerts
+                            </h3>
+                            <a href="#" style="font-size: 13px; color: var(--primary); text-decoration: none;">View All</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert-item warning">
+                                <div class="alert-icon">
+                                    <i class="fas fa-exclamation"></i>
+                                </div>
+                                <div class="alert-content">
+                                    <div class="alert-title">High Memory Utilization</div>
+                                    <div class="alert-time">Memory exceeded 65% threshold • 2 min ago</div>
+                                </div>
+                            </div>
+                            <div class="alert-item warning">
+                                <div class="alert-icon">
+                                    <i class="fas fa-exclamation"></i>
+                                </div>
+                                <div class="alert-content">
+                                    <div class="alert-title">BGP Neighbor Flapping</div>
+                                    <div class="alert-time">Peer 10.128.2.1 unstable • 15 min ago</div>
+                                </div>
+                            </div>
+                            <div class="alert-item info">
+                                <div class="alert-icon">
+                                    <i class="fas fa-info"></i>
+                                </div>
+                                <div class="alert-content">
+                                    <div class="alert-title">Config Change Detected</div>
+                                    <div class="alert-time">Running config modified • 1 hour ago</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interface Status - Full Width -->
+                <div class="card full-width">
+                    <div class="tabs">
+                        <div class="tab active">Interfaces (50)</div>
+                        <div class="tab">VLANs (24)</div>
+                        <div class="tab">Routing</div>
+                        <div class="tab">CDP/LLDP Neighbors</div>
+                        <div class="tab">Config</div>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <table class="interface-table">
+                            <thead>
+                                <tr>
+                                    <th>Interface</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Speed</th>
+                                    <th>In Traffic</th>
+                                    <th>Out Traffic</th>
+                                    <th>Errors</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="interface-name">Ethernet1/1</span></td>
+                                    <td>Uplink to RTR-DIST-01</td>
+                                    <td><span class="interface-status up">Up</span></td>
+                                    <td>100 Gbps</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div class="traffic-bar"><div class="traffic-bar-fill medium" style="width: 45%;"></div></div>
+                                            <span style="font-size: 12px;">45 Gbps</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div class="traffic-bar"><div class="traffic-bar-fill low" style="width: 32%;"></div></div>
+                                            <span style="font-size: 12px;">32 Gbps</span>
+                                        </div>
+                                    </td>
+                                    <td><span style="color: var(--success);">0</span></td>
+                                    <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;"><i class="fas fa-chart-line"></i></button></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="interface-name">Ethernet1/2</span></td>
+                                    <td>Uplink to RTR-DIST-02</td>
+                                    <td><span class="interface-status up">Up</span></td>
+                                    <td>100 Gbps</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div class="traffic-bar"><div class="traffic-bar-fill high" style="width: 78%;"></div></div>
+                                            <span style="font-size: 12px;">78 Gbps</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div class="traffic-bar"><div class="traffic-bar-fill medium" style="width: 56%;"></div></div>
+                                            <span style="font-size: 12px;">56 Gbps</span>
+                                        </div>
+                                    </td>
+                                    <td><span style="color: var(--success);">0</span></td>
+                                    <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;"><i class="fas fa-chart-line"></i></button></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="interface-name">Ethernet1/3</span></td>
+                                    <td>Link to SW-ACC-01</td>
+                                    <td><span class="interface-status up">Up</span></td>
+                                    <td>40 Gbps</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div class="traffic-bar"><div class="traffic-bar-fill low" style="width: 23%;"></div></div>
+                                            <span style="font-size: 12px;">9.2 Gbps</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div class="traffic-bar"><div class="traffic-bar-fill low" style="width: 18%;"></div></div>
+                                            <span style="font-size: 12px;">7.2 Gbps</span>
+                                        </div>
+                                    </td>
+                                    <td><span style="color: var(--success);">0</span></td>
+                                    <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;"><i class="fas fa-chart-line"></i></button></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="interface-name">Ethernet1/4</span></td>
+                                    <td>Link to SW-ACC-02</td>
+                                    <td><span class="interface-status down">Down</span></td>
+                                    <td>40 Gbps</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div class="traffic-bar"><div class="traffic-bar-fill" style="width: 0%;"></div></div>
+                                            <span style="font-size: 12px; color: var(--gray-400);">--</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div class="traffic-bar"><div class="traffic-bar-fill" style="width: 0%;"></div></div>
+                                            <span style="font-size: 12px; color: var(--gray-400);">--</span>
+                                        </div>
+                                    </td>
+                                    <td><span style="color: var(--danger);">127</span></td>
+                                    <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;"><i class="fas fa-chart-line"></i></button></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="interface-name">Ethernet1/5</span></td>
+                                    <td>Link to FW-PROD-01</td>
+                                    <td><span class="interface-status up">Up</span></td>
+                                    <td>100 Gbps</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div class="traffic-bar"><div class="traffic-bar-fill medium" style="width: 52%;"></div></div>
+                                            <span style="font-size: 12px;">52 Gbps</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div class="traffic-bar"><div class="traffic-bar-fill medium" style="width: 48%;"></div></div>
+                                            <span style="font-size: 12px;">48 Gbps</span>
+                                        </div>
+                                    </td>
+                                    <td><span style="color: var(--success);">0</span></td>
+                                    <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;"><i class="fas fa-chart-line"></i></button></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="interface-name">mgmt0</span></td>
+                                    <td>Management Interface</td>
+                                    <td><span class="interface-status up">Up</span></td>
+                                    <td>1 Gbps</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div class="traffic-bar"><div class="traffic-bar-fill low" style="width: 5%;"></div></div>
+                                            <span style="font-size: 12px;">50 Mbps</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div class="traffic-bar"><div class="traffic-bar-fill low" style="width: 3%;"></div></div>
+                                            <span style="font-size: 12px;">30 Mbps</span>
+                                        </div>
+                                    </td>
+                                    <td><span style="color: var(--success);">0</span></td>
+                                    <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;"><i class="fas fa-chart-line"></i></button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- CDP/LLDP Neighbors -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-sitemap"></i>
+                            Connected Neighbors
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="neighbor-item">
+                            <div class="neighbor-icon">
+                                <i class="fas fa-router"></i>
+                            </div>
+                            <div class="neighbor-info">
+                                <div class="neighbor-name">RTR-DIST-01</div>
+                                <div class="neighbor-details">Cisco Nexus 9300 • 10.128.2.1</div>
+                            </div>
+                            <div class="neighbor-interface">Eth1/1 → Eth1/1</div>
+                        </div>
+                        <div class="neighbor-item">
+                            <div class="neighbor-icon">
+                                <i class="fas fa-router"></i>
+                            </div>
+                            <div class="neighbor-info">
+                                <div class="neighbor-name">RTR-DIST-02</div>
+                                <div class="neighbor-details">Cisco Nexus 9300 • 10.128.2.2</div>
+                            </div>
+                            <div class="neighbor-interface">Eth1/2 → Eth1/1</div>
+                        </div>
+                        <div class="neighbor-item">
+                            <div class="neighbor-icon">
+                                <i class="fas fa-network-wired"></i>
+                            </div>
+                            <div class="neighbor-info">
+                                <div class="neighbor-name">SW-ACC-01</div>
+                                <div class="neighbor-details">Cisco Catalyst 9300 • 10.128.3.1</div>
+                            </div>
+                            <div class="neighbor-interface">Eth1/3 → Eth1/49</div>
+                        </div>
+                        <div class="neighbor-item">
+                            <div class="neighbor-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="neighbor-info">
+                                <div class="neighbor-name">FW-PROD-01</div>
+                                <div class="neighbor-details">Palo Alto PA-5250 • 10.128.4.1</div>
+                            </div>
+                            <div class="neighbor-interface">Eth1/5 → Eth1/1</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SNMP Metrics -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-poll"></i>
+                            SNMP Metrics
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="snmp-metrics">
+                            <div class="snmp-metric">
+                                <span class="snmp-metric-name">sysUpTime</span>
+                                <span class="snmp-metric-value">127d 14:32:18</span>
+                            </div>
+                            <div class="snmp-metric">
+                                <span class="snmp-metric-name">ifNumber</span>
+                                <span class="snmp-metric-value">50</span>
+                            </div>
+                            <div class="snmp-metric">
+                                <span class="snmp-metric-name">hrProcessorLoad</span>
+                                <span class="snmp-metric-value">23%</span>
+                            </div>
+                            <div class="snmp-metric">
+                                <span class="snmp-metric-name">hrStorageUsed</span>
+                                <span class="snmp-metric-value">42.88 GB</span>
+                            </div>
+                            <div class="snmp-metric">
+                                <span class="snmp-metric-name">bgpPeerCount</span>
+                                <span class="snmp-metric-value">8</span>
+                            </div>
+                            <div class="snmp-metric">
+                                <span class="snmp-metric-name">ospfNeighborCount</span>
+                                <span class="snmp-metric-value">4</span>
+                            </div>
+                            <div class="snmp-metric">
+                                <span class="snmp-metric-name">ipRouteNumber</span>
+                                <span class="snmp-metric-value">12,847</span>
+                            </div>
+                            <div class="snmp-metric">
+                                <span class="snmp-metric-name">cpmCPUTotal5min</span>
+                                <span class="snmp-metric-value">18%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuration Preview - Full Width -->
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-file-code"></i>
+                            Running Configuration
+                        </h3>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" style="font-size: 13px;">
+                                <i class="fas fa-download"></i>
+                                Export
+                            </button>
+                            <button class="btn btn-secondary" style="font-size: 13px;">
+                                <i class="fas fa-code-compare"></i>
+                                Compare
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="config-preview">
+<span class="comment">! Cisco NX-OS Configuration</span>
+<span class="comment">! Last modified: 2024-12-23 14:32:18 UTC by admin</span>
+
+<span class="keyword">hostname</span> <span class="value">RTR-CORE-MUM-01</span>
+
+<span class="keyword">feature</span> bgp
+<span class="keyword">feature</span> ospf
+<span class="keyword">feature</span> interface-vlan
+<span class="keyword">feature</span> lacp
+<span class="keyword">feature</span> vpc
+
+<span class="keyword">interface</span> Ethernet1/1
+  <span class="keyword">description</span> <span class="value">Uplink to RTR-DIST-01</span>
+  <span class="keyword">no</span> switchport
+  <span class="keyword">mtu</span> <span class="value">9216</span>
+  <span class="keyword">ip</span> address <span class="value">10.128.1.1/30</span>
+  <span class="keyword">ip</span> router ospf 1 area 0.0.0.0
+  <span class="keyword">no</span> shutdown
+
+<span class="keyword">interface</span> Ethernet1/2
+  <span class="keyword">description</span> <span class="value">Uplink to RTR-DIST-02</span>
+  <span class="keyword">no</span> switchport
+  <span class="keyword">mtu</span> <span class="value">9216</span>
+  <span class="keyword">ip</span> address <span class="value">10.128.1.5/30</span>
+  <span class="keyword">ip</span> router ospf 1 area 0.0.0.0
+  <span class="keyword">no</span> shutdown
+
+<span class="keyword">router</span> ospf 1
+  <span class="keyword">router-id</span> <span class="value">10.128.1.1</span>
+
+<span class="keyword">router</span> bgp 65001
+  <span class="keyword">router-id</span> <span class="value">10.128.1.1</span>
+  <span class="keyword">neighbor</span> <span class="value">10.128.2.1</span> remote-as 65002
+  <span class="keyword">neighbor</span> <span class="value">10.128.2.2</span> remote-as 65002
+  address-family ipv4 unicast
+    <span class="keyword">network</span> <span class="value">10.128.0.0/16</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // CPU Chart
+        const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+        new Chart(cpuCtx, {
+            type: 'line',
+            data: {
+                labels: ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00'],
+                datasets: [{
+                    label: 'CPU %',
+                    data: [15, 18, 22, 19, 23, 21, 23],
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: '#f3f4f6' },
+                        ticks: { callback: value => value + '%' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Memory Chart
+        const memCtx = document.getElementById('memoryChart').getContext('2d');
+        new Chart(memCtx, {
+            type: 'line',
+            data: {
+                labels: ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00'],
+                datasets: [{
+                    label: 'Memory %',
+                    data: [62, 64, 65, 66, 65, 67, 67],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: '#f3f4f6' },
+                        ticks: { callback: value => value + '%' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Traffic Chart
+        const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+        new Chart(trafficCtx, {
+            type: 'line',
+            data: {
+                labels: ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00'],
+                datasets: [{
+                    label: 'Inbound',
+                    data: [1.8, 2.1, 2.4, 2.2, 2.6, 2.3, 2.4],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    borderWidth: 2
+                }, {
+                    label: 'Outbound',
+                    data: [1.5, 1.8, 2.0, 1.9, 2.2, 2.0, 2.1],
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f3f4f6' },
+                        ticks: { callback: value => value + ' Tbps' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
