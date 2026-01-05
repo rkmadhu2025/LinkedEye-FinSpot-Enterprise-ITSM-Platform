@@ -74,7 +74,7 @@ class TestRoleBasedAccessControl:
             role=user_role,
             status=UserStatus.ACTIVE,
             permissions=permissions,
-            failed_login_attempts="0"
+            failed_login_attempts=0
         )
         db_session.add(user)
         db_session.commit()
@@ -125,7 +125,7 @@ class TestRoleBasedAccessControl:
             role=UserRole.ADMIN,
             status=UserStatus.ACTIVE,
             permissions=admin_permissions,  # Explicit permissions shouldn't matter for admin
-            failed_login_attempts="0"
+            failed_login_attempts=0
         )
         db_session.add(admin_user)
         db_session.commit()
@@ -171,7 +171,7 @@ class TestRoleBasedAccessControl:
             role=user_role,
             status=UserStatus.ACTIVE,
             permissions=permissions,
-            failed_login_attempts="0"
+            failed_login_attempts=0
         )
         db_session.add(user)
         db_session.commit()
@@ -213,7 +213,7 @@ class TestRoleBasedAccessControl:
             role=user_role,
             status=user_status,
             permissions=permissions,
-            failed_login_attempts="0"
+            failed_login_attempts=0
         )
         db_session.add(user)
         db_session.commit()
@@ -289,7 +289,7 @@ class TestRoleBasedAccessControl:
             status=UserStatus.ACTIVE,
             failed_login_attempts=str(failed_attempts),
             locked_until=datetime.utcnow() + timedelta(minutes=locked_duration_minutes),
-            failed_login_attempts="0"
+            failed_login_attempts=0
         )
         db_session.add(user)
         db_session.commit()

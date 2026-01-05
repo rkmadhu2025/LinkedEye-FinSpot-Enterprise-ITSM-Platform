@@ -1,7 +1,7 @@
 """
 User model for authentication and authorization.
 """
-from sqlalchemy import Column, String, Boolean, DateTime, Text, Enum as SQLEnum
+from sqlalchemy import Column, String, Boolean, DateTime, Text, Integer, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from app.models.base import BaseModel
@@ -62,7 +62,7 @@ class User(BaseModel):
     status = Column(String(20), default=UserStatus.ACTIVE.value, nullable=False)
     last_login_at = Column(DateTime(timezone=True), nullable=True)
     last_activity_at = Column(DateTime(timezone=True), nullable=True)
-    failed_login_attempts = Column(String(10), default="0", nullable=False)
+    failed_login_attempts = Column(Integer, default=0, nullable=False)
     locked_until = Column(DateTime(timezone=True), nullable=True)
     
     # Preferences

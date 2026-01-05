@@ -1,7 +1,7 @@
 """
 Change model for change management.
 """
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Boolean, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from app.models.base import BaseModel
@@ -87,8 +87,8 @@ class Change(BaseModel):
     affected_assets = Column(JSONB, default=list, nullable=False)
     
     # Approval and Review
-    approval_required = Column(String(10), default="true", nullable=False)  # Using string for boolean
-    cab_required = Column(String(10), default="false", nullable=False)  # Change Advisory Board
+    approval_required = Column(Boolean, default=True, nullable=False)
+    cab_required = Column(Boolean, default=False, nullable=False)  # Change Advisory Board
     
     # Results and Closure
     success_criteria = Column(Text, nullable=True)
@@ -109,22 +109,22 @@ class Change(BaseModel):
     @property
     def requires_approval(self) -> bool:
         """Check if change requires approval."""
-        return self.approval_required == "true"
-    
+        return bool(self.approval_required)
+
     @requires_approval.setter
     def requires_approval(self, value: bool):
         """Set approval requirement."""
-        self.approval_required = "true" if value else "false"
-    
+        self.approval_required = bool(value)
+
     @property
     def requires_cab(self) -> bool:
         """Check if change requires CAB review."""
-        return self.cab_required == "true"
-    
+        return bool(self.cab_required)
+
     @requires_cab.setter
     def requires_cab(self, value: bool):
         """Set CAB requirement."""
-        self.cab_required = "true" if value else "false"
+        self.cab_required = bool(value)
     
     @property
     def is_emergency(self) -> bool:

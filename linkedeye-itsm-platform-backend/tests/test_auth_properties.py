@@ -102,7 +102,7 @@ class TestAuthenticationSecurity:
             last_name=last_name,
             role=UserRole.USER,
             status=UserStatus.ACTIVE,
-            failed_login_attempts="0"
+            failed_login_attempts=0
         )
         db_session.add(user)
         db_session.commit()
@@ -167,7 +167,7 @@ class TestAuthenticationSecurity:
             last_name="User",
             role=UserRole.USER,
             status=UserStatus.ACTIVE,
-            failed_login_attempts="0"
+            failed_login_attempts=0
         )
         db_session.add(user)
         db_session.commit()

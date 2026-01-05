@@ -1,7 +1,7 @@
 """
 Incident model for incident management.
 """
-from sqlalchemy import Column, String, Text, DateTime, Integer, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, String, Text, DateTime, Integer, ForeignKey, Boolean, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from app.models.base import BaseModel
@@ -67,7 +67,7 @@ class Incident(BaseModel):
     
     # SLA and Timing
     sla_target = Column(DateTime(timezone=True), nullable=True)
-    sla_breached = Column(String(10), default="false", nullable=False)  # Using string for boolean
+    sla_breached = Column(Boolean, default=False, nullable=False)
     first_response_at = Column(DateTime(timezone=True), nullable=True)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     closed_at = Column(DateTime(timezone=True), nullable=True)
@@ -96,12 +96,12 @@ class Incident(BaseModel):
     @property
     def is_sla_breached(self) -> bool:
         """Check if SLA is breached."""
-        return self.sla_breached == "true"
-    
+        return bool(self.sla_breached)
+
     @is_sla_breached.setter
     def is_sla_breached(self, value: bool):
         """Set SLA breach status."""
-        self.sla_breached = "true" if value else "false"
+        self.sla_breached = bool(value)
     
     @property
     def age_in_hours(self) -> float:

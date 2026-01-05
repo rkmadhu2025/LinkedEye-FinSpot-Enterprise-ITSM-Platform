@@ -102,10 +102,10 @@ async def login(
         # Verify password
         if not verify_password(user_credentials.password, user.password_hash):
             # Increment failed login attempts
-            user.failed_login_attempts = str(int(user.failed_login_attempts) + 1)
-            
+            user.failed_login_attempts += 1
+
             # Lock account after 5 failed attempts
-            if int(user.failed_login_attempts) >= 5:
+            if user.failed_login_attempts >= 5:
                 user.locked_until = datetime.utcnow() + timedelta(minutes=30)
                 log_security_event("account_locked", user_id=str(user.id), context={"failed_attempts": user.failed_login_attempts})
             
@@ -125,7 +125,7 @@ async def login(
             )
         
         # Reset failed login attempts on successful login
-        user.failed_login_attempts = "0"
+        user.failed_login_attempts = 0
         user.locked_until = None
         user.last_login_at = datetime.utcnow()
         db.commit()
@@ -328,7 +328,7 @@ async def confirm_password_reset(
         user.password_hash = get_password_hash(reset_data.new_password)
         user.password_reset_token = None
         user.password_reset_expires = None
-        user.failed_login_attempts = "0"
+        user.failed_login_attempts = 0
         user.locked_until = None
         db.commit()
 

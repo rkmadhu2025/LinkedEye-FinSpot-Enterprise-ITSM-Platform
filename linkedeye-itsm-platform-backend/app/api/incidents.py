@@ -78,7 +78,7 @@ class IncidentResponse(BaseModel):
     created_by_id: UUID
     environment_id: Optional[UUID]
     sla_target: Optional[datetime]
-    sla_breached: str
+    sla_breached: bool
     first_response_at: Optional[datetime]
     resolved_at: Optional[datetime]
     closed_at: Optional[datetime]
@@ -208,7 +208,7 @@ async def create_incident(
             tags=incident_data.tags,
             custom_fields=incident_data.custom_fields,
             sla_target=sla_target,
-            sla_breached="false"
+            sla_breached=False
         )
         
         db.add(new_incident)
@@ -357,7 +357,7 @@ async def update_incident(
         # Check SLA breach
         if incident.sla_target and datetime.utcnow() > incident.sla_target:
             if incident.status not in [IncidentStatus.RESOLVED, IncidentStatus.CLOSED, IncidentStatus.CANCELLED]:
-                incident.sla_breached = "true"
+                incident.sla_breached = True
         
         db.commit()
         db.refresh(incident)

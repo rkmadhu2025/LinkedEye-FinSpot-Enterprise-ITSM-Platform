@@ -18,7 +18,7 @@ interface BackendIncident {
   created_by_id: string;
   environment_id?: string;
   sla_target?: string;
-  sla_breached: string;
+  sla_breached: boolean;
   first_response_at?: string;
   resolved_at?: string;
   closed_at?: string;

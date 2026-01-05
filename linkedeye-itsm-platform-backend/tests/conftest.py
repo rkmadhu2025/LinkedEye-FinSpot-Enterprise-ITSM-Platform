@@ -62,7 +62,7 @@ def test_user(db_session):
         last_name="User",
         role=UserRole.USER,
         status=UserStatus.ACTIVE,
-        failed_login_attempts="0"
+        failed_login_attempts=0
     )
     db_session.add(user)
     db_session.commit()
@@ -81,7 +81,7 @@ def admin_user(db_session):
         last_name="User",
         role=UserRole.ADMIN,
         status=UserStatus.ACTIVE,
-        failed_login_attempts="0"
+        failed_login_attempts=0
     )
     db_session.add(user)
     db_session.commit()
