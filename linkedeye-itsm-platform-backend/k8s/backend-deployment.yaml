@@ -1,0 +1,140 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linkedeye-backend
+  namespace: incident-linkedeye-itsm
+  labels:
+    app: linkedeye-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: linkedeye-backend
+  template:
+    metadata:
+      labels:
+        app: linkedeye-backend
+    spec:
+      imagePullSecrets:
+      - name: gitlab-registry-auth
+      containers:
+      - name: backend
+        image: registry.gitlab.com/finspot-le-dev/fs-le-dev-finspot-incident-tool/backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: DATABASE_HOST
+        - name: DATABASE_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: DATABASE_PORT
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: itsm-backend-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: itsm-backend-secrets
+              key: DATABASE_PASSWORD
+        - name: DATABASE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: DATABASE_NAME
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)?sslmode=disable"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: itsm-backend-secrets
+              key: REDIS_PASSWORD
+        - name: REDIS_URL
+          value: "redis://:$(REDIS_PASSWORD)@redis-service:6379/0"
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: itsm-backend-secrets
+              key: JWT_SECRET_KEY
+        - name: ALLOWED_HOSTS
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: ALLOWED_HOSTS
+        - name: ALLOWED_ORIGINS
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: ALLOWED_ORIGINS
+        - name: RATE_LIMIT_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: RATE_LIMIT_ENABLED
+        - name: CELERY_BROKER_URL
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: CELERY_BROKER_URL
+        - name: CELERY_RESULT_BACKEND
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: CELERY_RESULT_BACKEND
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: ENVIRONMENT
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: DEBUG
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: logs
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: linkedeye-backend
+  namespace: incident-linkedeye-itsm
+spec:
+  selector:
+    app: linkedeye-backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP

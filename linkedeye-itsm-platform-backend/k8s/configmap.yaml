@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: itsm-backend-config
+  namespace: incident-linkedeye-itsm
+data:
+  DATABASE_HOST: "postgresql-leadmin-service.postgresql-leadmin.svc.cluster.local"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "linkedeye_finspot"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  CELERY_BROKER_URL: "redis://redis-service:6379/1"
+  CELERY_RESULT_BACKEND: "redis://redis-service:6379/2"
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+  LOG_LEVEL: "INFO"
+  ALLOWED_HOSTS: '["*"]'
+  ALLOWED_ORIGINS: '["*"]'
+  RATE_LIMIT_ENABLED: "false"

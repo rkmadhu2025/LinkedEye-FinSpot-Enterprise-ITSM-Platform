@@ -1,0 +1,33 @@
+
+-- Add is_active column to incidents
+ALTER TABLE incidents ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
+UPDATE incidents SET is_active = TRUE WHERE is_active IS NULL;
+ALTER TABLE incidents ALTER COLUMN is_active SET NOT NULL;
+
+-- Add is_active column to changes
+ALTER TABLE changes ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
+UPDATE changes SET is_active = TRUE WHERE is_active IS NULL;
+ALTER TABLE changes ALTER COLUMN is_active SET NOT NULL;
+
+-- Add is_active column to assets
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
+UPDATE assets SET is_active = TRUE WHERE is_active IS NULL;
+ALTER TABLE assets ALTER COLUMN is_active SET NOT NULL;
+
+-- Add is_active column to environments
+ALTER TABLE environments ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
+UPDATE environments SET is_active = TRUE WHERE is_active IS NULL;
+ALTER TABLE environments ALTER COLUMN is_active SET NOT NULL;
+
+-- Ensure created_at and updated_at exist too, just in case
+ALTER TABLE incidents ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL;
+ALTER TABLE incidents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL;
+
+ALTER TABLE changes ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL;
+ALTER TABLE changes ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL;
+
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL;
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL;
+
+ALTER TABLE environments ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL;
+ALTER TABLE environments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL;
