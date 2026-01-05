@@ -1,0 +1,118 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Environment files - NEVER commit secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+*.env
+
+# IDE and Editors
+.vscode/
+.idea/
+.cursor/
+.kiro/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+nul
+
+# SSL Certificates (sensitive)
+SSL/
+*.pem
+*.key
+*.crt
+*.p12
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output/
+.pytest_cache/
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+
+# Build outputs
+dist/
+build/
+*.js.map
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+
+# PowerShell scripts (development utilities)
+*.ps1
+
+# SQL migration scripts (development)
+execute_schema.sql
+fix_schema_mismatch.sql
+
+# Documentation generated during development
+ALL_FIXES_COMPLETE.md
+ALL_SCHEMA_FIXES_COMPLETE.md
+AUTHENTICATION_CODE_REVIEW.md
+CODE_LEVEL_ANALYSIS.md
+CREDENTIALS.md
+DEPLOYMENT_STATUS.md
+DEPLOYMENT_STATUS_FINAL.md
+FINAL_FIXES_APPLIED.md
+FINAL_STATUS.md
+INTEGRATION_GUIDE.md
+LOGIN_FIX_SUMMARY.md
+LOGIN_FIX_SUMMARY_V2.md
+LOGIN_TROUBLESHOOTING.md
+PRODUCTION_CODE_SUMMARY.md
+PYTHON_FRONTEND_GUIDE.md
+QUICK_EXECUTE.md
+REFERENCE_DESIGN_INTEGRATION.md
+REGISTRATION_FIX.md
+REGISTRATION_FIX_APPLIED.md
+REGISTRATION_FIX_SUMMARY.md
+SCHEMA_EXECUTION_GUIDE.md
+SCHEMA_EXECUTION_SUMMARY.md
+SCHEMA_FIXES_APPLIED.md
+SCHEMA_REVIEW.md
+TEST_USER_CREDENTIALS.md
+
+# Deprecated code
+linkedeye-finspot/
+
+# Claude Code config (local)
+.claude/

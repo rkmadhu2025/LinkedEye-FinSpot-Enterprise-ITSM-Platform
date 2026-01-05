@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block page_title %}Problem {{ problem.number }}{% endblock %}
+
+{% block content %}
+<div class="incident-header">
+    <div class="incident-title-section">
+        <h1>{{ problem.title }}</h1>
+        <div class="incident-meta">
+            <div class="meta-item">
+                <i class="fas fa-hashtag"></i>
+                <span>{{ problem.number }}</span>
+            </div>
+            <div class="meta-item">
+                <i class="fas fa-calendar"></i>
+                <span>Created {{ problem.created_at[:10] }}</span>
+            </div>
+        </div>
+    </div>
+    <div>
+        <a href="{{ url_for('problems') }}" class="btn" style="background: #fff; border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 8px; text-decoration: none;">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-card">
+        <h3>Description</h3>
+        <div style="color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">{{ problem.description }}</div>
+        
+        {% if problem.root_cause %}
+        <h3 style="margin-top: 24px;">Root Cause</h3>
+        <div style="color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">{{ problem.root_cause }}</div>
+        {% endif %}
+        
+        {% if problem.resolution_summary %}
+        <h3 style="margin-top: 24px;">Resolution Summary</h3>
+        <div style="color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">{{ problem.resolution_summary }}</div>
+        {% endif %}
+    </div>
+    
+    <div class="detail-card">
+        <h3>Details</h3>
+        <div class="detail-item">
+            <div class="detail-label">Status</div>
+            <div class="detail-value">{{ problem.status|replace('_', ' ')|title }}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Priority</div>
+            <div class="detail-value">
+                <span class="badge {{ problem.priority }}">{{ problem.priority|title }}</span>
+            </div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Created</div>
+            <div class="detail-value">{{ problem.created_at }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

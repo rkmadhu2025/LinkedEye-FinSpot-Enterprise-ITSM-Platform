@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Network Topology - LinkedEye-FinSpot Network Monitoring">
+    <title>Network Topology | LinkedEye-FinSpot</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .main-content { display: flex; padding: 0; min-height: calc(100vh - var(--header-height)); }
+
+        /* Topology Canvas */
+        .topology-canvas { flex: 1; background: linear-gradient(135deg, #1a1a2e, #16213e); position: relative; overflow: hidden; }
+
+        .topology-toolbar { position: absolute; top: 20px; left: 20px; display: flex; gap: 8px; z-index: 10; }
+        .toolbar-btn { width: 42px; height: 42px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .toolbar-btn:hover { background: rgba(255,255,255,0.2); }
+        .toolbar-btn.active { background: var(--primary-blue); border-color: var(--primary-blue); }
+
+        .legend { position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.75); backdrop-filter: blur(10px); padding: 18px 22px; border-radius: 12px; z-index: 10; border: 1px solid rgba(255,255,255,0.1); }
+        .legend h4 { color: #fff; font-size: 12px; margin-bottom: 14px; font-weight: 600; }
+        .legend-item { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.85); font-size: 12px; margin-bottom: 10px; }
+        .legend-item:last-child { margin-bottom: 0; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .legend-dot.healthy { background: var(--success); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+        .legend-dot.warning { background: var(--warning); box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
+        .legend-dot.critical { background: var(--danger); box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+
+        .topology-diagram { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+        .device { position: absolute; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; }
+        .device:hover { transform: scale(1.1); }
+        .device-icon { width: 64px; height: 64px; background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.25); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; color: #fff; position: relative; transition: all 0.3s; }
+        .device.healthy .device-icon { border-color: var(--success); box-shadow: 0 0 25px rgba(16, 185, 129, 0.35); }
+        .device.warning .device-icon { border-color: var(--warning); box-shadow: 0 0 25px rgba(245, 158, 11, 0.35); }
+        .device.critical .device-icon { border-color: var(--danger); box-shadow: 0 0 25px rgba(239, 68, 68, 0.35); }
+        .device-status { position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%; border: 3px solid #1a1a2e; }
+        .device-status.healthy { background: var(--success); }
+        .device-status.warning { background: var(--warning); }
+        .device-status.critical { background: var(--danger); }
+        .device-label { margin-top: 10px; color: #fff; font-size: 11px; font-weight: 600; text-align: center; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 6px; white-space: nowrap; }
+
+        .connection { position: absolute; background: rgba(255,255,255,0.15); }
+        .connection.vertical { width: 2px; }
+        .connection.horizontal { height: 2px; }
+        .connection.healthy { background: var(--success); box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+        .connection.warning { background: var(--warning); box-shadow: 0 0 10px rgba(245, 158, 11, 0.5); }
+        .connection.critical { background: var(--danger); box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+
+        /* Info Panel */
+        .info-panel { width: 340px; background: var(--bg-card); border-left: 1px solid var(--border-color); padding: 24px; overflow-y: auto; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .panel-header h3 { font-size: 15px; font-weight: 600; }
+        .panel-close { width: 34px; height: 34px; border: 1px solid var(--border-color); background: #fff; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .panel-close:hover { background: #f9fafb; }
+
+        .device-detail-header { text-align: center; margin-bottom: 24px; }
+        .device-detail-icon { width: 68px; height: 68px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 30px; }
+        .device-detail-icon.healthy { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .device-detail-icon.warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .device-detail-icon.critical { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .device-detail-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .device-detail-type { font-size: 12px; color: var(--text-secondary); }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
+        .stat-item { background: #f9fafb; padding: 14px; border-radius: 10px; text-align: center; }
+        .stat-item .value { font-size: 22px; font-weight: 700; line-height: 1; }
+        .stat-item .value.healthy { color: var(--success); }
+        .stat-item .value.warning { color: var(--warning); }
+        .stat-item .value.danger { color: var(--danger); }
+        .stat-item .label { font-size: 11px; color: var(--text-secondary); margin-top: 6px; }
+
+        .info-section { margin-bottom: 24px; }
+        .info-section:last-child { margin-bottom: 0; }
+        .info-section-title { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+        .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color); font-size: 12px; }
+        .info-row:last-child { border-bottom: none; }
+        .info-row .label { color: var(--text-secondary); }
+        .info-row .value { font-weight: 600; }
+
+        .activity-item { padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-item .activity-title { font-size: 12px; font-weight: 500; margin-bottom: 2px; }
+        .activity-item .activity-time { font-size: 11px; color: var(--text-secondary); }
+
+        /* Zoom controls display */
+        .zoom-level { position: absolute; bottom: 20px; right: 380px; background: rgba(0,0,0,0.75); padding: 8px 16px; border-radius: 8px; color: #fff; font-size: 12px; }
+
+        @media (max-width: 1200px) {
+            .info-panel { width: 320px; }
+        }
+        @media (max-width: 1024px) {
+            .main-content { flex-direction: column; }
+            .info-panel { width: 100%; border-left: none; border-top: 1px solid var(--border-color); }
+            .topology-canvas { min-height: 500px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-wrapper">
+            <header class="header" id="header"></header>
+            <main class="main-content">
+                <div class="topology-canvas" id="topologyCanvas">
+                    <div class="topology-toolbar">
+                        <button class="toolbar-btn active" id="panBtn" title="Pan"><i class="fas fa-hand-paper"></i></button>
+                        <button class="toolbar-btn" id="zoomInBtn" title="Zoom In"><i class="fas fa-search-plus"></i></button>
+                        <button class="toolbar-btn" id="zoomOutBtn" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+                        <button class="toolbar-btn" id="fitBtn" title="Fit"><i class="fas fa-expand-arrows-alt"></i></button>
+                        <button class="toolbar-btn" id="toggleLabelsBtn" title="Toggle Labels"><i class="fas fa-tag"></i></button>
+                        <button class="toolbar-btn" id="refreshBtn" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+
+                    <div class="legend">
+                        <h4>Device Status</h4>
+                        <div class="legend-item"><div class="legend-dot healthy"></div> Healthy</div>
+                        <div class="legend-item"><div class="legend-dot warning"></div> Warning</div>
+                        <div class="legend-item"><div class="legend-dot critical"></div> Critical</div>
+                    </div>
+
+                    <div class="zoom-level" id="zoomLevel">100%</div>
+
+                    <!-- Topology Diagram -->
+                    <div class="topology-diagram" id="topologyDiagram" style="width: 600px; height: 500px;">
+                        <!-- Devices rendered dynamically -->
+                    </div>
+                </div>
+
+                <div class="info-panel" id="infoPanel">
+                    <div class="panel-header">
+                        <h3>Device Details</h3>
+                        <button class="panel-close" onclick="closePanel()"><i class="fas fa-times"></i></button>
+                    </div>
+
+                    <div id="deviceDetails">
+                        <div class="device-detail-header">
+                            <div class="device-detail-icon healthy" id="panelDeviceIcon"><i class="fas fa-network-wired"></i></div>
+                            <div class="device-detail-name" id="panelDeviceName">SW-CORE-01</div>
+                            <div class="device-detail-type" id="panelDeviceType">Cisco Catalyst 9500</div>
+                        </div>
+
+                        <div class="stats-grid" id="panelStats">
+                            <div class="stat-item"><div class="value healthy">23%</div><div class="label">CPU Usage</div></div>
+                            <div class="stat-item"><div class="value">45%</div><div class="label">Memory</div></div>
+                            <div class="stat-item"><div class="value">45d</div><div class="label">Uptime</div></div>
+                            <div class="stat-item"><div class="value">42&#176;C</div><div class="label">Temperature</div></div>
+                        </div>
+
+                        <div class="info-section">
+                            <div class="info-section-title">Device Information</div>
+                            <div id="panelDeviceInfo">
+                                <div class="info-row"><span class="label">Hostname</span><span class="value">sw-core-01.finspot.com</span></div>
+                                <div class="info-row"><span class="label">IP Address</span><span class="value">10.0.1.1</span></div>
+                                <div class="info-row"><span class="label">Location</span><span class="value">DC-1, Rack A3</span></div>
+                                <div class="info-row"><span class="label">Serial #</span><span class="value">FDO2345A6B7</span></div>
+                                <div class="info-row"><span class="label">IOS Version</span><span class="value">17.3.4</span></div>
+                            </div>
+                        </div>
+
+                        <div class="info-section">
+                            <div class="info-section-title">Port Status</div>
+                            <div id="panelPortStatus">
+                                <div class="info-row"><span class="label">Ports Up</span><span class="value" style="color: var(--success);">45/48</span></div>
+                                <div class="info-row"><span class="label">Ports Down</span><span class="value" style="color: var(--danger);">3</span></div>
+                                <div class="info-row"><span class="label">Errors</span><span class="value">0</span></div>
+                            </div>
+                        </div>
+
+                        <div class="info-section">
+                            <div class="info-section-title">Recent Activity</div>
+                            <div id="panelActivity">
+                                <div class="activity-item">
+                                    <div class="activity-title">Port Gi1/0/24 went up</div>
+                                    <div class="activity-time">2 hours ago</div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-title">Config backup completed</div>
+                                    <div class="activity-time">6 hours ago</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="viewFullDetails()">
+                            <i class="fas fa-external-link-alt"></i> View Full Details
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        // Sample topology data
+        const topologyDevices = [
+            { id: 'internet', name: 'INTERNET', type: 'internet', icon: 'fa-globe', status: 'healthy', x: 250, y: 0 },
+            { id: 'fw-01', name: 'FW-01', type: 'firewall', icon: 'fa-shield-alt', status: 'healthy', x: 150, y: 110, model: 'Palo Alto PA-5250', ip: '10.0.0.1', location: 'DC-1, DMZ' },
+            { id: 'fw-02', name: 'FW-02', type: 'firewall', icon: 'fa-shield-alt', status: 'healthy', x: 350, y: 110, model: 'Palo Alto PA-5250', ip: '10.0.0.2', location: 'DC-1, DMZ' },
+            { id: 'sw-core-01', name: 'SW-CORE-01', type: 'switch', icon: 'fa-network-wired', status: 'healthy', x: 150, y: 220, model: 'Cisco Catalyst 9500', ip: '10.0.1.1', location: 'DC-1, Rack A3', cpu: 23, memory: 45, uptime: '45d', temp: '42', portsUp: 45, portsTotal: 48, serial: 'FDO2345A6B7', iosVersion: '17.3.4' },
+            { id: 'sw-core-02', name: 'SW-CORE-02', type: 'switch', icon: 'fa-network-wired', status: 'healthy', x: 350, y: 220, model: 'Cisco Catalyst 9500', ip: '10.0.1.2', location: 'DC-1, Rack A4', cpu: 18, memory: 42, uptime: '45d', temp: '40', portsUp: 48, portsTotal: 48, serial: 'FDO2345A6B8', iosVersion: '17.3.4' },
+            { id: 'sw-a-01', name: 'SW-A-01', type: 'switch', icon: 'fa-network-wired', status: 'healthy', x: 60, y: 340, model: 'Cisco Catalyst 9300', ip: '10.0.2.1', location: 'DC-1, Rack B1', cpu: 12, memory: 38, portsUp: 20, portsTotal: 24 },
+            { id: 'sw-a-02', name: 'SW-A-02', type: 'switch', icon: 'fa-network-wired', status: 'warning', x: 180, y: 340, model: 'Cisco Catalyst 9300', ip: '10.0.2.2', location: 'DC-1, Rack B2', cpu: 78, memory: 65, portsUp: 22, portsTotal: 24 },
+            { id: 'sw-a-03', name: 'SW-A-03', type: 'switch', icon: 'fa-network-wired', status: 'healthy', x: 340, y: 340, model: 'Cisco Catalyst 9300', ip: '10.0.2.3', location: 'DC-1, Rack B3', cpu: 15, memory: 40, portsUp: 18, portsTotal: 24 },
+            { id: 'sw-a-04', name: 'SW-A-04', type: 'switch', icon: 'fa-network-wired', status: 'healthy', x: 460, y: 340, model: 'Cisco Catalyst 9300', ip: '10.0.2.4', location: 'DC-1, Rack B4', cpu: 20, memory: 42, portsUp: 21, portsTotal: 24 }
+        ];
+
+        const connections = [
+            { from: 'internet', to: 'fw-01', status: 'healthy' },
+            { from: 'internet', to: 'fw-02', status: 'healthy' },
+            { from: 'fw-01', to: 'sw-core-01', status: 'healthy' },
+            { from: 'fw-02', to: 'sw-core-02', status: 'healthy' },
+            { from: 'sw-core-01', to: 'sw-core-02', status: 'healthy', type: 'horizontal' },
+            { from: 'sw-core-01', to: 'sw-a-01', status: 'healthy' },
+            { from: 'sw-core-01', to: 'sw-a-02', status: 'warning' },
+            { from: 'sw-core-02', to: 'sw-a-03', status: 'healthy' },
+            { from: 'sw-core-02', to: 'sw-a-04', status: 'healthy' }
+        ];
+
+        let selectedDevice = null;
+        let zoomLevel = 100;
+        let showLabels = true;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Layout.init({ activePage: 'network' });
+            renderTopology();
+            setupEventListeners();
+            selectDevice('sw-core-01');
+        });
+
+        function setupEventListeners() {
+            // Toolbar buttons
+            document.getElementById('zoomInBtn').addEventListener('click', () => zoom(10));
+            document.getElementById('zoomOutBtn').addEventListener('click', () => zoom(-10));
+            document.getElementById('fitBtn').addEventListener('click', fitToView);
+            document.getElementById('toggleLabelsBtn').addEventListener('click', toggleLabels);
+            document.getElementById('refreshBtn').addEventListener('click', refreshTopology);
+
+            // Pan button
+            document.getElementById('panBtn').addEventListener('click', function() {
+                document.querySelectorAll('.topology-toolbar .toolbar-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        }
+
+        function renderTopology() {
+            const diagram = document.getElementById('topologyDiagram');
+            let html = '';
+
+            // Render connections first (so they appear behind devices)
+            connections.forEach(conn => {
+                const fromDevice = topologyDevices.find(d => d.id === conn.from);
+                const toDevice = topologyDevices.find(d => d.id === conn.to);
+
+                if (fromDevice && toDevice) {
+                    if (conn.type === 'horizontal') {
+                        const x = Math.min(fromDevice.x, toDevice.x) + 70;
+                        const y = fromDevice.y + 32;
+                        const width = Math.abs(toDevice.x - fromDevice.x) - 70;
+                        html += `<div class="connection horizontal ${conn.status}" style="left: ${x}px; top: ${y}px; width: ${width}px;"></div>`;
+                    } else {
+                        const x = fromDevice.x + 32;
+                        const y = fromDevice.y + 75;
+                        const height = toDevice.y - fromDevice.y - 75;
+                        html += `<div class="connection vertical ${conn.status}" style="left: ${x}px; top: ${y}px; height: ${height}px;"></div>`;
+                    }
+                }
+            });
+
+            // Render devices
+            topologyDevices.forEach(device => {
+                html += `
+                    <div class="device ${device.status}" style="left: ${device.x}px; top: ${device.y}px;" onclick="selectDevice('${device.id}')">
+                        <div class="device-icon">
+                            <i class="fas ${device.icon}"></i>
+                            <div class="device-status ${device.status}"></div>
+                        </div>
+                        <div class="device-label" ${!showLabels ? 'style="display:none;"' : ''}>${device.name}</div>
+                    </div>
+                `;
+            });
+
+            diagram.innerHTML = html;
+        }
+
+        function selectDevice(deviceId) {
+            selectedDevice = topologyDevices.find(d => d.id === deviceId);
+
+            if (!selectedDevice || selectedDevice.type === 'internet') {
+                return;
+            }
+
+            // Update panel
+            const iconEl = document.getElementById('panelDeviceIcon');
+            iconEl.className = `device-detail-icon ${selectedDevice.status}`;
+            iconEl.innerHTML = `<i class="fas ${selectedDevice.icon}"></i>`;
+
+            document.getElementById('panelDeviceName').textContent = selectedDevice.name;
+            document.getElementById('panelDeviceType').textContent = selectedDevice.model || 'Network Device';
+
+            // Update stats
+            const statsHtml = `
+                <div class="stat-item"><div class="value ${selectedDevice.cpu > 70 ? 'warning' : 'healthy'}">${selectedDevice.cpu || '-'}%</div><div class="label">CPU Usage</div></div>
+                <div class="stat-item"><div class="value">${selectedDevice.memory || '-'}%</div><div class="label">Memory</div></div>
+                <div class="stat-item"><div class="value">${selectedDevice.uptime || '-'}</div><div class="label">Uptime</div></div>
+                <div class="stat-item"><div class="value">${selectedDevice.temp || '-'}&#176;C</div><div class="label">Temperature</div></div>
+            `;
+            document.getElementById('panelStats').innerHTML = statsHtml;
+
+            // Update device info
+            const infoHtml = `
+                <div class="info-row"><span class="label">Hostname</span><span class="value">${selectedDevice.name.toLowerCase()}.finspot.com</span></div>
+                <div class="info-row"><span class="label">IP Address</span><span class="value">${selectedDevice.ip || '-'}</span></div>
+                <div class="info-row"><span class="label">Location</span><span class="value">${selectedDevice.location || '-'}</span></div>
+                <div class="info-row"><span class="label">Serial #</span><span class="value">${selectedDevice.serial || '-'}</span></div>
+                <div class="info-row"><span class="label">IOS Version</span><span class="value">${selectedDevice.iosVersion || '-'}</span></div>
+            `;
+            document.getElementById('panelDeviceInfo').innerHTML = infoHtml;
+
+            // Update port status
+            if (selectedDevice.portsUp !== undefined) {
+                const portsDown = selectedDevice.portsTotal - selectedDevice.portsUp;
+                const portHtml = `
+                    <div class="info-row"><span class="label">Ports Up</span><span class="value" style="color: var(--success);">${selectedDevice.portsUp}/${selectedDevice.portsTotal}</span></div>
+                    <div class="info-row"><span class="label">Ports Down</span><span class="value" style="color: var(--danger);">${portsDown}</span></div>
+                    <div class="info-row"><span class="label">Errors</span><span class="value">0</span></div>
+                `;
+                document.getElementById('panelPortStatus').innerHTML = portHtml;
+            } else {
+                document.getElementById('panelPortStatus').innerHTML = '<div class="info-row"><span class="label">N/A</span><span class="value">-</span></div>';
+            }
+
+            // Update recent activity
+            const activityHtml = `
+                <div class="activity-item">
+                    <div class="activity-title">Port status changed</div>
+                    <div class="activity-time">2 hours ago</div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-title">Config backup completed</div>
+                    <div class="activity-time">6 hours ago</div>
+                </div>
+            `;
+            document.getElementById('panelActivity').innerHTML = activityHtml;
+        }
+
+        function closePanel() {
+            document.getElementById('infoPanel').style.display = 'none';
+        }
+
+        function viewFullDetails() {
+            if (selectedDevice) {
+                window.location.href = `network-device-detail.html?id=${selectedDevice.id}`;
+            }
+        }
+
+        function zoom(delta) {
+            zoomLevel = Math.max(50, Math.min(200, zoomLevel + delta));
+            document.getElementById('zoomLevel').textContent = zoomLevel + '%';
+            document.getElementById('topologyDiagram').style.transform = `translate(-50%, -50%) scale(${zoomLevel / 100})`;
+        }
+
+        function fitToView() {
+            zoomLevel = 100;
+            document.getElementById('zoomLevel').textContent = '100%';
+            document.getElementById('topologyDiagram').style.transform = 'translate(-50%, -50%) scale(1)';
+        }
+
+        function toggleLabels() {
+            showLabels = !showLabels;
+            document.querySelectorAll('.device-label').forEach(label => {
+                label.style.display = showLabels ? 'block' : 'none';
+            });
+            document.getElementById('toggleLabelsBtn').classList.toggle('active', showLabels);
+        }
+
+        function refreshTopology() {
+            const btn = document.getElementById('refreshBtn');
+            btn.querySelector('i').classList.add('fa-spin');
+
+            setTimeout(() => {
+                renderTopology();
+                btn.querySelector('i').classList.remove('fa-spin');
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

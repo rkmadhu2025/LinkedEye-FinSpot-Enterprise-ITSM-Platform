@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Network Devices - LinkedEye-FinSpot Network Monitoring">
+    <title>Network Devices | LinkedEye-FinSpot</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Stats Row */
+        .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 18px; text-align: center; transition: all 0.2s; }
+        .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .stat-card .icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 20px; }
+        .stat-card.total .icon { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .stat-card.up .icon { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .stat-card.down .icon { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .stat-card.warning .icon { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .stat-card.maintenance .icon { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+        .stat-card .value { font-size: 28px; font-weight: 700; line-height: 1; }
+        .stat-card .label { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+        /* Toolbar */
+        .toolbar { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .toolbar-left { display: flex; gap: 10px; flex-wrap: wrap; }
+        .filter-btn { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: #fff; border: 1px solid var(--border-color); border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+        .filter-btn:hover { background: #f9fafb; border-color: #d1d5db; }
+        .filter-btn i { color: var(--text-secondary); }
+        .filter-btn.active { background: var(--primary-blue); color: #fff; border-color: var(--primary-blue); }
+        .filter-btn.active i { color: #fff; }
+
+        /* Devices Table */
+        .devices-table { width: 100%; border-collapse: collapse; }
+        .devices-table th { text-align: left; padding: 14px 20px; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; background: #f9fafb; border-bottom: 1px solid var(--border-color); }
+        .devices-table td { padding: 16px 20px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        .devices-table tr { transition: all 0.2s; }
+        .devices-table tbody tr:hover { background: #f9fafb; cursor: pointer; }
+        .devices-table tr:last-child td { border-bottom: none; }
+
+        .device-name { display: flex; align-items: center; gap: 14px; }
+        .device-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .device-icon.switch { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .device-icon.router { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .device-icon.firewall { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .device-icon.ap { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+        .device-info .hostname { font-weight: 600; color: var(--primary-blue); font-size: 13px; }
+        .device-info .ip { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .status-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+        .status-badge.up { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .status-badge.up::before { background: var(--success); }
+        .status-badge.down { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .status-badge.down::before { background: var(--danger); }
+        .status-badge.warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .status-badge.warning::before { background: var(--warning); }
+        .status-badge.maintenance { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+        .status-badge.maintenance::before { background: var(--purple); }
+
+        .metrics { display: flex; gap: 20px; }
+        .metric { text-align: center; }
+        .metric .value { font-size: 14px; font-weight: 600; }
+        .metric .label { font-size: 10px; color: var(--text-secondary); }
+
+        .port-status { display: flex; gap: 3px; align-items: center; }
+        .port-indicator { width: 6px; height: 22px; border-radius: 2px; background: #e5e7eb; }
+        .port-indicator.up { background: var(--success); }
+        .port-indicator.down { background: var(--danger); }
+
+        .pagination { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-top: 1px solid var(--border-color); background: #f9fafb; }
+        .pagination-info { font-size: 13px; color: var(--text-secondary); }
+        .pagination-info strong { color: var(--text-primary); }
+        .pagination-controls { display: flex; gap: 6px; }
+        .page-btn { min-width: 36px; height: 36px; border: 1px solid var(--border-color); background: #fff; border-radius: 8px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .page-btn:hover { background: #f9fafb; border-color: #d1d5db; }
+        .page-btn.active { background: var(--primary-blue); border-color: var(--primary-blue); color: #fff; }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Add Device Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: var(--bg-card); border-radius: 16px; width: 100%; max-width: 500px; max-height: 90vh; overflow: hidden; }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { font-size: 18px; font-weight: 600; }
+        .modal-close { width: 36px; height: 36px; border: none; background: #f3f4f6; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .modal-close:hover { background: #e5e7eb; }
+        .modal-body { padding: 24px; overflow-y: auto; max-height: calc(90vh - 140px); }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; }
+
+        @media (max-width: 1200px) {
+            .stats-row { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .devices-table { display: block; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-wrapper">
+            <header class="header" id="header"></header>
+            <main class="main-content">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Network Devices</h1>
+                        <p>Switches, routers, firewalls, and access points</p>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-secondary" onclick="exportDevices()"><i class="fas fa-download"></i> Export</button>
+                        <button class="btn btn-primary" onclick="showAddDeviceModal()"><i class="fas fa-plus"></i> Add Device</button>
+                    </div>
+                </div>
+
+                <div class="stats-row" id="statsRow">
+                    <!-- Stats loaded dynamically -->
+                </div>
+
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <button class="filter-btn active" data-filter="all"><i class="fas fa-list"></i> All</button>
+                        <button class="filter-btn" data-filter="switch"><i class="fas fa-network-wired"></i> Switches</button>
+                        <button class="filter-btn" data-filter="router"><i class="fas fa-route"></i> Routers</button>
+                        <button class="filter-btn" data-filter="firewall"><i class="fas fa-shield-alt"></i> Firewalls</button>
+                        <button class="filter-btn" data-filter="ap"><i class="fas fa-wifi"></i> Access Points</button>
+                    </div>
+                    <div class="toolbar-right">
+                        <div class="search-box" style="width: 250px;">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="deviceSearch" placeholder="Search devices...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <table class="devices-table">
+                        <thead>
+                            <tr>
+                                <th>Device</th>
+                                <th>Type</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>CPU / Memory</th>
+                                <th>Ports</th>
+                                <th>Last Seen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="devicesTable">
+                            <!-- Devices loaded dynamically -->
+                        </tbody>
+                    </table>
+                    <div class="pagination">
+                        <div class="pagination-info">Showing <strong id="showingRange">1-10</strong> of <strong id="totalDevices">0</strong> devices</div>
+                        <div class="pagination-controls" id="paginationControls">
+                            <!-- Pagination loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Add Device Modal -->
+    <div class="modal-overlay" id="addDeviceModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Network Device</h3>
+                <button class="modal-close" onclick="closeAddDeviceModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="addDeviceForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Hostname</label>
+                            <input type="text" name="hostname" placeholder="e.g., sw-core-01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>IP Address</label>
+                            <input type="text" name="ip" placeholder="e.g., 10.0.1.1" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Device Type</label>
+                            <select name="type" required>
+                                <option value="">Select type...</option>
+                                <option value="switch">Switch</option>
+                                <option value="router">Router</option>
+                                <option value="firewall">Firewall</option>
+                                <option value="ap">Access Point</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Model</label>
+                            <input type="text" name="model" placeholder="e.g., Cisco Catalyst 9500">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" name="location" placeholder="e.g., DC-1, Core">
+                        </div>
+                        <div class="form-group">
+                            <label>Vendor</label>
+                            <select name="vendor">
+                                <option value="">Select vendor...</option>
+                                <option value="cisco">Cisco</option>
+                                <option value="juniper">Juniper</option>
+                                <option value="paloalto">Palo Alto</option>
+                                <option value="arista">Arista</option>
+                                <option value="fortinet">Fortinet</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>SNMP Community String</label>
+                        <input type="password" name="snmpCommunity" placeholder="Enter SNMP community string">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAddDeviceModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="addDevice()"><i class="fas fa-plus"></i> Add Device</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        // Sample devices data
+        const sampleDevices = [
+            { id: 1, hostname: 'sw-core-01', ip: '10.0.1.1', type: 'switch', model: 'Cisco Catalyst 9500', location: 'DC-1, Core', status: 'up', cpu: 23, memory: 45, portsUp: 45, portsTotal: 48, lastSeen: '30s ago' },
+            { id: 2, hostname: 'sw-core-02', ip: '10.0.1.2', type: 'switch', model: 'Cisco Catalyst 9500', location: 'DC-1, Core', status: 'up', cpu: 18, memory: 42, portsUp: 48, portsTotal: 48, lastSeen: '30s ago' },
+            { id: 3, hostname: 'fw-01', ip: '10.0.0.1', type: 'firewall', model: 'Palo Alto PA-5250', location: 'DC-1, DMZ', status: 'up', cpu: 35, memory: 58, portsUp: null, portsTotal: null, lastSeen: '15s ago' },
+            { id: 4, hostname: 'fw-02', ip: '10.0.0.2', type: 'firewall', model: 'Palo Alto PA-5250', location: 'DC-1, DMZ', status: 'up', cpu: 32, memory: 55, portsUp: null, portsTotal: null, lastSeen: '15s ago' },
+            { id: 5, hostname: 'sw-a-01', ip: '10.0.2.1', type: 'switch', model: 'Cisco Catalyst 9300', location: 'DC-1, Rack A', status: 'up', cpu: 12, memory: 38, portsUp: 20, portsTotal: 24, lastSeen: '45s ago' },
+            { id: 6, hostname: 'sw-a-02', ip: '10.0.2.2', type: 'switch', model: 'Cisco Catalyst 9300', location: 'DC-1, Rack B', status: 'warning', cpu: 78, memory: 65, portsUp: 22, portsTotal: 24, lastSeen: '1m ago' },
+            { id: 7, hostname: 'rtr-edge-01', ip: '10.0.0.10', type: 'router', model: 'Cisco ISR 4451', location: 'DC-1, Edge', status: 'down', cpu: null, memory: null, portsUp: null, portsTotal: null, lastSeen: '15m ago' },
+            { id: 8, hostname: 'rtr-edge-02', ip: '10.0.0.11', type: 'router', model: 'Cisco ISR 4451', location: 'DC-1, Edge', status: 'up', cpu: 28, memory: 52, portsUp: null, portsTotal: null, lastSeen: '30s ago' },
+            { id: 9, hostname: 'ap-floor1-01', ip: '10.0.10.1', type: 'ap', model: 'Cisco Meraki MR46', location: 'Office, Floor 1', status: 'up', cpu: 15, memory: 30, portsUp: null, portsTotal: null, lastSeen: '1m ago' },
+            { id: 10, hostname: 'ap-floor1-02', ip: '10.0.10.2', type: 'ap', model: 'Cisco Meraki MR46', location: 'Office, Floor 1', status: 'up', cpu: 18, memory: 35, portsUp: null, portsTotal: null, lastSeen: '1m ago' },
+            { id: 11, hostname: 'sw-dist-01', ip: '10.0.3.1', type: 'switch', model: 'Arista 7280SR', location: 'DC-1, Distribution', status: 'up', cpu: 22, memory: 48, portsUp: 32, portsTotal: 48, lastSeen: '30s ago' },
+            { id: 12, hostname: 'sw-dist-02', ip: '10.0.3.2', type: 'switch', model: 'Arista 7280SR', location: 'DC-1, Distribution', status: 'maintenance', cpu: null, memory: null, portsUp: null, portsTotal: null, lastSeen: '2h ago' },
+        ];
+
+        let currentFilter = 'all';
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let devices = [...sampleDevices];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Layout.init({ activePage: 'devices' });
+            loadDevices();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentFilter = this.dataset.filter;
+                    currentPage = 1;
+                    loadDevices();
+                });
+            });
+
+            // Search
+            document.getElementById('deviceSearch').addEventListener('input', function() {
+                currentPage = 1;
+                loadDevices();
+            });
+        }
+
+        function loadDevices() {
+            const searchTerm = document.getElementById('deviceSearch').value.toLowerCase();
+
+            // Filter devices
+            let filteredDevices = devices.filter(device => {
+                const matchesFilter = currentFilter === 'all' || device.type === currentFilter;
+                const matchesSearch = device.hostname.toLowerCase().includes(searchTerm) ||
+                                     device.ip.includes(searchTerm) ||
+                                     device.model.toLowerCase().includes(searchTerm);
+                return matchesFilter && matchesSearch;
+            });
+
+            // Calculate stats
+            const stats = {
+                total: devices.length,
+                up: devices.filter(d => d.status === 'up').length,
+                down: devices.filter(d => d.status === 'down').length,
+                warning: devices.filter(d => d.status === 'warning').length,
+                maintenance: devices.filter(d => d.status === 'maintenance').length
+            };
+
+            renderStats(stats);
+
+            // Paginate
+            const totalPages = Math.ceil(filteredDevices.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const paginatedDevices = filteredDevices.slice(startIndex, startIndex + itemsPerPage);
+
+            renderDevices(paginatedDevices);
+            renderPagination(filteredDevices.length, totalPages);
+        }
+
+        function renderStats(stats) {
+            document.getElementById('statsRow').innerHTML = `
+                <div class="stat-card total">
+                    <div class="icon"><i class="fas fa-network-wired"></i></div>
+                    <div class="value">${stats.total}</div>
+                    <div class="label">Total Devices</div>
+                </div>
+                <div class="stat-card up">
+                    <div class="icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="value">${stats.up}</div>
+                    <div class="label">Online</div>
+                </div>
+                <div class="stat-card down">
+                    <div class="icon"><i class="fas fa-times-circle"></i></div>
+                    <div class="value">${stats.down}</div>
+                    <div class="label">Offline</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="icon"><i class="fas fa-exclamation-circle"></i></div>
+                    <div class="value">${stats.warning}</div>
+                    <div class="label">Warning</div>
+                </div>
+                <div class="stat-card maintenance">
+                    <div class="icon"><i class="fas fa-wrench"></i></div>
+                    <div class="value">${stats.maintenance}</div>
+                    <div class="label">Maintenance</div>
+                </div>
+            `;
+        }
+
+        function renderDevices(deviceList) {
+            const tbody = document.getElementById('devicesTable');
+
+            if (deviceList.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            <i class="fas fa-server" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                            <p>No devices found</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = deviceList.map(device => `
+                <tr onclick="viewDevice(${device.id})">
+                    <td>
+                        <div class="device-name">
+                            <div class="device-icon ${device.type}">
+                                <i class="fas ${getDeviceIcon(device.type)}"></i>
+                            </div>
+                            <div class="device-info">
+                                <div class="hostname">${device.hostname}</div>
+                                <div class="ip">${device.ip}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${device.model}</td>
+                    <td>${device.location}</td>
+                    <td><span class="status-badge ${device.status}">${capitalize(device.status)}</span></td>
+                    <td>
+                        ${device.cpu !== null ? `
+                            <div class="metrics">
+                                <div class="metric">
+                                    <div class="value" ${device.cpu > 70 ? 'style="color: var(--warning);"' : ''}>${device.cpu}%</div>
+                                    <div class="label">CPU</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="value">${device.memory}%</div>
+                                    <div class="label">MEM</div>
+                                </div>
+                            </div>
+                        ` : '-'}
+                    </td>
+                    <td>
+                        ${device.portsUp !== null ? `
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="port-status">
+                                    ${renderPortIndicators(device.portsUp, device.portsTotal)}
+                                </div>
+                                <span style="font-size: 11px; color: var(--text-secondary);">${device.portsUp}/${device.portsTotal}</span>
+                            </div>
+                        ` : '-'}
+                    </td>
+                    <td ${device.status === 'down' ? 'style="color: var(--danger); font-weight: 500;"' : ''}>${device.lastSeen}</td>
+                </tr>
+            `).join('');
+        }
+
+        function getDeviceIcon(type) {
+            const icons = {
+                switch: 'fa-network-wired',
+                router: 'fa-route',
+                firewall: 'fa-shield-alt',
+                ap: 'fa-wifi'
+            };
+            return icons[type] || 'fa-server';
+        }
+
+        function renderPortIndicators(up, total) {
+            const maxIndicators = 4;
+            const indicators = [];
+            const ratio = up / total;
+
+            for (let i = 0; i < maxIndicators; i++) {
+                const isUp = (i / maxIndicators) < ratio;
+                indicators.push(`<div class="port-indicator ${isUp ? 'up' : 'down'}"></div>`);
+            }
+
+            return indicators.join('');
+        }
+
+        function renderPagination(total, totalPages) {
+            const startItem = (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, total);
+
+            document.getElementById('showingRange').textContent = total > 0 ? `${startItem}-${endItem}` : '0';
+            document.getElementById('totalDevices').textContent = total;
+
+            const controls = document.getElementById('paginationControls');
+
+            if (totalPages <= 1) {
+                controls.innerHTML = '';
+                return;
+            }
+
+            let html = `<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
+
+            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                html += `<button class="page-btn ${currentPage === i ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            if (totalPages > 5) {
+                html += `<button class="page-btn" disabled>...</button>`;
+                html += `<button class="page-btn ${currentPage === totalPages ? 'active' : ''}" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+
+            html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
+
+            controls.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadDevices();
+        }
+
+        function capitalize(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        function viewDevice(id) {
+            window.location.href = `network-device-detail.html?id=${id}`;
+        }
+
+        function showAddDeviceModal() {
+            document.getElementById('addDeviceModal').classList.add('show');
+        }
+
+        function closeAddDeviceModal() {
+            document.getElementById('addDeviceModal').classList.remove('show');
+            document.getElementById('addDeviceForm').reset();
+        }
+
+        function addDevice() {
+            const form = document.getElementById('addDeviceForm');
+            const formData = new FormData(form);
+
+            const newDevice = {
+                id: devices.length + 1,
+                hostname: formData.get('hostname'),
+                ip: formData.get('ip'),
+                type: formData.get('type'),
+                model: formData.get('model') || 'Unknown',
+                location: formData.get('location') || 'Unknown',
+                status: 'up',
+                cpu: 0,
+                memory: 0,
+                portsUp: null,
+                portsTotal: null,
+                lastSeen: 'Just now'
+            };
+
+            devices.unshift(newDevice);
+            closeAddDeviceModal();
+            loadDevices();
+
+            // Show success toast
+            showToast('Device added successfully', 'success');
+        }
+
+        function exportDevices() {
+            const csv = [
+                ['Hostname', 'IP', 'Type', 'Model', 'Location', 'Status', 'CPU', 'Memory', 'Last Seen'].join(','),
+                ...devices.map(d => [d.hostname, d.ip, d.type, d.model, d.location, d.status, d.cpu || 'N/A', d.memory || 'N/A', d.lastSeen].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'network-devices.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> ${message}`;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 24px;
+                right: 24px;
+                background: ${type === 'success' ? 'var(--success)' : 'var(--info)'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                z-index: 9999;
+                animation: slideIn 0.3s ease;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Close modal on outside click
+        document.getElementById('addDeviceModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAddDeviceModal();
+        });
+    </script>
+</body>
+</html>

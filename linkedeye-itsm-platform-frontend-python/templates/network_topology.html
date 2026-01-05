@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Network Topology - LinkedEye-FinSpot Network Monitoring">
+    <title>Network Topology | LinkedEye-FinSpot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #0f1c3f;
+            --primary-blue: #2563eb;
+            --primary-blue-light: #3b82f6;
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --pink: #ec4899;
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+            --text-primary: #0f1c3f;
+            --text-secondary: #6b7785;
+            --border-color: #e5e8eb;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-body); color: var(--text-primary); font-size: 13px; }
+
+        /* Sidebar */
+        .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh; background: var(--primary-navy); z-index: 200; }
+        .sidebar-header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-logo { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-blue-light), var(--purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .sidebar-logo i { color: #fff; font-size: 20px; }
+        .sidebar-brand { color: #fff; }
+        .sidebar-brand h1 { font-size: 16px; font-weight: 700; }
+        .sidebar-brand span { font-size: 10px; color: rgba(255,255,255,0.6); }
+        .sidebar-nav { padding: 16px 12px; overflow-y: auto; height: calc(100vh - 140px); }
+        .nav-section { margin-bottom: 20px; }
+        .nav-section-title { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.2s; margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .nav-item.active { background: linear-gradient(135deg, var(--primary-blue), #1d4ed8); color: #fff; }
+        .nav-item i { width: 20px; text-align: center; }
+        .nav-item .nav-badge { background: var(--danger); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: auto; }
+        .nav-item .nav-badge.warning { background: var(--warning); }
+        .sidebar-footer { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .env-selector { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; color: #fff; font-size: 12px; }
+        .env-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; }
+
+        /* Header */
+        .header { position: fixed; top: 0; left: var(--sidebar-width); right: 0; height: var(--header-height); background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .page-title { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .page-title i { color: var(--primary-blue); }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn-secondary { background: #fff; color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary-blue), #1d4ed8); color: #fff; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .notification-btn { position: relative; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border-color); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .notification-btn:hover { background: #f9fafb; }
+        .notification-badge { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 600; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
+        .user-menu { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+        .user-menu:hover { background: #f3f4f6; }
+        .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-blue), var(--purple)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 14px; }
+        .user-info { text-align: left; }
+        .user-name { font-size: 13px; font-weight: 600; }
+        .user-role { font-size: 11px; color: var(--text-secondary); }
+
+        /* Main Content */
+        .main-content { margin-left: var(--sidebar-width); margin-top: var(--header-height); height: calc(100vh - var(--header-height)); display: flex; }
+
+        /* Topology Canvas */
+        .topology-canvas { flex: 1; background: linear-gradient(135deg, #1a1a2e, #16213e); position: relative; overflow: hidden; }
+
+        .topology-toolbar { position: absolute; top: 20px; left: 20px; display: flex; gap: 8px; z-index: 10; }
+        .toolbar-btn { width: 42px; height: 42px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .toolbar-btn:hover { background: rgba(255,255,255,0.2); }
+        .toolbar-btn.active { background: var(--primary-blue); border-color: var(--primary-blue); }
+
+        .legend { position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.75); backdrop-filter: blur(10px); padding: 18px 22px; border-radius: 12px; z-index: 10; border: 1px solid rgba(255,255,255,0.1); }
+        .legend h4 { color: #fff; font-size: 12px; margin-bottom: 14px; font-weight: 600; }
+        .legend-item { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.85); font-size: 12px; margin-bottom: 10px; }
+        .legend-item:last-child { margin-bottom: 0; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .legend-dot.healthy { background: var(--success); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+        .legend-dot.warning { background: var(--warning); box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
+        .legend-dot.critical { background: var(--danger); box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+
+        .topology-diagram { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+        .device { position: absolute; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; }
+        .device:hover { transform: scale(1.1); }
+        .device-icon { width: 64px; height: 64px; background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.25); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; color: #fff; position: relative; transition: all 0.3s; }
+        .device.healthy .device-icon { border-color: var(--success); box-shadow: 0 0 25px rgba(16, 185, 129, 0.35); }
+        .device.warning .device-icon { border-color: var(--warning); box-shadow: 0 0 25px rgba(245, 158, 11, 0.35); }
+        .device.critical .device-icon { border-color: var(--danger); box-shadow: 0 0 25px rgba(239, 68, 68, 0.35); }
+        .device-status { position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%; border: 3px solid #1a1a2e; }
+        .device-status.healthy { background: var(--success); }
+        .device-status.warning { background: var(--warning); }
+        .device-status.critical { background: var(--danger); }
+        .device-label { margin-top: 10px; color: #fff; font-size: 11px; font-weight: 600; text-align: center; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 6px; white-space: nowrap; }
+
+        .connection { position: absolute; background: rgba(255,255,255,0.15); }
+        .connection.vertical { width: 2px; }
+        .connection.horizontal { height: 2px; }
+        .connection.healthy { background: var(--success); box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+
+        /* Info Panel */
+        .info-panel { width: 340px; background: var(--bg-card); border-left: 1px solid var(--border-color); padding: 24px; overflow-y: auto; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .panel-header h3 { font-size: 15px; font-weight: 600; }
+        .panel-close { width: 34px; height: 34px; border: 1px solid var(--border-color); background: #fff; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .panel-close:hover { background: #f9fafb; }
+
+        .device-detail-header { text-align: center; margin-bottom: 24px; }
+        .device-detail-icon { width: 68px; height: 68px; background: rgba(16, 185, 129, 0.1); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 30px; color: var(--success); }
+        .device-detail-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .device-detail-type { font-size: 12px; color: var(--text-secondary); }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
+        .stat-item { background: #f9fafb; padding: 14px; border-radius: 10px; text-align: center; }
+        .stat-item .value { font-size: 22px; font-weight: 700; color: var(--success); line-height: 1; }
+        .stat-item .label { font-size: 11px; color: var(--text-secondary); margin-top: 6px; }
+
+        .info-section { margin-bottom: 24px; }
+        .info-section:last-child { margin-bottom: 0; }
+        .info-section-title { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+        .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color); font-size: 12px; }
+        .info-row:last-child { border-bottom: none; }
+        .info-row .label { color: var(--text-secondary); }
+        .info-row .value { font-weight: 600; }
+
+        .activity-item { padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-item .activity-title { font-size: 12px; font-weight: 500; margin-bottom: 2px; }
+        .activity-item .activity-time { font-size: 11px; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fas fa-eye"></i></div>
+            <div class="sidebar-brand"><h1>LinkedEye</h1><span>FinSpot Enterprise</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="{{ url_for('dashboard') }}" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+                <a href="{{ url_for('incidents') }}" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Incidents</span><span class="nav-badge">23</span></a>
+                <a href="{{ url_for('change_calendar') }}" class="nav-item"><i class="fas fa-code-branch"></i><span>Changes</span><span class="nav-badge warning">7</span></a>
+                <a href="{{ url_for('problems') }}" class="nav-item"><i class="fas fa-search"></i><span>Problems</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Infrastructure</div>
+                <a href="{{ url_for('assets') }}" class="nav-item"><i class="fas fa-cubes"></i><span>Assets</span></a>
+                <a href="{{ url_for('network_topology') }}" class="nav-item active"><i class="fas fa-network-wired"></i><span>Network</span></a>
+                <a href="{{ url_for('network_devices') }}" class="nav-item"><i class="fas fa-server"></i><span>Devices</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Analytics</div>
+                <a href="{{ url_for('reports') }}" class="nav-item"><i class="fas fa-file-alt"></i><span>Reports</span></a>
+                <a href="{{ url_for('analytics') }}" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Administration</div>
+                <a href="{{ url_for('users') if 'users' in url_for.__globals__ else '#' }}" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+                <a href="{{ url_for('groups') }}" class="nav-item"><i class="fas fa-user-friends"></i><span>Groups</span></a>
+                <a href="{{ url_for('integrations') }}" class="nav-item"><i class="fas fa-plug"></i><span>Integrations</span></a>
+                <a href="{{ url_for('settings') }}" class="nav-item"><i class="fas fa-cog"></i><span>Settings</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="env-selector">
+                <div class="env-dot"></div>
+                <span>Production Environment</span>
+            </div>
+        </div>
+    </aside>
+
+    <header class="header">
+        <div class="header-left">
+            <span class="page-title"><i class="fas fa-network-wired"></i> Network Topology</span>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-secondary"><i class="fas fa-sync-alt"></i> Refresh</button>
+            <button class="btn btn-secondary"><i class="fas fa-download"></i> Export</button>
+            <button class="notification-btn">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">3</span>
+            </button>
+            <div class="user-menu">
+                <div class="user-avatar">{{ session.get('user_email', 'U')[0].upper() }}</div>
+                <div class="user-info">
+                    <div class="user-name">{{ session.get('user_email', 'User') }}</div>
+                    <div class="user-role">Network Engineer</div>
+                </div>
+                <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-secondary);"></i>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="topology-canvas">
+            <div class="topology-toolbar">
+                <button class="toolbar-btn active" title="Pan"><i class="fas fa-hand-paper"></i></button>
+                <button class="toolbar-btn" title="Zoom In"><i class="fas fa-search-plus"></i></button>
+                <button class="toolbar-btn" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+                <button class="toolbar-btn" title="Fit"><i class="fas fa-expand-arrows-alt"></i></button>
+                <button class="toolbar-btn" title="Toggle Labels"><i class="fas fa-tag"></i></button>
+            </div>
+
+            <div class="legend">
+                <h4>Device Status</h4>
+                <div class="legend-item"><div class="legend-dot healthy"></div> Healthy</div>
+                <div class="legend-item"><div class="legend-dot warning"></div> Warning</div>
+                <div class="legend-item"><div class="legend-dot critical"></div> Critical</div>
+            </div>
+
+            <!-- Topology Diagram -->
+            <div class="topology-diagram" style="width: 600px; height: 500px;">
+                <!-- Internet -->
+                <div class="device healthy" style="left: 250px; top: 0;" onclick="selectDevice('internet')">
+                    <div class="device-icon"><i class="fas fa-globe"></i><div class="device-status healthy"></div></div>
+                    <div class="device-label">INTERNET</div>
+                </div>
+
+                <!-- Connection to firewalls -->
+                <div class="connection vertical healthy" style="left: 280px; top: 75px; height: 35px;"></div>
+
+                <!-- Firewalls -->
+                <div class="device healthy" style="left: 150px; top: 110px;" onclick="selectDevice('fw-01')">
+                    <div class="device-icon"><i class="fas fa-shield-alt"></i><div class="device-status healthy"></div></div>
+                    <div class="device-label">FW-01</div>
+                </div>
+                <div class="device healthy" style="left: 350px; top: 110px;" onclick="selectDevice('fw-02')">
+                    <div class="device-icon"><i class="fas fa-shield-alt"></i><div class="device-status healthy"></div></div>
+                    <div class="device-label">FW-02</div>
+                </div>
+
+                <!-- Connections -->
+                <div class="connection vertical healthy" style="left: 182px; top: 185px; height: 35px;"></div>
+                <div class="connection vertical healthy" style="left: 382px; top: 185px; height: 35px;"></div>
+
+                <!-- Core Switches -->
+                <div class="device healthy" style="left: 150px; top: 220px;" onclick="selectDevice('sw-c-01')">
+                    <div class="device-icon"><i class="fas fa-network-wired"></i><div class="device-status healthy"></div></div>
+                    <div class="device-label">SW-CORE-01</div>
+                </div>
+                <div class="device healthy" style="left: 350px; top: 220px;" onclick="selectDevice('sw-c-02')">
+                    <div class="device-icon"><i class="fas fa-network-wired"></i><div class="device-status healthy"></div></div>
+                    <div class="device-label">SW-CORE-02</div>
+                </div>
+                <div class="connection horizontal healthy" style="left: 220px; top: 252px; width: 130px;"></div>
+
+                <!-- Connections to access switches -->
+                <div class="connection vertical healthy" style="left: 92px; top: 295px; height: 45px;"></div>
+                <div class="connection vertical healthy" style="left: 212px; top: 295px; height: 45px;"></div>
+                <div class="connection vertical healthy" style="left: 372px; top: 295px; height: 45px;"></div>
+                <div class="connection vertical healthy" style="left: 492px; top: 295px; height: 45px;"></div>
+
+                <!-- Access Switches -->
+                <div class="device healthy" style="left: 60px; top: 340px;" onclick="selectDevice('sw-a-01')">
+                    <div class="device-icon"><i class="fas fa-network-wired"></i><div class="device-status healthy"></div></div>
+                    <div class="device-label">SW-A-01</div>
+                </div>
+                <div class="device warning" style="left: 180px; top: 340px;" onclick="selectDevice('sw-a-02')">
+                    <div class="device-icon"><i class="fas fa-network-wired"></i><div class="device-status warning"></div></div>
+                    <div class="device-label">SW-A-02</div>
+                </div>
+                <div class="device healthy" style="left: 340px; top: 340px;" onclick="selectDevice('sw-a-03')">
+                    <div class="device-icon"><i class="fas fa-network-wired"></i><div class="device-status healthy"></div></div>
+                    <div class="device-label">SW-A-03</div>
+                </div>
+                <div class="device healthy" style="left: 460px; top: 340px;" onclick="selectDevice('sw-a-04')">
+                    <div class="device-icon"><i class="fas fa-network-wired"></i><div class="device-status healthy"></div></div>
+                    <div class="device-label">SW-A-04</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="panel-header">
+                <h3>Device Details</h3>
+                <button class="panel-close"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="device-detail-header">
+                <div class="device-detail-icon"><i class="fas fa-network-wired"></i></div>
+                <div class="device-detail-name">{{ device.get('hostname', 'SW-CORE-01') if device else 'SW-CORE-01' }}</div>
+                <div class="device-detail-type">{{ device.get('model', 'Cisco Catalyst 9500') if device else 'Cisco Catalyst 9500' }}</div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-item"><div class="value">{{ device.get('cpu_usage', 23) if device else 23 }}%</div><div class="label">CPU Usage</div></div>
+                <div class="stat-item"><div class="value">{{ device.get('memory_usage', 45) if device else 45 }}%</div><div class="label">Memory</div></div>
+                <div class="stat-item"><div class="value">{{ device.get('uptime', '45d') if device else '45d' }}</div><div class="label">Uptime</div></div>
+                <div class="stat-item"><div class="value">{{ device.get('temperature', '42°C') if device else '42°C' }}</div><div class="label">Temperature</div></div>
+            </div>
+
+            <div class="info-section">
+                <div class="info-section-title">Device Information</div>
+                <div class="info-row"><span class="label">Hostname</span><span class="value">{{ device.get('hostname', 'sw-core-01.finspot.com') if device else 'sw-core-01.finspot.com' }}</span></div>
+                <div class="info-row"><span class="label">IP Address</span><span class="value">{{ device.get('ip_address', '10.0.1.1') if device else '10.0.1.1' }}</span></div>
+                <div class="info-row"><span class="label">Location</span><span class="value">{{ device.get('location', 'DC-1, Rack A3') if device else 'DC-1, Rack A3' }}</span></div>
+                <div class="info-row"><span class="label">Serial #</span><span class="value">{{ device.get('serial', 'FDO2345A6B7') if device else 'FDO2345A6B7' }}</span></div>
+                <div class="info-row"><span class="label">IOS Version</span><span class="value">{{ device.get('ios_version', '17.3.4') if device else '17.3.4' }}</span></div>
+            </div>
+
+            <div class="info-section">
+                <div class="info-section-title">Port Status</div>
+                <div class="info-row"><span class="label">Ports Up</span><span class="value" style="color: var(--success);">{{ device.get('ports_up', '45/48') if device else '45/48' }}</span></div>
+                <div class="info-row"><span class="label">Ports Down</span><span class="value" style="color: var(--danger);">{{ device.get('ports_down', 3) if device else 3 }}</span></div>
+                <div class="info-row"><span class="label">Errors</span><span class="value">{{ device.get('errors', 0) if device else 0 }}</span></div>
+            </div>
+
+            <div class="info-section">
+                <div class="info-section-title">Recent Activity</div>
+                {% if activities %}
+                    {% for activity in activities %}
+                    <div class="activity-item">
+                        <div class="activity-title">{{ activity.get('title', 'Port Gi1/0/24 went up') }}</div>
+                        <div class="activity-time">{{ activity.get('time', '2 hours ago') }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="activity-item">
+                        <div class="activity-title">Port Gi1/0/24 went up</div>
+                        <div class="activity-time">2 hours ago</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-title">Config backup completed</div>
+                        <div class="activity-time">6 hours ago</div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="location.href='{{ url_for('network_device_detail', device_id=device.get('id', 1) if device else 1) }}'">
+                <i class="fas fa-external-link-alt"></i> View Full Details
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function selectDevice(deviceId) {
+            console.log('Selected device:', deviceId);
+            // TODO: Load device details via API
+            fetch(`/api/v1/network-devices/${deviceId}`, {
+                headers: {
+                    'Authorization': 'Bearer {{ session.get("access_token", "") }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update info panel with device data
+                console.log('Device data:', data);
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        document.querySelectorAll('.toolbar-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.toolbar-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

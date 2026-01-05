@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | LinkedEye-FinSpot{% endblock %}
+{% block page_title %}Operations Dashboard{% endblock %}
+
+{% block content %}
+<!-- Status Bar -->
+<div class="status-bar">
+    <div class="status-item">
+        <span class="dot green"></span>
+        <span>{{ metrics.get('environments', {}).get('active', 0) }} Environments Active</span>
+    </div>
+    <div class="status-item">
+        <span class="dot green"></span>
+        <span>Prometheus Connected</span>
+    </div>
+    <div class="status-item">
+        <span class="dot green"></span>
+        <span>Grafana Sync OK</span>
+    </div>
+    <div class="status-item">
+        <span class="dot green"></span>
+        <span>StackStorm Running</span>
+    </div>
+    <div class="status-item">
+        <span class="dot yellow"></span>
+        <span>{{ metrics.get('incidents', {}).get('critical', 0) }} Alerts Active</span>
+    </div>
+</div>
+
+{% if error %}
+<div style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 14px 16px; border-radius: 10px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+    <i class="fas fa-exclamation-circle"></i>
+    <span>{{ error.get('detail', 'Error loading dashboard') }}</span>
+</div>
+{% endif %}
+
+<!-- Metrics Grid -->
+<div class="metrics-grid">
+    <div class="metric-card critical">
+        <div class="metric-header">
+            <span class="metric-title">Critical Incidents</span>
+            <div class="metric-icon">
+                <i class="fas fa-fire"></i>
+            </div>
+        </div>
+        <div class="metric-value">{{ metrics.get('incidents', {}).get('critical', 0) }}</div>
+        <div class="metric-trend up">
+            <i class="fas fa-arrow-up"></i>
+            <span>Require immediate attention</span>
+        </div>
+    </div>
+
+    <div class="metric-card warning">
+        <div class="metric-header">
+            <span class="metric-title">Open Incidents</span>
+            <div class="metric-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+        </div>
+        <div class="metric-value">{{ metrics.get('incidents', {}).get('open', 0) }}</div>
+        <div class="metric-trend neutral">
+            <i class="fas fa-minus"></i>
+            <span>Currently active</span>
+        </div>
+    </div>
+
+    <div class="metric-card success">
+        <div class="metric-header">
+            <span class="metric-title">SLA Compliance</span>
+            <div class="metric-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+        </div>
+        <div class="metric-value">{{ "%.1f"|format(metrics.get('incidents', {}).get('sla_compliance', 0)) }}%</div>
+        <div class="metric-trend neutral">
+            <i class="fas fa-check"></i>
+            <span>On target</span>
+        </div>
+    </div>
+
+    <div class="metric-card info">
+        <div class="metric-header">
+            <span class="metric-title">MTTR</span>
+            <div class="metric-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+        </div>
+        <div class="metric-value">{{ "%.0f"|format(metrics.get('mttr_minutes', 0)) }}m</div>
+        <div class="metric-trend down">
+            <i class="fas fa-arrow-down"></i>
+            <span>Last 30 days</span>
+        </div>
+    </div>
+
+    <div class="metric-card purple">
+        <div class="metric-header">
+            <span class="metric-title">System Uptime</span>
+            <div class="metric-icon">
+                <i class="fas fa-server"></i>
+            </div>
+        </div>
+        <div class="metric-value">{{ "%.2f"|format(metrics.get('system_uptime', 99.98)) }}%</div>
+        <div class="metric-trend neutral">
+            <i class="fas fa-check"></i>
+            <span>30-day average</span>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid-row two-cols">
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">
+                <i class="fas fa-chart-area"></i>
+                Incident Trends (Last 7 Days)
+            </span>
+            <div class="card-actions">
+                <button class="active">7D</button>
+                <button>30D</button>
+                <button>90D</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas id="incidentTrendsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">
+                <i class="fas fa-chart-pie"></i>
+                Incidents by Category
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize Charts
+    document.addEventListener('DOMContentLoaded', function() {
+        const trendsData = {{ trends|tojson }};
+        const categoriesData = {{ categories|tojson }};
+        
+        // Incident Trends Chart
+        const trendsCtx = document.getElementById('incidentTrendsChart').getContext('2d');
+        const trendsGradient = trendsCtx.createLinearGradient(0, 0, 0, 280);
+        trendsGradient.addColorStop(0, 'rgba(37, 99, 235, 0.3)');
+        trendsGradient.addColorStop(1, 'rgba(37, 99, 235, 0)');
+
+        const trendsLabels = trendsData.total_incidents?.map(item => item.date) || [];
+        const trendsTotal = trendsData.total_incidents?.map(item => item.count) || [];
+        const trendsResolved = trendsData.resolved_incidents?.map(item => item.count) || [];
+        const trendsCritical = trendsData.critical_incidents?.map(item => item.count) || [];
+
+        new Chart(trendsCtx, {
+            type: 'line',
+            data: {
+                labels: trendsLabels,
+                datasets: [
+                    {
+                        label: 'Total Incidents',
+                        data: trendsTotal,
+                        borderColor: '#2563eb',
+                        backgroundColor: trendsGradient,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#2563eb'
+                    },
+                    {
+                        label: 'Resolved',
+                        data: trendsResolved,
+                        borderColor: '#10b981',
+                        backgroundColor: 'transparent',
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#10b981',
+                        borderDash: [5, 5]
+                    },
+                    {
+                        label: 'Critical',
+                        data: trendsCritical,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#ef4444'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#e5e7eb'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+
+        // Category Chart
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        const categoryLabels = categoriesData.categories?.map(cat => cat.name) || [];
+        const categoryData = categoriesData.categories?.map(cat => cat.count) || [];
+
+        new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    data: categoryData,
+                    backgroundColor: [
+                        '#8b5cf6',
+                        '#3b82f6',
+                        '#10b981',
+                        '#f59e0b',
+                        '#ef4444',
+                        '#6b7280'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

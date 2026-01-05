@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Error - LinkedEye-FinSpot{% endblock %}
+
+{% block content %}
+<div style="min-height: 60vh; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 40px;">
+    <div style="font-size: 72px; color: var(--danger); margin-bottom: 24px;">
+        <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <h1 style="font-size: 32px; font-weight: 700; margin-bottom: 16px;">Error</h1>
+    <p style="font-size: 16px; color: var(--text-secondary); margin-bottom: 32px; max-width: 500px;">
+        {{ error or 'An error occurred' }}
+    </p>
+    <a href="{{ url_for('dashboard') }}" style="padding: 12px 24px; background: var(--primary-blue); color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600;">
+        <i class="fas fa-home"></i> Go to Dashboard
+    </a>
+</div>
+{% endblock %}
