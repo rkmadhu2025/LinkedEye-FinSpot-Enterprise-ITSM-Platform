@@ -1,0 +1,57 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: linkedeye-backend-api-ingress
+  namespace: incident-linkedeye-itsm
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # Using existing wildcard cert instead of cert-manager
+
+    # SSL/TLS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # CORS - Allow frontend domain
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://fs-le-dev-inc.finspot.in"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Authorization, Content-Type, X-Requested-With, X-Total-Count, X-Page, X-Per-Page, X-Total-Pages, X-Request-ID"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-expose-headers: "X-Total-Count, X-Page, X-Per-Page, X-Total-Pages, X-Request-ID"
+
+    # Proxy Tuning for API
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+
+    # Rate Limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/rate-limit: "200"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+
+    # Rewrite rules - remove /api prefix if needed
+    # nginx.ingress.kubernetes.io/rewrite-target: /$2
+
+  labels:
+    app.kubernetes.io/name: linkedeye-finspot
+    app.kubernetes.io/component: backend
+    environment: production
+
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - fs-le-dev-inc-api.finspot.in
+    secretName: finspot-wildcard-tls
+  rules:
+  - host: fs-le-dev-inc-api.finspot.in
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: linkedeye-backend
+            port:
+              number: 8000
