@@ -116,3 +116,6 @@ linkedeye-finspot/
 
 # Claude Code config (local)
 .claude/
+
+# Local archive for sensitive files
+.secure_archive/

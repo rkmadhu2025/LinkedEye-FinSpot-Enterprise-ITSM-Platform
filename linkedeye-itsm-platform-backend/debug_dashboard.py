@@ -1,15 +1,20 @@
 
 import requests
 import sys
+import os
 
 BASE_URL = "http://localhost:8000/api/v1"
 
 def debug_dashboard():
     # 1. Login
     try:
+        ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@finspot.com")
+        ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+        if not ADMIN_PASSWORD:
+            raise RuntimeError("ADMIN_PASSWORD environment variable is required for debug_dashboard")
         login_resp = requests.post(
             f"{BASE_URL}/auth/login",
-            json={"email": "admin@finspot.com", "password": "password"}
+            json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
         )
         login_resp.raise_for_status()
         

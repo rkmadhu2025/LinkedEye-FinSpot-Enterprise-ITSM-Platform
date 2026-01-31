@@ -3,6 +3,7 @@ import json
 import urllib.request
 import urllib.error
 import sys
+import os
 
 BASE_URL = "http://localhost:8000/api/v1"
 
@@ -10,7 +11,11 @@ def debug_dashboard():
     # 1. Login
     print("Logging in...")
     login_url = f"{BASE_URL}/auth/login"
-    data = json.dumps({"email": "admin@finspot.com", "password": "password"}).encode('utf-8')
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@finspot.com")
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+    if not ADMIN_PASSWORD:
+        raise RuntimeError("ADMIN_PASSWORD environment variable is required for debug_dashboard2")
+    data = json.dumps({"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}).encode('utf-8')
     headers = {'Content-Type': 'application/json'}
     
     try:
