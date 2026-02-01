@@ -1,7 +1,7 @@
 """
 Alert management API endpoints.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -196,9 +196,9 @@ async def update_alert(
         if alert_data.status:
             if alert_data.status == AlertStatus.ACKNOWLEDGED and not alert.acknowledged_at:
                 alert.acknowledged_by = current_user.id
-                alert.acknowledged_at = datetime.utcnow()
+                alert.acknowledged_at = datetime.now(timezone.utc)
             elif alert_data.status == AlertStatus.RESOLVED and not alert.resolved_at:
-                alert.resolved_at = datetime.utcnow()
+                alert.resolved_at = datetime.now(timezone.utc)
         
         db.commit()
         db.refresh(alert)
@@ -236,7 +236,7 @@ async def acknowledge_alert(
         
         alert.status = AlertStatus.ACKNOWLEDGED
         alert.acknowledged_by = current_user.id
-        alert.acknowledged_at = datetime.utcnow()
+        alert.acknowledged_at = datetime.now(timezone.utc)
         
         db.commit()
         db.refresh(alert)

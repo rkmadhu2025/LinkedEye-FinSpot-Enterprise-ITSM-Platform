@@ -1,7 +1,7 @@
 """
 Security utilities for authentication and authorization.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -29,9 +29,9 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
     to_encode = data.copy()
     
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.jwt_access_token_expire_minutes)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_access_token_expire_minutes)
     
     to_encode.update({"exp": expire, "type": "access"})
     
@@ -47,7 +47,7 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
 def create_refresh_token(data: Dict[str, Any]) -> str:
     """Create a JWT refresh token."""
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=settings.jwt_refresh_token_expire_days)
+    expire = datetime.now(timezone.utc) + timedelta(days=settings.jwt_refresh_token_expire_days)
     
     to_encode.update({"exp": expire, "type": "refresh"})
     
@@ -86,7 +86,7 @@ def verify_token(token: str, token_type: str = "access") -> Dict[str, Any]:
 def generate_password_reset_token(email: str) -> str:
     """Generate a password reset token."""
     delta = timedelta(hours=1)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     expires = now + delta
     exp = expires.timestamp()
     

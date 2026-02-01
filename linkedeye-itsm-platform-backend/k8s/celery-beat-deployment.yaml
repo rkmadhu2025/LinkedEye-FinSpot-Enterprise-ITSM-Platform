@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: celery-beat
-  namespace: itsm-platform
+  namespace: incident-linkedeye-itsm
   labels:
     app: celery-beat
 spec:
@@ -15,13 +15,23 @@ spec:
       labels:
         app: celery-beat
     spec:
+      imagePullSecrets:
+      - name: gitlab-registry-auth
       containers:
       - name: celery-beat
-        image: itsm-backend:latest
+        image: registry.gitlab.com/rajkumar.finspot/finspot-le-dev/linkedeye-backend:v1.0.0
         command: ["celery", "-A", "app.core.celery_app", "beat", "--loglevel=info"]
         env:
-        - name: DATABASE_URL
-          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@postgres-service:5432/$(DATABASE_NAME)"
+        - name: DATABASE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: DATABASE_HOST
+        - name: DATABASE_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: DATABASE_PORT
         - name: DATABASE_USER
           valueFrom:
             secretKeyRef:
@@ -37,6 +47,8 @@ spec:
             configMapKeyRef:
               name: itsm-backend-config
               key: DATABASE_NAME
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
         - name: CELERY_BROKER_URL
           valueFrom:
             configMapKeyRef:

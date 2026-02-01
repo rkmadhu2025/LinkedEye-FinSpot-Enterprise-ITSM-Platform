@@ -19,10 +19,10 @@ spec:
       - name: gitlab-registry-auth
       containers:
       - name: frontend
-        image: registry.gitlab.com/finspot-le-dev/fs-le-dev-finspot-incident-tool/frontend:latest
-        imagePullPolicy: Always
+        image: registry.gitlab.com/rajkumar.finspot/finspot-le-dev/linkedeye-frontend:v1.0.0
+        imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 8080
+        - containerPort: 80
         resources:
           requests:
             memory: "128Mi"
@@ -33,13 +33,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /
-            port: 8080
+            port: 80
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /
-            port: 8080
+            port: 80
           initialDelaySeconds: 5
           periodSeconds: 5
 ---
@@ -53,5 +53,5 @@ spec:
     app: linkedeye-frontend
   ports:
   - port: 80
-    targetPort: 8080
+    targetPort: 80
   type: ClusterIP

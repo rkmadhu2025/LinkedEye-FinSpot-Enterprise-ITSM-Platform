@@ -1,7 +1,7 @@
 """
 Change management API endpoints.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
@@ -304,9 +304,9 @@ async def update_change(
         # Handle status changes
         if change_data.status:
             if change_data.status == ChangeStatus.IN_PROGRESS and not change.actual_start:
-                change.actual_start = datetime.utcnow()
+                change.actual_start = datetime.now(timezone.utc)
             elif change_data.status == ChangeStatus.COMPLETED and not change.actual_end:
-                change.actual_end = datetime.utcnow()
+                change.actual_end = datetime.now(timezone.utc)
         
         db.commit()
         db.refresh(change)
@@ -540,7 +540,7 @@ async def approve_change(
             approver_id=current_user.id,
             status="approved",
             comments=approval_data.comments if approval_data else None,
-            approved_at=datetime.utcnow()
+            approved_at=datetime.now(timezone.utc)
         )
         db.add(approval)
 
@@ -595,7 +595,7 @@ async def reject_change(
             approver_id=current_user.id,
             status="rejected",
             comments=rejection_data.comments,
-            approved_at=datetime.utcnow()
+            approved_at=datetime.now(timezone.utc)
         )
         db.add(approval)
 
@@ -644,7 +644,7 @@ async def start_change_implementation(
             )
 
         change.status = ChangeStatus.IN_PROGRESS
-        change.actual_start = datetime.utcnow()
+        change.actual_start = datetime.now(timezone.utc)
         db.commit()
         db.refresh(change)
 
@@ -690,7 +690,7 @@ async def complete_change(
             )
 
         change.status = ChangeStatus.COMPLETED
-        change.actual_end = datetime.utcnow()
+        change.actual_end = datetime.now(timezone.utc)
         if completion_data and completion_data.notes:
             change.completion_notes = completion_data.notes
         db.commit()
@@ -738,7 +738,7 @@ async def fail_change(
             )
 
         change.status = ChangeStatus.FAILED
-        change.actual_end = datetime.utcnow()
+        change.actual_end = datetime.now(timezone.utc)
         change.completion_notes = f"FAILED: {failure_data.reason}"
         db.commit()
         db.refresh(change)
@@ -831,7 +831,7 @@ async def rollback_change(
             )
 
         change.status = ChangeStatus.ROLLED_BACK
-        change.actual_end = datetime.utcnow()
+        change.actual_end = datetime.now(timezone.utc)
         change.completion_notes = f"ROLLED BACK: {rollback_data.reason}"
         db.commit()
         db.refresh(change)
@@ -964,7 +964,7 @@ async def add_change_comment(
         comments.append({
             "user_id": str(current_user.id),
             "comment": comment_data.comment,
-            "created_at": datetime.utcnow().isoformat()
+            "created_at": datetime.now(timezone.utc).isoformat()
         })
         if not change.custom_fields:
             change.custom_fields = {}
@@ -977,7 +977,7 @@ async def add_change_comment(
             "id": str(change_id),
             "user_id": str(current_user.id),
             "comment": comment_data.comment,
-            "created_at": datetime.utcnow().isoformat()
+            "created_at": datetime.now(timezone.utc).isoformat()
         }
 
     except HTTPException:

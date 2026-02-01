@@ -1,7 +1,7 @@
 """
 Settings management API endpoints.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Any
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -118,18 +118,24 @@ async def get_settings(
     """Get list of settings."""
     try:
         query = db.query(Setting)
-        
+
         if category:
             query = query.filter(Setting.category == category)
-        
+
         # Filter by public access if not admin
         if not current_user.is_admin:
             query = query.filter(Setting.is_public == "true")
-        
+
         query = query.filter(Setting.is_active == True)
         query = query.order_by(Setting.category, Setting.key)
-        
+
         settings = query.offset(skip).limit(limit).all()
+
+        # Log domain-related settings for debugging
+        domain_settings = [s for s in settings if 'domain' in s.key.lower() or 'url' in s.key.lower()]
+        if domain_settings:
+            logger.info(f"Domain-related settings retrieved: {[s.key for s in domain_settings]}")
+
         return settings
     
     except Exception as e:
@@ -137,6 +143,76 @@ async def get_settings(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch settings"
+        )
+
+
+@router.post("/initialize-domain-settings", status_code=status.HTTP_201_CREATED)
+async def initialize_domain_settings(
+    current_user = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Initialize default domain settings if they don't exist."""
+    try:
+        from app.core.config import settings as config_settings
+
+        # Domain settings to initialize
+        domain_settings = [
+            {
+                "key": "frontend_domain",
+                "category": SettingCategory.SYSTEM,
+                "name": "Frontend Domain",
+                "description": "Primary domain for the frontend application",
+                "value": config_settings.frontend_domain,
+                "value_type": "string",
+                "is_public": "false",
+                "is_readonly": "false",
+                "validation_rules": {"pattern": r"^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"}
+            },
+            {
+                "key": "backend_api_domain",
+                "category": SettingCategory.SYSTEM,
+                "name": "Backend API Domain",
+                "description": "Domain for the backend API",
+                "value": config_settings.backend_api_domain,
+                "value_type": "string",
+                "is_public": "false",
+                "is_readonly": "false",
+                "validation_rules": {"pattern": r"^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"}
+            }
+        ]
+
+        created_count = 0
+        for setting_data in domain_settings:
+            # Check if setting already exists
+            existing = db.query(Setting).filter(Setting.key == setting_data["key"]).first()
+            if not existing:
+                new_setting = Setting(
+                    key=setting_data["key"],
+                    category=setting_data["category"],
+                    name=setting_data["name"],
+                    description=setting_data["description"],
+                    value=setting_data["value"],
+                    value_type=setting_data["value_type"],
+                    is_encrypted="false",
+                    is_public=setting_data["is_public"],
+                    is_readonly=setting_data["is_readonly"],
+                    validation_rules=setting_data["validation_rules"],
+                    created_by_id=current_user.id
+                )
+                db.add(new_setting)
+                created_count += 1
+                logger.info(f"Created domain setting: {setting_data['key']}")
+
+        db.commit()
+
+        return {"message": f"Initialized {created_count} domain settings"}
+
+    except Exception as e:
+        logger.error(f"Error initializing domain settings: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to initialize domain settings"
         )
 
 
@@ -201,7 +277,7 @@ async def update_setting(
             setattr(setting, field, value)
         
         setting.updated_by_id = current_user.id
-        setting.updated_at = datetime.utcnow()
+        setting.updated_at = datetime.now(timezone.utc)
         db.commit()
         db.refresh(setting)
         
@@ -235,7 +311,7 @@ async def delete_setting(
             )
         
         setting.is_active = False
-        setting.updated_at = datetime.utcnow()
+        setting.updated_at = datetime.now(timezone.utc)
         db.commit()
         
         logger.info(f"Setting deleted: {setting_key}")

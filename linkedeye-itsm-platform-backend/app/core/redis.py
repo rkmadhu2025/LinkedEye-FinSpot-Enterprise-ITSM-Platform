@@ -3,7 +3,7 @@ Redis configuration and utilities for caching and session management.
 """
 import redis
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional
 from app.core.config import settings
 import logging
@@ -122,7 +122,7 @@ class SessionManager:
         # Store session data
         session_data.update({
             "user_id": user_id,
-            "created_at": str(datetime.utcnow()),
+            "created_at": str(datetime.now(timezone.utc)),
             "session_id": session_id
         })
         

@@ -32,6 +32,23 @@ from app.api.network_topology import router as network_topology_router
 from app.api.reports import router as reports_router
 from app.api.analytics import router as analytics_router
 from app.api.settings import router as settings_router
+try:
+    from app.api.notification_preferences import router as notification_preferences_router
+except ImportError:
+    notification_preferences_router = None
+from app.api.alert_suppressions import router as alert_suppressions_router
+from app.api.clients import router as clients_router
+from app.api.on_call import router as on_call_router
+from app.api.monitoring import router as monitoring_router
+from app.api.infrastructure import router as infrastructure_router
+from app.api.asset_workflow import router as asset_workflow_router
+from app.api.chat import router as chat_router
+from app.api.device_import import router as device_import_router
+from app.api.user_preferences import router as user_preferences_router
+from app.api.webhooks import router as webhooks_router
+from app.api.device_templates import router as device_templates_router
+from app.api.debug import router as debug_router
+from app.api.metrics import router as metrics_router
 
 
 # Configure logging
@@ -221,6 +238,22 @@ app.include_router(network_topology_router, prefix="/api/v1")
 app.include_router(reports_router, prefix="/api/v1")
 app.include_router(analytics_router, prefix="/api/v1")
 app.include_router(settings_router, prefix="/api/v1")
+if notification_preferences_router:
+    app.include_router(notification_preferences_router, prefix="/api/v1")
+app.include_router(alert_suppressions_router, prefix="/api/v1")
+app.include_router(clients_router, prefix="/api/v1")
+app.include_router(on_call_router, prefix="/api/v1")
+app.include_router(monitoring_router, prefix="/api/v1")
+app.include_router(infrastructure_router, prefix="/api/v1")
+app.include_router(asset_workflow_router, prefix="/api/v1")
+app.include_router(chat_router, prefix="/api/v1")
+app.include_router(device_import_router, prefix="/api/v1")
+app.include_router(user_preferences_router, prefix="/api/v1")
+app.include_router(webhooks_router, prefix="/api/v1")
+app.include_router(device_templates_router, prefix="/api/v1/device-templates")
+if settings.debug:
+    app.include_router(debug_router, prefix="/api/v1")
+app.include_router(metrics_router, prefix="/api/v1")
 
 
 # Root endpoint

@@ -18,13 +18,13 @@ class IncidentPriority(str, enum.Enum):
 
 class IncidentStatus(str, enum.Enum):
     """Incident status values."""
-    NEW = "open"
-    ASSIGNED = "open"
+    NEW = "new"
+    ASSIGNED = "assigned"
     IN_PROGRESS = "in_progress"
     PENDING = "pending"
     RESOLVED = "resolved"
     CLOSED = "closed"
-    CANCELLED = "closed"
+    CANCELLED = "cancelled"
 
 
 class IncidentImpact(str, enum.Enum):
@@ -63,7 +63,7 @@ class Incident(BaseModel):
     status = Column(String(20), default=IncidentStatus.NEW.value, nullable=False)
     assigned_to_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     assigned_group = Column(String(100), nullable=True)
-    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)  # Nullable for auto-created incidents from webhooks
     
     # SLA and Timing
     sla_target = Column(DateTime(timezone=True), nullable=True)
@@ -92,6 +92,9 @@ class Incident(BaseModel):
 
     # Relationships
     activities = relationship("IncidentActivity", backref="incident", order_by="desc(IncidentActivity.created_at)")
+    environment = relationship("Environment", foreign_keys=[environment_id], lazy="select")
+    assignee = relationship("User", foreign_keys=[assigned_to_id], lazy="select")
+    created_by = relationship("User", foreign_keys=[created_by_id], lazy="select")
     
     @property
     def is_sla_breached(self) -> bool:
@@ -106,15 +109,19 @@ class Incident(BaseModel):
     @property
     def age_in_hours(self) -> float:
         """Calculate incident age in hours."""
-        from datetime import datetime
-        return (datetime.utcnow() - self.created_at).total_seconds() / 3600
-    
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        created = self.created_at.replace(tzinfo=timezone.utc) if self.created_at.tzinfo is None else self.created_at
+        return (now - created).total_seconds() / 3600
+
     @property
     def is_overdue(self) -> bool:
         """Check if incident is overdue based on SLA."""
         if not self.sla_target:
             return False
-        from datetime import datetime
-        return datetime.utcnow() > self.sla_target and self.status not in [
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        sla = self.sla_target.replace(tzinfo=timezone.utc) if self.sla_target.tzinfo is None else self.sla_target
+        return now > sla and self.status not in [
             IncidentStatus.RESOLVED, IncidentStatus.CLOSED, IncidentStatus.CANCELLED
         ]

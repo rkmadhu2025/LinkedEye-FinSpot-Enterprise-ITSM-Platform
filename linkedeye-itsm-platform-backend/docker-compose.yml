@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # PostgreSQL Database
@@ -27,7 +27,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: itsm_redis
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
+    command: redis-server --appendonly yes
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
@@ -130,7 +130,7 @@ services:
     networks:
       - itsm_network
     restart: unless-stopped
-    command: celery -A app.core.celery_app flower --port=5555
+    command: celery -A app.core.celery_app flower --port=5555 --basic-auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:?FLOWER_PASSWORD must be set}
 
 volumes:
   postgres_data:

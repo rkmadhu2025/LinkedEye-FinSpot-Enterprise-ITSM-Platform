@@ -6,7 +6,7 @@ metadata:
   labels:
     app: linkedeye-backend
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: linkedeye-backend
@@ -19,8 +19,8 @@ spec:
       - name: gitlab-registry-auth
       containers:
       - name: backend
-        image: registry.gitlab.com/finspot-le-dev/fs-le-dev-finspot-incident-tool/backend:latest
-        imagePullPolicy: Always
+        image: registry.gitlab.com/rajkumar.finspot/finspot-le-dev/linkedeye-backend:v1.0.0
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
         env:
@@ -56,8 +56,23 @@ spec:
             secretKeyRef:
               name: itsm-backend-secrets
               key: REDIS_PASSWORD
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: REDIS_PORT
+        - name: REDIS_DB
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: REDIS_DB
         - name: REDIS_URL
-          value: "redis://:$(REDIS_PASSWORD)@redis-service:6379/0"
+          value: "redis://:$(REDIS_PASSWORD)@$(REDIS_HOST):$(REDIS_PORT)/$(REDIS_DB)"
         - name: JWT_SECRET_KEY
           valueFrom:
             secretKeyRef:
@@ -78,6 +93,51 @@ spec:
             configMapKeyRef:
               name: itsm-backend-config
               key: RATE_LIMIT_ENABLED
+        - name: PROMETHEUS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: PROMETHEUS_URL
+        - name: LOKI_URL
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: LOKI_URL
+        - name: LOKI_ORG_ID
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: LOKI_ORG_ID
+        - name: GRAFANA_URL
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: GRAFANA_URL
+        - name: GRAFANA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: itsm-backend-secrets
+              key: GRAFANA_USERNAME
+        - name: GRAFANA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: itsm-backend-secrets
+              key: GRAFANA_PASSWORD
+        - name: STACKSTORM_URL
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: STACKSTORM_URL
+        - name: STACKSTORM_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: itsm-backend-secrets
+              key: STACKSTORM_USERNAME
+        - name: STACKSTORM_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: itsm-backend-secrets
+              key: STACKSTORM_PASSWORD
         - name: CELERY_BROKER_URL
           valueFrom:
             configMapKeyRef:

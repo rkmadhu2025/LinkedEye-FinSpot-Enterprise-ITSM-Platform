@@ -5,7 +5,7 @@ from app.core.celery_app import celery_app
 from app.core.logging import get_logger
 from app.core.database import SessionLocal
 from app.models.incident import Incident, IncidentStatus
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 logger = get_logger(__name__)
 
@@ -16,7 +16,7 @@ def check_sla_breaches():
     db = SessionLocal()
     try:
         # Find incidents that have breached SLA
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         breached_incidents = db.query(Incident).filter(
             Incident.sla_target < now,
             Incident.status.notin_([IncidentStatus.RESOLVED, IncidentStatus.CLOSED, IncidentStatus.CANCELLED]),
@@ -45,7 +45,7 @@ def auto_assign_incidents():
     db = SessionLocal()
     try:
         # Find unassigned incidents older than 5 minutes
-        threshold = datetime.utcnow() - timedelta(minutes=5)
+        threshold = datetime.now(timezone.utc) - timedelta(minutes=5)
         unassigned = db.query(Incident).filter(
             Incident.assigned_to_id.is_(None),
             Incident.status == IncidentStatus.NEW,

@@ -1,7 +1,7 @@
 """
 Incident management API endpoints.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
@@ -18,6 +18,7 @@ from app.models.incident import (
 )
 from app.models.user import User
 from app.models.environment import Environment
+from app.models.client import Client
 from app.api.dependencies import get_current_user, require_agent
 from app.core.logging import get_logger
 
@@ -62,6 +63,38 @@ class IncidentUpdate(BaseModel):
     custom_fields: Optional[dict] = None
 
 
+class EnvironmentInfo(BaseModel):
+    id: UUID
+    name: str
+    description: Optional[str] = None
+    environment_type: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ClientInfo(BaseModel):
+    id: UUID
+    name: str
+    display_name: Optional[str] = None
+    client_code: str
+    environment: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class UserInfo(BaseModel):
+    id: UUID
+    email: str
+    firstName: str
+    lastName: str
+    role: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 class IncidentResponse(BaseModel):
     id: UUID
     number: str
@@ -74,9 +107,13 @@ class IncidentResponse(BaseModel):
     urgency: IncidentUrgency
     status: IncidentStatus
     assigned_to_id: Optional[UUID]
+    assignee: Optional[UserInfo] = None
     assigned_group: Optional[str]
-    created_by_id: UUID
+    created_by_id: Optional[UUID]
     environment_id: Optional[UUID]
+    environment: Optional[EnvironmentInfo] = None
+    client_id: Optional[UUID] = None
+    client: Optional[ClientInfo] = None
     sla_target: Optional[datetime]
     sla_breached: bool
     first_response_at: Optional[datetime]
@@ -88,11 +125,15 @@ class IncidentResponse(BaseModel):
     workaround: Optional[str]
     tags: List[str]
     custom_fields: dict
+    source: Optional[str] = None
+    alert_rule: Optional[str] = None
+    external_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
     class Config:
         from_attributes = True
+
 
 
 class IncidentAssign(BaseModel):
@@ -136,10 +177,17 @@ class PaginatedIncidentResponse(BaseModel):
 
 
 def generate_incident_number(db: Session) -> str:
-    """Generate unique incident number using database-level locking to prevent race conditions."""
+    """Generate unique incident number using a PostgreSQL sequence to prevent race conditions."""
     try:
-        # Use database-level MAX query with proper locking
-        # This prevents race conditions by getting the max in a single atomic operation
+        # Ensure the sequence exists (idempotent)
+        db.execute(text(
+            "CREATE SEQUENCE IF NOT EXISTS incident_number_seq START WITH 1 INCREMENT BY 1"
+        ))
+        result = db.execute(text("SELECT nextval('incident_number_seq')")).fetchone()
+        next_num = result[0]
+    except Exception as e:
+        logger.warning(f"Failed to get next incident number via sequence: {e}")
+        # Fallback: use advisory lock + MAX to avoid duplicates
         result = db.execute(
             text("""
                 SELECT COALESCE(
@@ -148,21 +196,10 @@ def generate_incident_number(db: Session) -> str:
                 ) + 1 as next_num
                 FROM incidents
                 WHERE number LIKE 'INC%'
+                FOR UPDATE
             """)
         ).fetchone()
         next_num = result[0] if result else 1
-    except Exception as e:
-        logger.warning(f"Failed to get next incident number via SQL: {e}")
-        # Fallback: use Python-based approach
-        latest = db.query(Incident).order_by(Incident.created_at.desc()).first()
-        if latest and latest.number:
-            try:
-                num_part = latest.number.replace("INC", "")
-                next_num = int(num_part) + 1
-            except (ValueError, AttributeError):
-                next_num = 1
-        else:
-            next_num = 1
 
     return f"INC{next_num:07d}"
 
@@ -181,13 +218,13 @@ async def create_incident(
         # Calculate SLA target based on priority
         sla_target = None
         if incident_data.priority == IncidentPriority.CRITICAL:
-            sla_target = datetime.utcnow() + timedelta(hours=1)
+            sla_target = datetime.now(timezone.utc) + timedelta(hours=1)
         elif incident_data.priority == IncidentPriority.HIGH:
-            sla_target = datetime.utcnow() + timedelta(hours=4)
+            sla_target = datetime.now(timezone.utc) + timedelta(hours=4)
         elif incident_data.priority == IncidentPriority.MEDIUM:
-            sla_target = datetime.utcnow() + timedelta(hours=8)
+            sla_target = datetime.now(timezone.utc) + timedelta(hours=8)
         else:
-            sla_target = datetime.utcnow() + timedelta(hours=24)
+            sla_target = datetime.now(timezone.utc) + timedelta(hours=24)
         
         # Create incident
         new_incident = Incident(
@@ -215,9 +252,16 @@ async def create_incident(
         db.commit()
         db.refresh(new_incident)
         
+        # Eager load relationships for response
+        from sqlalchemy.orm import joinedload
+        incident_with_relations = db.query(Incident).options(
+            joinedload(Incident.environment),
+            joinedload(Incident.assignee)
+        ).filter(Incident.id == new_incident.id).first()
+        
         logger.info(f"Incident created: {incident_number} by user {current_user.id}")
         
-        return new_incident
+        return incident_with_relations
     
     except Exception as e:
         db.rollback()
@@ -226,6 +270,7 @@ async def create_incident(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create incident"
         )
+
 
 
 @router.get("", response_model=List[IncidentResponse])
@@ -273,8 +318,12 @@ async def list_incidents(
         # Order by created_at descending
         query = query.order_by(Incident.created_at.desc())
 
-        # Apply pagination
-        incidents = query.offset(skip).limit(limit).all()
+        # Apply pagination with eager loading
+        from sqlalchemy.orm import joinedload
+        incidents = query.options(
+            joinedload(Incident.environment),
+            joinedload(Incident.assignee)
+        ).offset(skip).limit(limit).all()
 
         # Add pagination headers
         page = (skip // limit) + 1
@@ -284,7 +333,84 @@ async def list_incidents(
         response.headers["X-Per-Page"] = str(limit)
         response.headers["X-Total-Pages"] = str(total_pages)
 
-        return incidents
+        # Pre-fetch user's client once (avoid N+1)
+        user_client = None
+        if current_user.client_id:
+            user_client = db.query(Client).filter(Client.id == current_user.client_id).first()
+
+        # Build response with environment and client data
+        result = []
+        for incident in incidents:
+            # Get client if available
+            client = user_client
+            if not client and incident.custom_fields and incident.custom_fields.get('client_id'):
+                try:
+                    client_id = UUID(incident.custom_fields.get('client_id'))
+                    client = db.query(Client).filter(Client.id == client_id).first()
+                except (ValueError, AttributeError):
+                    client = None
+            
+            # Build assignee info if present
+            assignee_info = None
+            if incident.assignee:
+                assignee_info = UserInfo(
+                    id=incident.assignee.id,
+                    email=incident.assignee.email,
+                    firstName=incident.assignee.first_name,
+                    lastName=incident.assignee.last_name,
+                    role=incident.assignee.role
+                )
+            
+            incident_dict = {
+                "id": incident.id,
+                "number": incident.number,
+                "title": incident.title,
+                "description": incident.description,
+                "category": incident.category,
+                "subcategory": incident.subcategory,
+                "priority": incident.priority,
+                "impact": incident.impact,
+                "urgency": incident.urgency,
+                "status": incident.status,
+                "assigned_to_id": incident.assigned_to_id,
+                "assignee": assignee_info,
+                "assigned_group": incident.assigned_group,
+                "created_by_id": incident.created_by_id,
+                "environment_id": incident.environment_id,
+                "environment": EnvironmentInfo(
+                    id=incident.environment.id,
+                    name=incident.environment.name,
+                    description=incident.environment.description,
+                    environment_type=incident.environment.environment_type
+                ) if incident.environment else None,
+                "client_id": client.id if client else None,
+                "client": ClientInfo(
+                    id=client.id,
+                    name=client.name,
+                    display_name=client.display_name,
+                    client_code=client.client_code,
+                    environment=client.environment.value if client and client.environment else None
+                ) if client else None,
+                "sla_target": incident.sla_target,
+                "sla_breached": incident.sla_breached,
+                "first_response_at": incident.first_response_at,
+                "resolved_at": incident.resolved_at,
+                "closed_at": incident.closed_at,
+                "affected_assets": incident.affected_assets or [],
+                "resolution_notes": incident.resolution_notes,
+                "customer_impact": incident.customer_impact,
+                "workaround": incident.workaround,
+                "tags": incident.tags or [],
+                "custom_fields": incident.custom_fields or {},
+                "source": incident.source,
+                "alert_rule": incident.alert_rule,
+                "external_id": incident.external_id,
+                "created_at": incident.created_at,
+                "updated_at": incident.updated_at,
+            }
+            result.append(IncidentResponse(**incident_dict))
+        
+        return result
 
     except Exception as e:
         logger.error(f"Error listing incidents: {e}")
@@ -302,7 +428,12 @@ async def get_incident(
 ):
     """Get incident by ID."""
     try:
-        incident = db.query(Incident).filter(Incident.id == incident_id).first()
+        from sqlalchemy.orm import joinedload
+        from app.models.client import Client
+        
+        incident = db.query(Incident).options(
+            joinedload(Incident.environment)
+        ).filter(Incident.id == incident_id).first()
         
         if not incident:
             raise HTTPException(
@@ -310,7 +441,68 @@ async def get_incident(
                 detail="Incident not found"
             )
         
-        return incident
+        # Get client if available (from custom_fields or user's client)
+        client = None
+        if hasattr(incident, 'client_id') and incident.client_id:
+            client = db.query(Client).filter(Client.id == incident.client_id).first()
+        elif current_user.client_id:
+            client = db.query(Client).filter(Client.id == current_user.client_id).first()
+        elif incident.custom_fields and incident.custom_fields.get('client_id'):
+            try:
+                client_id = UUID(incident.custom_fields.get('client_id'))
+                client = db.query(Client).filter(Client.id == client_id).first()
+            except (ValueError, AttributeError):
+                pass
+
+        # Build response with relationships
+        response_data = {
+            "id": incident.id,
+            "number": incident.number,
+            "title": incident.title,
+            "description": incident.description,
+            "category": incident.category,
+            "subcategory": incident.subcategory,
+            "priority": incident.priority,
+            "impact": incident.impact,
+            "urgency": incident.urgency,
+            "status": incident.status,
+            "assigned_to_id": incident.assigned_to_id,
+            "assigned_group": incident.assigned_group,
+            "created_by_id": incident.created_by_id,
+            "environment_id": incident.environment_id,
+            "environment": EnvironmentInfo(
+                id=incident.environment.id,
+                name=incident.environment.name,
+                description=incident.environment.description,
+                environment_type=incident.environment.environment_type
+            ) if incident.environment else None,
+            "client_id": client.id if client else None,
+            "client": ClientInfo(
+                id=client.id,
+                name=client.name,
+                display_name=client.display_name,
+                client_code=client.client_code,
+                environment=client.environment.value if client.environment else None
+            ) if client else None,
+            "sla_target": incident.sla_target,
+            "sla_breached": incident.sla_breached,
+            "first_response_at": incident.first_response_at,
+            "resolved_at": incident.resolved_at,
+            "closed_at": incident.closed_at,
+            "affected_assets": incident.affected_assets or [],
+            "resolution_notes": incident.resolution_notes,
+            "customer_impact": incident.customer_impact,
+            "workaround": incident.workaround,
+            "tags": incident.tags or [],
+            "custom_fields": incident.custom_fields or {},
+            "source": incident.source,
+            "alert_rule": incident.alert_rule,
+            "external_id": incident.external_id,
+            "created_at": incident.created_at,
+            "updated_at": incident.updated_at,
+        }
+
+        return IncidentResponse(**response_data)
     
     except HTTPException:
         raise
@@ -348,14 +540,14 @@ async def update_incident(
         # Handle status changes
         if incident_data.status:
             if incident_data.status == IncidentStatus.IN_PROGRESS and not incident.first_response_at:
-                incident.first_response_at = datetime.utcnow()
+                incident.first_response_at = datetime.now(timezone.utc)
             elif incident_data.status == IncidentStatus.RESOLVED and not incident.resolved_at:
-                incident.resolved_at = datetime.utcnow()
+                incident.resolved_at = datetime.now(timezone.utc)
             elif incident_data.status == IncidentStatus.CLOSED and not incident.closed_at:
-                incident.closed_at = datetime.utcnow()
+                incident.closed_at = datetime.now(timezone.utc)
         
         # Check SLA breach
-        if incident.sla_target and datetime.utcnow() > incident.sla_target:
+        if incident.sla_target and datetime.now(timezone.utc) > incident.sla_target:
             if incident.status not in [IncidentStatus.RESOLVED, IncidentStatus.CLOSED, IncidentStatus.CANCELLED]:
                 incident.sla_breached = True
         
@@ -529,7 +721,7 @@ async def resolve_incident(
         # Update resolution
         incident.resolution_notes = resolution.resolution_notes
         incident.status = IncidentStatus.RESOLVED
-        incident.resolved_at = datetime.utcnow()
+        incident.resolved_at = datetime.now(timezone.utc)
 
         db.commit()
         db.refresh(incident)
@@ -575,7 +767,7 @@ async def close_incident(
             )
 
         incident.status = IncidentStatus.CLOSED
-        incident.closed_at = datetime.utcnow()
+        incident.closed_at = datetime.now(timezone.utc)
 
         db.commit()
         db.refresh(incident)

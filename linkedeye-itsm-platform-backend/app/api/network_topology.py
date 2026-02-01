@@ -1,7 +1,7 @@
 """
 Network Topology management API endpoints.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -175,7 +175,7 @@ async def update_topology(
         for field, value in update_data.items():
             setattr(topology, field, value)
         
-        topology.updated_at = datetime.utcnow()
+        topology.updated_at = datetime.now(timezone.utc)
         db.commit()
         db.refresh(topology)
         
@@ -209,7 +209,7 @@ async def delete_topology(
             )
         
         topology.is_active = False
-        topology.updated_at = datetime.utcnow()
+        topology.updated_at = datetime.now(timezone.utc)
         db.commit()
         
         logger.info(f"Network topology deleted: {topology_id}")

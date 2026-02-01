@@ -1,13 +1,13 @@
 """
 Authentication API endpoints.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr, Field, AliasChoices
+from pydantic import BaseModel, EmailStr, Field, AliasChoices, validator
 from app.core.database import get_db
 from app.core.security import (
     verify_password, 
@@ -26,6 +26,20 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
 
+def _validate_password_strength(v: str) -> str:
+    """Shared password strength validator."""
+    import re
+    if not re.search(r'[A-Z]', v):
+        raise ValueError("Password must contain at least one uppercase letter")
+    if not re.search(r'[a-z]', v):
+        raise ValueError("Password must contain at least one lowercase letter")
+    if not re.search(r'[0-9]', v):
+        raise ValueError("Password must contain at least one digit")
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
+        raise ValueError("Password must contain at least one special character")
+    return v
+
+
 # Pydantic models
 class Token(BaseModel):
     access_token: str
@@ -38,16 +52,25 @@ class TokenRefresh(BaseModel):
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: Optional[EmailStr] = None
+    username: Optional[str] = None
     password: str
+
+    class Config:
+        # Allow either email or username to be provided
+        extra = "ignore"
 
 
 class UserRegister(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=12)
     first_name: str = Field(..., validation_alias=AliasChoices("first_name", "firstName"))
     last_name: str = Field(..., validation_alias=AliasChoices("last_name", "lastName"))
     department: Optional[str] = None
+
+    @validator("password")
+    def validate_password_strength(cls, v):
+        return _validate_password_strength(v)
 
 
 class PasswordReset(BaseModel):
@@ -56,19 +79,54 @@ class PasswordReset(BaseModel):
 
 class PasswordResetConfirm(BaseModel):
     token: str
-    new_password: str
+    new_password: str = Field(..., min_length=12)
+
+    @validator("new_password")
+    def validate_password_strength(cls, v):
+        return _validate_password_strength(v)
+
+
+class RoleResponse(BaseModel):
+    id: str
+    name: str
+    code: str
+    description: Optional[str] = None
+    permissions: list[str] = []
+    isSystem: bool = False
+    isActive: bool = True
+
+
+class GroupResponse(BaseModel):
+    id: str
+    name: str
+    code: str
+    description: Optional[str] = None
+    groupType: str = "team"
+    isActive: bool = True
 
 
 class UserResponse(BaseModel):
     id: UUID
+    organizationId: str = "default"  # Default organization for now
     email: str
-    first_name: str = Field(..., serialization_alias="firstName")
-    last_name: str = Field(..., serialization_alias="lastName")
-    display_name: Optional[str] = Field(None, serialization_alias="displayName")
-    role: UserRole
+    firstName: str = Field(..., validation_alias=AliasChoices("first_name", "firstName"))
+    lastName: str = Field(..., validation_alias=AliasChoices("last_name", "lastName"))
+    displayName: Optional[str] = Field(None, validation_alias=AliasChoices("display_name", "displayName"))
+    phone: Optional[str] = None
+    avatarUrl: Optional[str] = None
+    jobTitle: Optional[str] = None
     department: Optional[str] = None
-    is_active: bool
-    
+    location: Optional[str] = None
+    timezone: str = "UTC"
+    authProvider: str = "local"
+    status: str = "active"
+    emailVerified: bool = Field(False, validation_alias=AliasChoices("is_email_verified", "emailVerified"))
+    lastLoginAt: Optional[str] = Field(None, validation_alias=AliasChoices("last_login_at", "lastLoginAt"))
+    createdAt: Optional[str] = Field(None, validation_alias=AliasChoices("created_at", "createdAt"))
+    updatedAt: Optional[str] = Field(None, validation_alias=AliasChoices("updated_at", "updatedAt"))
+    roles: list[RoleResponse] = []
+    groups: list[GroupResponse] = []
+
     class Config:
         from_attributes = True
         populate_by_name = True
@@ -81,14 +139,33 @@ async def login(
 ):
     """Authenticate user and return JWT tokens."""
     try:
-        # Find user by email
-        user = db.query(User).filter(User.email == user_credentials.email).first()
-        
+        # Find user by email or username
+        user = None
+        login_identifier = user_credentials.email or user_credentials.username
+
+        if not login_identifier:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email or username is required"
+            )
+
+        # If email is provided or the identifier contains @, search by email
+        if user_credentials.email or (login_identifier and '@' in login_identifier):
+            email_to_search = user_credentials.email or login_identifier
+            user = db.query(User).filter(User.email == email_to_search).first()
+        # Otherwise search by username (email field for now, or add username column)
+        elif user_credentials.username:
+            # First try to find by email (since username might be the email)
+            user = db.query(User).filter(User.email == user_credentials.username).first()
+            # If not found by email, try display_name as username fallback
+            if not user:
+                user = db.query(User).filter(User.display_name == user_credentials.username).first()
+
         if not user:
-            log_security_event("login_failed", context={"email": user_credentials.email, "reason": "user_not_found"})
+            log_security_event("login_failed", context={"identifier": login_identifier, "reason": "user_not_found"})
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect email or password"
+                detail="Incorrect username/email or password"
             )
         
         # Check if account is locked
@@ -106,14 +183,14 @@ async def login(
 
             # Lock account after 5 failed attempts
             if user.failed_login_attempts >= 5:
-                user.locked_until = datetime.utcnow() + timedelta(minutes=30)
+                user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=30)
                 log_security_event("account_locked", user_id=str(user.id), context={"failed_attempts": user.failed_login_attempts})
             
             db.commit()
             log_security_event("login_failed", user_id=str(user.id), context={"reason": "invalid_password"})
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect email or password"
+                detail="Incorrect username/email or password"
             )
         
         # Check if user is active
@@ -127,7 +204,7 @@ async def login(
         # Reset failed login attempts on successful login
         user.failed_login_attempts = 0
         user.locked_until = None
-        user.last_login_at = datetime.utcnow()
+        user.last_login_at = datetime.now(timezone.utc)
         db.commit()
         
         # Create tokens
@@ -145,10 +222,20 @@ async def login(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Login error: {e}")
+        db.rollback()
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Login error: {e}", error=str(e), traceback=error_details)
+        
+        # If debug mode is on, return the error details
+        from app.core.config import settings
+        detail_msg = "Internal server error"
+        if settings.debug:
+            detail_msg = f"Internal server error: {str(e)}"
+            
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
+            detail=detail_msg
         )
 
 
@@ -202,10 +289,20 @@ async def refresh_token(
 @router.post("/register", response_model=UserResponse)
 async def register(
     user_data: UserRegister,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    """Register a new user."""
+    """Register a new user. Requires admin authentication."""
     try:
+        # Only admins can create new users
+        user_role = getattr(current_user, 'role', '')
+        if hasattr(user_role, 'value'):
+            user_role = user_role.value
+        if user_role not in ('admin', 'super_admin'):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only administrators can create new users"
+            )
         # Check if user already exists
         existing_user = db.query(User).filter(User.email == user_data.email).first()
         if existing_user:
@@ -250,15 +347,68 @@ async def get_current_user_info(
     current_user: User = Depends(get_current_user)
 ):
     """Get current user information."""
-    return current_user
+    # Convert user's role to roles array format expected by frontend
+    user_role = getattr(current_user, 'role', 'user')
+    if hasattr(user_role, 'value'):
+        user_role = user_role.value
+
+    role_obj = RoleResponse(
+        id=str(current_user.id),
+        name=str(user_role).replace('_', ' ').title(),
+        code=str(user_role),
+        description=f"{str(user_role).replace('_', ' ').title()} role",
+        permissions=[],
+        isSystem=True,
+        isActive=True
+    )
+
+    # Build response with all required fields
+    return UserResponse(
+        id=current_user.id,
+        organizationId="default",
+        email=current_user.email,
+        firstName=current_user.first_name,
+        lastName=current_user.last_name,
+        displayName=current_user.display_name or f"{current_user.first_name} {current_user.last_name}",
+        phone=getattr(current_user, 'phone', None),
+        avatarUrl=getattr(current_user, 'avatar_url', None),
+        jobTitle=getattr(current_user, 'job_title', None),
+        department=current_user.department,
+        location=getattr(current_user, 'location', None),
+        timezone=getattr(current_user, 'timezone', 'UTC') or 'UTC',
+        authProvider="local",
+        status=str(getattr(current_user, 'status', 'active').value if hasattr(getattr(current_user, 'status', 'active'), 'value') else 'active'),
+        emailVerified=getattr(current_user, 'is_email_verified', False) or False,
+        lastLoginAt=str(current_user.last_login_at) if current_user.last_login_at else None,
+        createdAt=str(current_user.created_at) if current_user.created_at else None,
+        updatedAt=str(current_user.updated_at) if current_user.updated_at else None,
+        roles=[role_obj],
+        groups=[]
+    )
 
 
 @router.post("/logout")
 async def logout(
-    current_user: User = Depends(get_current_user)
+    request: Request
 ):
-    """Logout user (client should discard tokens)."""
-    log_security_event("logout", user_id=str(current_user.id))
+    """Logout user (client should discard tokens). Accepts expired tokens gracefully."""
+    try:
+        # Try to extract user ID from token for logging, but don't fail if expired
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header.split(" ", 1)[1]
+            import jwt as pyjwt
+            from app.core.config import settings
+            payload = pyjwt.decode(
+                token,
+                settings.jwt_secret_key,
+                algorithms=[settings.jwt_algorithm],
+                options={"verify_exp": False}
+            )
+            if payload and "sub" in payload:
+                log_security_event("logout", user_id=payload["sub"])
+    except Exception:
+        pass  # Token parsing failed - still allow logout
     return {"message": "Successfully logged out"}
 
 
@@ -275,7 +425,7 @@ async def request_password_reset(
             # Generate reset token
             reset_token = generate_password_reset_token(user.email)
             user.password_reset_token = reset_token
-            user.password_reset_expires = datetime.utcnow() + timedelta(hours=1)
+            user.password_reset_expires = datetime.now(timezone.utc) + timedelta(hours=1)
             db.commit()
             
             log_security_event("password_reset_requested", user_id=str(user.id))
@@ -318,7 +468,7 @@ async def confirm_password_reset(
             )
 
         # Check token expiration
-        if user.password_reset_expires and datetime.utcnow() > user.password_reset_expires:
+        if user.password_reset_expires and datetime.now(timezone.utc) > user.password_reset_expires:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Reset token has expired"
@@ -348,7 +498,11 @@ async def confirm_password_reset(
 
 class ChangePassword(BaseModel):
     current_password: str
-    new_password: str
+    new_password: str = Field(..., min_length=12)
+
+    @validator("new_password")
+    def validate_password_strength(cls, v):
+        return _validate_password_strength(v)
 
 
 class EmailVerification(BaseModel):
@@ -454,6 +608,102 @@ async def resend_verification_email(
         raise
     except Exception as e:
         logger.error(f"Resend verification error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+
+class ProfileUpdate(BaseModel):
+    first_name: Optional[str] = Field(None, validation_alias=AliasChoices("first_name", "firstName"))
+    last_name: Optional[str] = Field(None, validation_alias=AliasChoices("last_name", "lastName"))
+    display_name: Optional[str] = Field(None, validation_alias=AliasChoices("display_name", "displayName"))
+    phone: Optional[str] = None
+    department: Optional[str] = None
+    job_title: Optional[str] = Field(None, validation_alias=AliasChoices("job_title", "jobTitle"))
+    location: Optional[str] = None
+    timezone: Optional[str] = None
+
+
+@router.put("/profile", response_model=UserResponse)
+async def update_profile(
+    profile_data: ProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update current user's profile."""
+    try:
+        # Update only provided fields
+        if profile_data.first_name is not None:
+            current_user.first_name = profile_data.first_name
+        if profile_data.last_name is not None:
+            current_user.last_name = profile_data.last_name
+        if profile_data.display_name is not None:
+            current_user.display_name = profile_data.display_name
+        if profile_data.phone is not None:
+            current_user.phone = profile_data.phone
+        if profile_data.department is not None:
+            current_user.department = profile_data.department
+        if profile_data.job_title is not None:
+            current_user.job_title = profile_data.job_title
+        if profile_data.location is not None:
+            current_user.location = profile_data.location
+        if profile_data.timezone is not None:
+            current_user.timezone = profile_data.timezone
+
+        # Update display_name if not explicitly set
+        if profile_data.display_name is None and (profile_data.first_name or profile_data.last_name):
+            first = profile_data.first_name or current_user.first_name
+            last = profile_data.last_name or current_user.last_name
+            current_user.display_name = f"{first} {last}"
+
+        db.commit()
+        db.refresh(current_user)
+
+        log_security_event("profile_updated", user_id=str(current_user.id))
+
+        # Convert user's role to roles array format expected by frontend
+        user_role = getattr(current_user, 'role', 'user')
+        if hasattr(user_role, 'value'):
+            user_role = user_role.value
+
+        role_obj = RoleResponse(
+            id=str(current_user.id),
+            name=str(user_role).replace('_', ' ').title(),
+            code=str(user_role),
+            description=f"{str(user_role).replace('_', ' ').title()} role",
+            permissions=[],
+            isSystem=True,
+            isActive=True
+        )
+
+        return UserResponse(
+            id=current_user.id,
+            organizationId="default",
+            email=current_user.email,
+            firstName=current_user.first_name,
+            lastName=current_user.last_name,
+            displayName=current_user.display_name or f"{current_user.first_name} {current_user.last_name}",
+            phone=getattr(current_user, 'phone', None),
+            avatarUrl=getattr(current_user, 'avatar_url', None),
+            jobTitle=getattr(current_user, 'job_title', None),
+            department=current_user.department,
+            location=getattr(current_user, 'location', None),
+            timezone=getattr(current_user, 'timezone', 'UTC') or 'UTC',
+            authProvider="local",
+            status=str(getattr(current_user, 'status', 'active').value if hasattr(getattr(current_user, 'status', 'active'), 'value') else 'active'),
+            emailVerified=getattr(current_user, 'is_email_verified', False) or False,
+            lastLoginAt=str(current_user.last_login_at) if current_user.last_login_at else None,
+            createdAt=str(current_user.created_at) if current_user.created_at else None,
+            updatedAt=str(current_user.updated_at) if current_user.updated_at else None,
+            roles=[role_obj],
+            groups=[]
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Profile update error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error"

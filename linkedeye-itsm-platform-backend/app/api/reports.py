@@ -1,7 +1,7 @@
 """
 Report management API endpoints.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
@@ -217,7 +217,7 @@ async def generate_report(
         generate_pdf_report(abs_path, report_content, title=report.name)
         
         report.status = ReportStatus.COMPLETED
-        report.generated_at = datetime.utcnow()
+        report.generated_at = datetime.now(timezone.utc)
         report.file_path = f"/static/reports/{file_name}"
         db.commit()
         db.refresh(report)
@@ -252,7 +252,7 @@ async def delete_report(
             )
         
         report.is_active = False
-        report.updated_at = datetime.utcnow()
+        report.updated_at = datetime.now(timezone.utc)
         db.commit()
         
         logger.info(f"Report deleted: {report_id}")

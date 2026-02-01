@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: celery-worker
-  namespace: itsm-platform
+  namespace: incident-linkedeye-itsm
   labels:
     app: celery-worker
 spec:
@@ -15,48 +15,69 @@ spec:
       labels:
         app: celery-worker
     spec:
+      imagePullSecrets:
+      - name: gitlab-registry-auth
       containers:
-      - name: celery-worker
-        image: itsm-backend:latest
-        command: ["celery", "-A", "app.core.celery_app", "worker", "--loglevel=info", "--concurrency=4", "--queues=default,incidents,notifications,reports,sync"]
-        env:
-        - name: DATABASE_URL
-          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@postgres-service:5432/$(DATABASE_NAME)"
-        - name: DATABASE_USER
-          valueFrom:
-            secretKeyRef:
-              name: itsm-backend-secrets
-              key: DATABASE_USER
-        - name: DATABASE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: itsm-backend-secrets
-              key: DATABASE_PASSWORD
-        - name: DATABASE_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: itsm-backend-config
-              key: DATABASE_NAME
-        - name: CELERY_BROKER_URL
-          valueFrom:
-            configMapKeyRef:
-              name: itsm-backend-config
-              key: CELERY_BROKER_URL
-        - name: CELERY_RESULT_BACKEND
-          valueFrom:
-            configMapKeyRef:
-              name: itsm-backend-config
-              key: CELERY_RESULT_BACKEND
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
-            memory: "1Gi"
-            cpu: "500m"
-        volumeMounts:
-        - name: logs
-          mountPath: /app/logs
+        - name: celery-worker
+          image: registry.gitlab.com/rajkumar.finspot/finspot-le-dev/linkedeye-backend:v1.0.0
+          command:
+            [
+              "celery",
+              "-A",
+              "app.core.celery_app",
+              "worker",
+              "--loglevel=info",
+              "--concurrency=4",
+              "--queues=default,incidents,notifications,reports,sync",
+            ]
+          env:
+            - name: DATABASE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: itsm-backend-config
+                  key: DATABASE_HOST
+            - name: DATABASE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: itsm-backend-config
+                  key: DATABASE_PORT
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: itsm-backend-secrets
+                  key: DATABASE_USER
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: itsm-backend-secrets
+                  key: DATABASE_PASSWORD
+            - name: DATABASE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: itsm-backend-config
+                  key: DATABASE_NAME
+            - name: DATABASE_URL
+              value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+            - name: CELERY_BROKER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: itsm-backend-config
+                  key: CELERY_BROKER_URL
+            - name: CELERY_RESULT_BACKEND
+              valueFrom:
+                configMapKeyRef:
+                  name: itsm-backend-config
+                  key: CELERY_RESULT_BACKEND
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          volumeMounts:
+            - name: logs
+              mountPath: /app/logs
       volumes:
-      - name: logs
-        emptyDir: {}
+        - name: logs
+          emptyDir: {}

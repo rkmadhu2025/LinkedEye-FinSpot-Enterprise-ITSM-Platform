@@ -1,7 +1,7 @@
 """
 Problem management API endpoints.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
@@ -18,16 +18,17 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/problems", tags=["problems"])
 
 
-# Pydantic models
+# Pydantic models - Updated to match DB schema
 class ProblemCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
-    description: str = Field(..., min_length=1)
+    description: Optional[str] = None
     category: Optional[str] = None
-    priority: ProblemPriority = ProblemPriority.MEDIUM
-    assigned_to_id: Optional[UUID] = None
+    priority: Optional[str] = ProblemPriority.MEDIUM.value
+    impact: Optional[str] = None
+    assigned_to: Optional[UUID] = None
+    assigned_group_id: Optional[UUID] = None
     environment_id: Optional[UUID] = None
-    related_incidents: List[str] = Field(default_factory=list)
-    affected_assets: List[str] = Field(default_factory=list)
+    affected_asset_id: Optional[UUID] = None
     tags: List[str] = Field(default_factory=list)
     custom_fields: dict = Field(default_factory=dict)
 
@@ -36,42 +37,45 @@ class ProblemUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = None
     category: Optional[str] = None
-    priority: Optional[ProblemPriority] = None
-    status: Optional[ProblemStatus] = None
-    assigned_to_id: Optional[UUID] = None
+    priority: Optional[str] = None
+    status: Optional[str] = None
+    impact: Optional[str] = None
+    assigned_to: Optional[UUID] = None
+    assigned_group_id: Optional[UUID] = None
     environment_id: Optional[UUID] = None
+    affected_asset_id: Optional[UUID] = None
     root_cause: Optional[str] = None
-    resolution_summary: Optional[str] = None
-    related_incidents: Optional[List[str]] = None
-    related_changes: Optional[List[str]] = None
-    affected_assets: Optional[List[str]] = None
+    workaround: Optional[str] = None
+    permanent_fix: Optional[str] = None
     tags: Optional[List[str]] = None
     custom_fields: Optional[dict] = None
 
 
 class ProblemResponse(BaseModel):
     id: UUID
-    number: str
+    problem_number: Optional[str] = None
     title: str
-    description: str
-    category: Optional[str]
-    priority: ProblemPriority
-    status: ProblemStatus
-    assigned_to_id: Optional[UUID]
-    created_by_id: UUID
-    environment_id: Optional[UUID]
-    root_cause: Optional[str]
-    resolution_summary: Optional[str]
-    resolved_at: Optional[datetime]
-    closed_at: Optional[datetime]
-    related_incidents: List[str]
-    related_changes: List[str]
-    affected_assets: List[str]
-    tags: List[str]
-    custom_fields: dict
+    description: Optional[str] = None
+    category: Optional[str] = None
+    priority: Optional[str] = None
+    status: Optional[str] = None
+    impact: Optional[str] = None
+    assigned_to: Optional[UUID] = None
+    assigned_group_id: Optional[UUID] = None
+    reported_by: Optional[UUID] = None
+    environment_id: Optional[UUID] = None
+    affected_asset_id: Optional[UUID] = None
+    root_cause: Optional[str] = None
+    workaround: Optional[str] = None
+    permanent_fix: Optional[str] = None
+    resolved_at: Optional[datetime] = None
+    closed_at: Optional[datetime] = None
+    tags: Optional[List[str]] = None
+    custom_fields: Optional[dict] = None
     created_at: datetime
     updated_at: datetime
-    
+    is_active: bool = True
+
     class Config:
         from_attributes = True
 
@@ -83,11 +87,11 @@ def generate_problem_number(db: Session) -> str:
         result = db.execute(
             text("""
                 SELECT COALESCE(
-                    MAX(CAST(SUBSTRING(number FROM 4) AS INTEGER)),
+                    MAX(CAST(SUBSTRING(problem_number FROM 4) AS INTEGER)),
                     0
                 ) + 1 as next_num
                 FROM problems
-                WHERE number LIKE 'PRB%'
+                WHERE problem_number LIKE 'PRB%'
             """)
         ).fetchone()
         next_num = result[0] if result else 1
@@ -95,9 +99,9 @@ def generate_problem_number(db: Session) -> str:
         logger.warning(f"Failed to get next problem number via SQL: {e}")
         # Fallback: use Python-based approach
         latest = db.query(Problem).order_by(Problem.created_at.desc()).first()
-        if latest and latest.number:
+        if latest and latest.problem_number:
             try:
-                num_part = latest.number.replace("PRB", "")
+                num_part = latest.problem_number.replace("PRB", "")
                 next_num = int(num_part) + 1
             except (ValueError, AttributeError):
                 next_num = 1
@@ -113,22 +117,23 @@ async def create_problem(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Create a new problem."""
+    """Create a new problem. All authenticated users can create."""
     try:
         problem_number = generate_problem_number(db)
-        
+
         new_problem = Problem(
-            number=problem_number,
+            problem_number=problem_number,
             title=problem_data.title,
             description=problem_data.description,
             category=problem_data.category,
             priority=problem_data.priority,
-            status=ProblemStatus.NEW,
-            assigned_to_id=problem_data.assigned_to_id,
-            created_by_id=current_user.id,
+            impact=problem_data.impact,
+            status=ProblemStatus.NEW.value,
+            assigned_to=problem_data.assigned_to,
+            assigned_group_id=problem_data.assigned_group_id,
+            reported_by=current_user.id,
             environment_id=problem_data.environment_id,
-            related_incidents=problem_data.related_incidents,
-            affected_assets=problem_data.affected_assets,
+            affected_asset_id=problem_data.affected_asset_id,
             tags=problem_data.tags,
             custom_fields=problem_data.custom_fields
         )
@@ -175,7 +180,7 @@ async def list_problems(
                 or_(
                     Problem.title.ilike(search_term),
                     Problem.description.ilike(search_term),
-                    Problem.number.ilike(search_term)
+                    Problem.problem_number.ilike(search_term)
                 )
             )
 
@@ -235,10 +240,10 @@ async def get_problem(
 async def update_problem(
     problem_id: UUID,
     problem_data: ProblemUpdate,
-    current_user: User = Depends(require_agent),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Update a problem."""
+    """Update a problem. All authenticated users can update."""
     try:
         problem = db.query(Problem).filter(Problem.id == problem_id).first()
         
@@ -255,10 +260,10 @@ async def update_problem(
         
         # Handle status changes
         if problem_data.status:
-            if problem_data.status == ProblemStatus.RESOLVED and not problem.resolved_at:
-                problem.resolved_at = datetime.utcnow()
-            elif problem_data.status == ProblemStatus.CLOSED and not problem.closed_at:
-                problem.closed_at = datetime.utcnow()
+            if problem_data.status == ProblemStatus.RESOLVED.value and not problem.resolved_at:
+                problem.resolved_at = datetime.now(timezone.utc)
+            elif problem_data.status == ProblemStatus.CLOSED.value and not problem.closed_at:
+                problem.closed_at = datetime.now(timezone.utc)
         
         db.commit()
         db.refresh(problem)
@@ -281,10 +286,10 @@ async def update_problem(
 @router.delete("/{problem_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_problem(
     problem_id: UUID,
-    current_user: User = Depends(require_agent),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Delete a problem (soft delete)."""
+    """Delete a problem (soft delete). All authenticated users can delete."""
     try:
         problem = db.query(Problem).filter(Problem.id == problem_id).first()
         
