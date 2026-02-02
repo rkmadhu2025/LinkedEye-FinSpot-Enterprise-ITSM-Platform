@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
+from app.models.group import Group, user_group_association
 from pydantic import BaseModel, EmailStr, Field
 from app.core.database import get_db
 from app.core.security import get_password_hash
@@ -45,25 +46,77 @@ class UserUpdate(BaseModel):
     language: Optional[str] = None
 
 
+class RoleInfo(BaseModel):
+    id: str
+    name: str
+    code: str
+
+class GroupInfo(BaseModel):
+    id: str
+    name: str
+    code: Optional[str] = None
+    group_type: Optional[str] = None
+
 class UserResponse(BaseModel):
     id: UUID
     email: str
     username: Optional[str] = None
-    first_name: str = Field(..., serialization_alias="firstName")
-    last_name: str = Field(..., serialization_alias="lastName")
-    display_name: Optional[str] = Field(None, serialization_alias="displayName")
+    firstName: str = Field(..., validation_alias="first_name")
+    lastName: str = Field(..., validation_alias="last_name")
+    displayName: Optional[str] = Field(None, validation_alias="display_name")
     role: UserRole
     department: Optional[str] = None
-    job_title: Optional[str] = Field(None, serialization_alias="jobTitle")
+    jobTitle: Optional[str] = Field(None, validation_alias="job_title")
     phone: Optional[str] = None
     status: UserStatus
-    is_active: bool
-    created_at: datetime = Field(..., serialization_alias="createdAt")
-    updated_at: datetime = Field(..., serialization_alias="updatedAt")
-    
+    isActive: bool = Field(..., validation_alias="is_active")
+    createdAt: datetime = Field(..., validation_alias="created_at")
+    updatedAt: datetime = Field(..., validation_alias="updated_at")
+    roles: list[RoleInfo] = []
+    groups: list[GroupInfo] = []
+
     class Config:
         from_attributes = True
         populate_by_name = True
+
+
+def map_user_to_response(user: User) -> UserResponse:
+    user_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
+    role_info = RoleInfo(
+        id=str(user.id),
+        name=user_role.replace('_', ' ').title(),
+        code=user_role
+    )
+    
+    # Build groups list (user.groups is dynamic, so call .all())
+    groups_info = []
+    if hasattr(user, 'groups'):
+        for group in user.groups.all():
+            groups_info.append(GroupInfo(
+                id=str(group.id),
+                name=group.name,
+                code=group.code,
+                group_type=group.group_type
+            ))
+    
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        username=user.username,
+        firstName=user.first_name,
+        lastName=user.last_name,
+        displayName=user.display_name or f"{user.first_name} {user.last_name}",
+        role=user.role,
+        department=user.department,
+        jobTitle=user.job_title,
+        status=user.status,
+        phone=user.phone,
+        isActive=user.is_active,
+        createdAt=user.created_at,
+        updatedAt=user.updated_at,
+        roles=[role_info],
+        groups=groups_info
+    )
 
 
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -72,7 +125,7 @@ async def create_user(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    """Create a new user."""
+    """Create a new user. Requires admin role."""
     try:
         # Check if email already exists
         existing = db.query(User).filter(User.email == user_data.email).first()
@@ -111,7 +164,7 @@ async def create_user(
         
         logger.info(f"User created: {user_data.email} by admin {current_user.id}")
         
-        return new_user
+        return map_user_to_response(new_user)
     
     except HTTPException:
         raise
@@ -121,6 +174,58 @@ async def create_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create user"
+        )
+
+
+# User Roles Endpoint - MUST be before /{user_id} to avoid route conflict
+class RoleResponse(BaseModel):
+    value: str
+    label: str
+    description: str
+
+
+@router.get("/roles", response_model=List[RoleResponse])
+async def get_user_roles(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all available user roles."""
+    try:
+        roles = [
+            {
+                "value": UserRole.ADMIN.value,
+                "label": "Administrator",
+                "description": "Full system access with all permissions"
+            },
+            {
+                "value": UserRole.AGENT.value,
+                "label": "Agent",
+                "description": "Can manage tickets, assets, and handle incidents"
+            },
+            {
+                "value": UserRole.MANAGER.value,
+                "label": "Manager",
+                "description": "Can view reports and manage team members"
+            },
+            {
+                "value": UserRole.USER.value,
+                "label": "User",
+                "description": "Can create and view own tickets"
+            },
+            {
+                "value": UserRole.READONLY.value,
+                "label": "Read-only",
+                "description": "Limited read-only access"
+            }
+        ]
+
+        return roles
+
+    except Exception as e:
+        logger.error(f"Error fetching user roles: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch user roles"
         )
 
 
@@ -137,6 +242,8 @@ async def list_users(
 ):
     """List users with filtering and pagination."""
     try:
+        # Note: User.groups uses lazy="dynamic" which doesn't support joinedload
+        # Groups will be loaded when accessed
         query = db.query(User).filter(User.is_active == True)
 
         if role:
@@ -168,7 +275,60 @@ async def list_users(
         response.headers["X-Per-Page"] = str(limit)
         response.headers["X-Total-Pages"] = str(total_pages)
 
-        return users
+        # Batch-load groups for all users to avoid N+1 queries
+        user_ids = [u.id for u in users]
+        user_groups_map = {}
+        if user_ids:
+            group_rows = (
+                db.query(user_group_association.c.user_id, Group)
+                .join(Group, Group.id == user_group_association.c.group_id)
+                .filter(user_group_association.c.user_id.in_(user_ids))
+                .all()
+            )
+            for uid, grp in group_rows:
+                user_groups_map.setdefault(uid, []).append(grp)
+
+        # Transform users to include roles array and groups
+        result = []
+        for user in users:
+            user_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
+            role_info = RoleInfo(
+                id=str(user.id),
+                name=user_role.replace('_', ' ').title(),
+                code=user_role
+            )
+
+            groups_info = [
+                GroupInfo(
+                    id=str(group.id),
+                    name=group.name,
+                    code=group.code,
+                    group_type=group.group_type
+                )
+                for group in user_groups_map.get(user.id, [])
+            ]
+
+            user_response = UserResponse(
+                id=user.id,
+                email=user.email,
+                username=user.username,
+                firstName=user.first_name,
+                lastName=user.last_name,
+                displayName=user.display_name or f"{user.first_name} {user.last_name}",
+                role=user.role,
+                department=user.department,
+                jobTitle=user.job_title,
+                phone=user.phone,
+                status=user.status,
+                isActive=user.is_active,
+                createdAt=user.created_at,
+                updatedAt=user.updated_at,
+                roles=[role_info],
+                groups=groups_info
+            )
+            result.append(user_response)
+
+        return result
 
     except Exception as e:
         logger.error(f"Error listing users: {e}")
@@ -186,6 +346,7 @@ async def get_user(
 ):
     """Get user by ID."""
     try:
+        # Note: User.groups uses lazy="dynamic" which doesn't support joinedload
         user = db.query(User).filter(User.id == user_id).first()
         
         if not user:
@@ -194,7 +355,7 @@ async def get_user(
                 detail="User not found"
             )
         
-        return user
+        return map_user_to_response(user)
     
     except HTTPException:
         raise
@@ -213,7 +374,7 @@ async def update_user(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    """Update a user."""
+    """Update a user. Requires admin role."""
     try:
         user = db.query(User).filter(User.id == user_id).first()
         
@@ -241,7 +402,7 @@ async def update_user(
                     detail="User with this username already exists"
                 )
         
-        update_data = user_data.dict(exclude_unset=True)
+        update_data = user_data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             if value is not None:
                 setattr(user, field, value)
@@ -251,7 +412,7 @@ async def update_user(
         
         logger.info(f"User updated: {user.email} by admin {current_user.id}")
         
-        return user
+        return map_user_to_response(user)
     
     except HTTPException:
         raise
@@ -270,7 +431,7 @@ async def delete_user(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    """Delete a user (soft delete)."""
+    """Delete a user (soft delete). Requires admin role."""
     try:
         user = db.query(User).filter(User.id == user_id).first()
         
@@ -292,9 +453,9 @@ async def delete_user(
         db.commit()
         
         logger.info(f"User deleted: {user.email} by admin {current_user.id}")
-        
+
         return None
-    
+
     except HTTPException:
         raise
     except Exception as e:

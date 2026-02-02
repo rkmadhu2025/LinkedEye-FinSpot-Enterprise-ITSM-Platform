@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BarChart, TrendingUp, PieChart, Activity, TrendingDown, Users } from 'lucide-react';
+import { useAppSelector } from '@/hooks/useRedux';
 import { Card, CardHeader, CardBody, Select, StatsCard } from '@/components/ui';
 import {
   BarChart as RechartsBarChart,
@@ -69,14 +70,16 @@ const priorityDistribution = [
 ];
 
 const AnalyticsPage = () => {
+  const { theme } = useAppSelector((state) => state.ui);
+  const isDark = theme === 'dark';
   const [dateRange, setDateRange] = useState('30');
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-          <p className="text-gray-500 mt-1">Insights and trends from your ITSM data</p>
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>Analytics</h1>
+          <p className={`mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Insights and trends from your ITSM data</p>
         </div>
         <Select
           options={[
@@ -134,14 +137,15 @@ const AnalyticsPage = () => {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsBarChart data={incidentTrendData} barGap={4}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'} />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: isDark ? '#94a3b8' : '#6b7280' }} />
+                  <YAxis tick={{ fontSize: 12, fill: isDark ? '#94a3b8' : '#6b7280' }} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '1px solid #e5e7eb',
+                      backgroundColor: isDark ? 'rgba(17, 28, 50, 0.95)' : '#fff',
+                      border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e5e7eb',
                       borderRadius: '8px',
+                      color: isDark ? '#f8fafc' : undefined,
                     }}
                   />
                   <Legend />
@@ -200,14 +204,15 @@ const AnalyticsPage = () => {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsBarChart data={resolutionTimeData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis type="number" tick={{ fontSize: 12 }} />
-                  <YAxis dataKey="range" type="category" tick={{ fontSize: 12 }} width={60} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'} />
+                  <XAxis type="number" tick={{ fontSize: 12, fill: isDark ? '#94a3b8' : '#6b7280' }} />
+                  <YAxis dataKey="range" type="category" tick={{ fontSize: 12, fill: isDark ? '#94a3b8' : '#6b7280' }} width={60} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '1px solid #e5e7eb',
+                      backgroundColor: isDark ? 'rgba(17, 28, 50, 0.95)' : '#fff',
+                      border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e5e7eb',
                       borderRadius: '8px',
+                      color: isDark ? '#f8fafc' : undefined,
                     }}
                   />
                   <Bar dataKey="count" name="Incidents" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
@@ -235,14 +240,15 @@ const AnalyticsPage = () => {
                       <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis domain={[80, 100]} tick={{ fontSize: 12 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'} />
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: isDark ? '#94a3b8' : '#6b7280' }} />
+                  <YAxis domain={[80, 100]} tick={{ fontSize: 12, fill: isDark ? '#94a3b8' : '#6b7280' }} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '1px solid #e5e7eb',
+                      backgroundColor: isDark ? 'rgba(17, 28, 50, 0.95)' : '#fff',
+                      border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #e5e7eb',
                       borderRadius: '8px',
+                      color: isDark ? '#f8fafc' : undefined,
                     }}
                     formatter={(value: number) => [`${value}%`, 'Compliance']}
                   />
@@ -295,20 +301,20 @@ const AnalyticsPage = () => {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-600">Team</th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-600">Resolved</th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-600">Avg Time</th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-600">SLA %</th>
-                    <th className="py-3 px-4 font-medium text-gray-600">Performance</th>
+                  <tr className={`border-b ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
+                    <th className={`text-left py-3 px-4 font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Team</th>
+                    <th className={`text-right py-3 px-4 font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Resolved</th>
+                    <th className={`text-right py-3 px-4 font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Avg Time</th>
+                    <th className={`text-right py-3 px-4 font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>SLA %</th>
+                    <th className={`py-3 px-4 font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Performance</th>
                   </tr>
                 </thead>
                 <tbody>
                   {teamPerformanceData.map((team) => (
-                    <tr key={team.team} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium text-gray-900">{team.team}</td>
-                      <td className="py-3 px-4 text-right text-gray-600">{team.resolved}</td>
-                      <td className="py-3 px-4 text-right text-gray-600">{team.avgTime}h</td>
+                    <tr key={team.team} className={`border-b ${isDark ? 'border-white/5 hover:bg-white/5' : 'border-gray-100 hover:bg-gray-50'}`}>
+                      <td className={`py-3 px-4 font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>{team.team}</td>
+                      <td className={`py-3 px-4 text-right ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{team.resolved}</td>
+                      <td className={`py-3 px-4 text-right ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{team.avgTime}h</td>
                       <td className="py-3 px-4 text-right">
                         <span
                           className={`font-medium ${
@@ -323,7 +329,7 @@ const AnalyticsPage = () => {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className={`w-full rounded-full h-2 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}>
                           <div
                             className={`h-2 rounded-full ${
                               team.sla >= 95
@@ -355,22 +361,22 @@ const AnalyticsPage = () => {
         </CardHeader>
         <CardBody>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 className="font-medium text-blue-900 mb-2">Trend Alert</h4>
-              <p className="text-sm text-blue-700">
+            <div className={`p-4 rounded-lg border ${isDark ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-200'}`}>
+              <h4 className={`font-medium mb-2 ${isDark ? 'text-blue-300' : 'text-blue-900'}`}>Trend Alert</h4>
+              <p className={`text-sm ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>
                 Network-related incidents increased by 23% this week. Consider reviewing network
                 infrastructure.
               </p>
             </div>
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-              <h4 className="font-medium text-green-900 mb-2">Performance Win</h4>
-              <p className="text-sm text-green-700">
+            <div className={`p-4 rounded-lg border ${isDark ? 'bg-green-500/10 border-green-500/20' : 'bg-green-50 border-green-200'}`}>
+              <h4 className={`font-medium mb-2 ${isDark ? 'text-green-300' : 'text-green-900'}`}>Performance Win</h4>
+              <p className={`text-sm ${isDark ? 'text-green-400' : 'text-green-700'}`}>
                 Security Team achieved 100% SLA compliance. Average resolution time improved by 15%.
               </p>
             </div>
-            <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-              <h4 className="font-medium text-yellow-900 mb-2">Recommendation</h4>
-              <p className="text-sm text-yellow-700">
+            <div className={`p-4 rounded-lg border ${isDark ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-yellow-50 border-yellow-200'}`}>
+              <h4 className={`font-medium mb-2 ${isDark ? 'text-yellow-300' : 'text-yellow-900'}`}>Recommendation</h4>
+              <p className={`text-sm ${isDark ? 'text-yellow-400' : 'text-yellow-700'}`}>
                 40% of software incidents are password resets. Consider implementing self-service
                 password reset.
               </p>

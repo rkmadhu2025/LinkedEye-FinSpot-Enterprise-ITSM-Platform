@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Eye, EyeOff, Mail, Lock, User, Check, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button, Input } from '@/components/ui';
+import { useAppSelector } from '@/hooks/useRedux';
 import clsx from 'clsx';
 
 const registerSchema = z
@@ -34,6 +35,8 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 
 const RegisterPage = () => {
   const { register: registerUser, isLoading, error } = useAuth();
+  const { theme } = useAppSelector((state) => state.ui);
+  const isDark = theme === 'dark';
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -95,15 +98,15 @@ const RegisterPage = () => {
             </svg>
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">LinkedEye-FinSpot</h1>
-            <p className="text-xs text-gray-500">Enterprise ITSM Platform</p>
+            <h1 className={`text-xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>LinkedEye-FinSpot</h1>
+            <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Enterprise ITSM Platform</p>
           </div>
         </div>
       </div>
 
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Create your account</h2>
-        <p className="mt-2 text-gray-600">Start managing your IT services today</p>
+        <h2 className={`text-2xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>Create your account</h2>
+        <p className={`mt-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Start managing your IT services today</p>
       </div>
 
       {error && (
@@ -171,7 +174,7 @@ const RegisterPage = () => {
                   />
                 ))}
               </div>
-              <p className="text-xs text-gray-600 mb-2">
+              <p className={`text-xs mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 Password strength: <span className="font-medium">{strengthLabels[passwordStrength - 1] || 'Very weak'}</span>
               </p>
 
@@ -218,7 +221,7 @@ const RegisterPage = () => {
             {...register('acceptTerms')}
             className="w-4 h-4 mt-0.5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
           />
-          <span className="text-sm text-gray-600">
+          <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             I agree to the{' '}
             <a href="#" className="text-primary-600 hover:text-primary-700">
               Terms of Service
@@ -238,7 +241,7 @@ const RegisterPage = () => {
         </Button>
       </form>
 
-      <p className="mt-8 text-center text-sm text-gray-600">
+      <p className={`mt-8 text-center text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
         Already have an account?{' '}
         <Link to="/login" className="font-medium text-primary-600 hover:text-primary-700">
           Sign in

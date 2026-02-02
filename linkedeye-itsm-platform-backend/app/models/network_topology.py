@@ -27,7 +27,10 @@ class TopologyStatus(str, enum.Enum):
 class NetworkTopology(BaseModel):
     """Network Topology model for network visualization."""
     __tablename__ = "network_topologies"
-    
+
+    # Client/Tenant Isolation
+    client_id = Column(UUID(as_uuid=True), ForeignKey("clients.id"), nullable=True, index=True)
+
     # Basic Information
     name = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)

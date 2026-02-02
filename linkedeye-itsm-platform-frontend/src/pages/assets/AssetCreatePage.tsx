@@ -1,17 +1,21 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Save, X } from 'lucide-react';
 import { Card, CardHeader, CardBody, CardFooter, Button, Input, Select, Textarea } from '@/components/ui';
+import { useAppSelector } from '@/hooks/useRedux';
 
 const AssetCreatePage = () => {
+  const { theme } = useAppSelector((state) => state.ui);
+  const isDark = theme === 'dark';
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
-        <Link to="/assets" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-          <ArrowLeft size={20} />
+        <Link to="/assets" className="p-2 rounded-lg transition-colors" style={{ background: 'transparent' }}>
+          <ArrowLeft size={20} style={{ color: isDark ? '#cbd5e1' : undefined }} />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Add Asset</h1>
-          <p className="text-gray-500 mt-1">Register a new asset in the CMDB</p>
+          <h1 className="text-2xl font-bold" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>Add Asset</h1>
+          <p className="mt-1" style={{ color: isDark ? '#94a3b8' : '#6b7280' }}>Register a new asset in the CMDB</p>
         </div>
       </div>
 

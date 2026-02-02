@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Save, Building, Bell, Shield, Clock, Mail, Loader2 } from 'lucide-react';
 import { Card, Button, Input, Select, Tabs, TabList, Tab, TabPanel } from '@/components/ui';
+import { useAppSelector } from '@/hooks/useRedux';
 import toast from 'react-hot-toast';
 
 interface GeneralSettings {
@@ -40,6 +41,8 @@ interface EmailSettings {
 }
 
 const SettingsPage = () => {
+  const { theme } = useAppSelector((state) => state.ui);
+  const isDark = theme === 'dark';
   const [isSaving, setIsSaving] = useState<string | null>(null);
 
   // General Settings State
@@ -111,8 +114,8 @@ const SettingsPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-500 mt-1">Configure system preferences and options</p>
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>Settings</h1>
+          <p className={`mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Configure system preferences and options</p>
         </div>
       </div>
 
@@ -182,10 +185,10 @@ const SettingsPage = () => {
                 { key: 'microsoftTeams', label: 'Microsoft Teams', description: 'Send notifications to Microsoft Teams' },
                 { key: 'inAppNotifications', label: 'In-app notifications', description: 'Show notifications within the application' },
               ].map((item) => (
-                <label key={item.key} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <label key={item.key} className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer ${isDark ? 'border-white/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-50'}`}>
                   <div>
-                    <span className="font-medium text-gray-900">{item.label}</span>
-                    <p className="text-sm text-gray-500">{item.description}</p>
+                    <span className={`font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>{item.label}</span>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{item.description}</p>
                   </div>
                   <input
                     type="checkbox"
@@ -225,10 +228,10 @@ const SettingsPage = () => {
                 min={6}
                 max={32}
               />
-              <label className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <label className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer ${isDark ? 'border-white/10 hover:bg-white/5' : 'border-gray-200 hover:bg-gray-50'}`}>
                 <div>
-                  <span className="font-medium text-gray-900">Require MFA for all users</span>
-                  <p className="text-sm text-gray-500">Enforce multi-factor authentication for all users</p>
+                  <span className={`font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>Require MFA for all users</span>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Enforce multi-factor authentication for all users</p>
                 </div>
                 <input
                   type="checkbox"
@@ -265,19 +268,19 @@ const SettingsPage = () => {
                   onChange={(e) => setSlaSettings({ ...slaSettings, businessHoursEnd: e.target.value })}
                 />
               </div>
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className={`border rounded-lg overflow-hidden ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className={isDark ? 'bg-white/5' : 'bg-gray-50'}>
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Priority</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Response (min)</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Resolution (hours)</th>
+                      <th className={`px-4 py-3 text-left text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Priority</th>
+                      <th className={`px-4 py-3 text-left text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Response (min)</th>
+                      <th className={`px-4 py-3 text-left text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Resolution (hours)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {slaSettings.slaConfigs.map((sla, index) => (
-                      <tr key={sla.priority} className="border-t border-gray-100">
-                        <td className="px-4 py-3 font-medium text-gray-900">{sla.priority}</td>
+                      <tr key={sla.priority} className={`border-t ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
+                        <td className={`px-4 py-3 font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>{sla.priority}</td>
                         <td className="px-4 py-3">
                           <Input
                             type="number"

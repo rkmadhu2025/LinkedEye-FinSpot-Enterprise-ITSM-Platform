@@ -13,45 +13,37 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Shield,
   Network,
-  Share2,
-  Server,
-  Activity,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  HelpCircle,
-  Layers,
-  Box,
-  ChevronRight,
   RefreshCw,
   Map,
+  Server,
+  Layers,
+  Share2,
+  Activity,
+  Monitor,
+  Shield,
   Plus,
-  Search,
-  Filter,
-  MoreVertical,
-  TrendingUp,
-  TrendingDown,
-  ArrowUpRight,
-  Cpu,
-  HardDrive,
-  Thermometer,
-  Wifi,
+  Box,
   Globe,
+  Wifi,
   Lock,
-  Settings,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import clsx from 'clsx';
 import {
   InfrastructureStats,
   LayerStats,
-  NetworkLayerType,
   NetworkLayerInfo,
   DeviceVendorInfo,
   InfrastructureHost,
 } from '../../types';
 import { infrastructureStatsService, infrastructureHostService } from '../../services/infrastructureService';
+import { useAppSelector } from '@/hooks/useRedux';
+
+// Assets
+import neuralGridImg from '@/assets/neural-grid.jpg';
+import observabilityCoreImg from '@/assets/observability-core.jpg';
 
 // =====================================
 // Layer Card Component
@@ -70,125 +62,68 @@ const LayerCard: React.FC<LayerCardProps> = ({ stats, onClick }) => {
 
   const getLayerIcon = () => {
     switch (stats.layer) {
-      case 'f_swi':
-        return <Shield size={28} />;
-      case 'r_swi':
-        return <Network size={28} />;
-      case 'e_swi':
-        return <Share2 size={28} />;
-      case 's_hw':
-        return <Server size={28} />;
-      default:
-        return <Layers size={28} />;
+      case 'f_swi': return <Shield size={24} />;
+      case 'r_swi': return <Network size={24} />;
+      case 'e_swi': return <Share2 size={24} />;
+      case 's_hw': return <Server size={24} />;
+      default: return <Layers size={24} />;
     }
   };
 
   return (
-    <div
+    <motion.div
+      whileHover={{ y: -5, scale: 1.02 }}
       onClick={onClick}
-      className="relative bg-white dark:bg-gradient-to-br dark:from-gray-800/90 dark:to-gray-900/90 backdrop-blur-sm rounded-2xl p-6 cursor-pointer hover:scale-[1.02] transition-all duration-300 border border-gray-200 dark:border-gray-700/50 hover:border-blue-400 dark:hover:border-gray-600 shadow-lg hover:shadow-xl dark:shadow-xl dark:hover:shadow-2xl group overflow-hidden"
+      className="architect-card p-6 cursor-pointer group relative overflow-hidden transition-all duration-300 border-indigo-500/10 hover:border-indigo-500/30"
     >
-      {/* Glow effect on hover */}
-      <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl blur-xl"
-        style={{ background: `radial-gradient(circle at top right, ${layerInfo.color}15, transparent 70%)` }}
-      ></div>
-
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      
       {/* Header */}
-      <div className="relative flex items-start justify-between mb-4">
-        <div
-          className="p-3 rounded-xl shadow-lg transition-transform duration-300 group-hover:scale-110"
-          style={{ backgroundColor: `${layerInfo.color}20`, boxShadow: `0 4px 14px ${layerInfo.color}20` }}
-        >
-          <div style={{ color: layerInfo.color }}>{getLayerIcon()}</div>
+      <div className="flex items-start justify-between mb-6">
+        <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-indigo-400 border border-white/10 group-hover:scale-110 transition-transform">
+          {getLayerIcon()}
         </div>
-        <div className="flex items-center gap-1">
-          <span className="text-3xl font-bold text-gray-900 dark:text-white">{stats.total_devices}</span>
-          <span className="text-gray-500 dark:text-gray-400 text-sm">devices</span>
+        <div className="text-right">
+          <div className="text-2xl font-bold text-white font-mono tracking-tighter">{stats.total_devices}</div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Active Devices</div>
         </div>
       </div>
 
       {/* Title */}
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{layerInfo.name}</h3>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{layerInfo.description}</p>
+      <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-1 group-hover:text-indigo-400 transition-colors">{layerInfo.name}</h3>
+      <p className="text-[11px] text-slate-400 font-medium mb-4">{layerInfo.description}</p>
 
       {/* Health Status Bar */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between text-xs mb-1">
-          <span className="text-gray-500 dark:text-gray-400">Health Status</span>
-          <span className="text-green-600 dark:text-green-400 font-medium">{healthPercentage}%</span>
+      <div className="space-y-2 mb-6">
+        <div className="flex justify-between text-[11px] font-semibold uppercase tracking-wide">
+          <span className="text-slate-400">Health Status</span>
+          <span className="text-emerald-400">{healthPercentage}%</span>
         </div>
-        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
           <div className="h-full flex">
-            <div
-              className="bg-green-500 transition-all duration-500"
-              style={{ width: `${(stats.healthy_devices / stats.total_devices) * 100 || 0}%` }}
-            />
-            <div
-              className="bg-yellow-500 transition-all duration-500"
-              style={{ width: `${(stats.warning_devices / stats.total_devices) * 100 || 0}%` }}
-            />
-            <div
-              className="bg-red-500 transition-all duration-500"
-              style={{ width: `${(stats.critical_devices / stats.total_devices) * 100 || 0}%` }}
-            />
+            <div className="bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" style={{ width: `${(stats.healthy_devices / stats.total_devices) * 100 || 0}%` }} />
+            <div className="bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" style={{ width: `${(stats.warning_devices / stats.total_devices) * 100 || 0}%` }} />
+            <div className="bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" style={{ width: `${(stats.critical_devices / stats.total_devices) * 100 || 0}%` }} />
           </div>
         </div>
       </div>
 
-      {/* Status breakdown */}
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="bg-gray-700/50 rounded-lg p-2">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <CheckCircle size={12} className="text-green-400" />
-            <span className="text-green-400 font-semibold">{stats.healthy_devices}</span>
-          </div>
-          <span className="text-xs text-gray-400">Healthy</span>
+      {/* Status segments */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="bg-white/5 rounded-xl p-2 text-center border border-white/5">
+          <div className="text-sm font-bold text-emerald-400 truncate">{stats.healthy_devices}</div>
+          <div className="text-[11px] font-semibold text-slate-500 uppercase">Healthy</div>
         </div>
-        <div className="bg-gray-700/50 rounded-lg p-2">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <AlertTriangle size={12} className="text-yellow-400" />
-            <span className="text-yellow-400 font-semibold">{stats.warning_devices}</span>
-          </div>
-          <span className="text-xs text-gray-400">Warning</span>
+        <div className="bg-white/5 rounded-xl p-2 text-center border border-white/5">
+          <div className="text-sm font-bold text-amber-400 truncate">{stats.warning_devices}</div>
+          <div className="text-[11px] font-semibold text-slate-500 uppercase">Warning</div>
         </div>
-        <div className="bg-gray-700/50 rounded-lg p-2">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <XCircle size={12} className="text-red-400" />
-            <span className="text-red-400 font-semibold">{stats.critical_devices}</span>
-          </div>
-          <span className="text-xs text-gray-400">Critical</span>
+        <div className="bg-white/5 rounded-xl p-2 text-center border border-white/5">
+          <div className="text-sm font-bold text-red-400 truncate">{stats.critical_devices}</div>
+          <div className="text-[11px] font-semibold text-slate-500 uppercase">Critical</div>
         </div>
       </div>
-
-      {/* Vendor distribution */}
-      {Object.keys(stats.devices_by_vendor).length > 0 && (
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <span className="text-xs text-gray-500 dark:text-gray-400 mb-2 block">Vendors</span>
-          <div className="flex flex-wrap gap-1">
-            {Object.entries(stats.devices_by_vendor).slice(0, 3).map(([vendor, count]) => (
-              <span
-                key={vendor}
-                className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-300"
-              >
-                {vendor}: {count}
-              </span>
-            ))}
-            {Object.keys(stats.devices_by_vendor).length > 3 && (
-              <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-500 dark:text-gray-400">
-                +{Object.keys(stats.devices_by_vendor).length - 3} more
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* View details link */}
-      <div className="mt-4 flex items-center justify-end text-sm" style={{ color: layerInfo.color }}>
-        <span>View Details</span>
-        <ChevronRight size={16} />
-      </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -211,35 +146,33 @@ const StatsSummaryCard: React.FC<StatsSummaryCardProps> = ({
   subtitle,
   icon,
   trend,
-  color,
 }) => (
-  <div className="relative bg-white dark:bg-gradient-to-br dark:from-gray-800/90 dark:to-gray-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 dark:border-gray-700/50 hover:border-blue-400 dark:hover:border-gray-600/50 transition-all duration-300 shadow-lg hover:shadow-xl dark:shadow-xl dark:hover:shadow-2xl group overflow-hidden">
-    {/* Glow effect on hover */}
-    <div
-      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl blur-xl"
-      style={{ background: `radial-gradient(circle at center, ${color}15, transparent 70%)` }}
-    ></div>
-
-    <div className="relative flex items-start justify-between">
-      <div
-        className="p-3 rounded-xl shadow-lg transition-transform duration-300 group-hover:scale-110"
-        style={{ backgroundColor: `${color}20`, boxShadow: `0 4px 14px ${color}20` }}
-      >
-        <div style={{ color }}>{icon}</div>
+  <motion.div
+    whileHover={{ y: -5 }}
+    className="architect-card p-6 border-indigo-500/10 group cursor-pointer relative overflow-hidden"
+  >
+    <div className="flex items-start justify-between mb-4">
+      <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-indigo-400 group-hover:scale-110 transition-transform">
+        {icon}
       </div>
       {trend && (
-        <div className={`flex items-center gap-1 text-sm font-medium ${trend.positive ? 'text-green-400' : 'text-red-400'}`}>
-          {trend.positive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-          <span>{trend.value}%</span>
+        <div className={clsx(
+          "px-2 py-1 rounded-lg text-[11px] font-bold border",
+          trend.positive ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"
+        )}>
+           {trend.positive ? '+' : ''}{trend.value}%
         </div>
       )}
     </div>
-    <div className="mt-4">
-      <p className="text-3xl font-bold text-gray-900 dark:text-white">{value}</p>
-      <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{title}</p>
-      {subtitle && <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">{subtitle}</p>}
+    <div>
+      <div className="text-3xl font-bold text-white font-mono tracking-tighter mb-1">{value}</div>
+      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1">{title}</div>
+      {subtitle && <div className="text-xs font-medium text-slate-500">{subtitle}</div>}
     </div>
-  </div>
+
+    {/* Accent light */}
+    <div className="absolute -bottom-8 -right-8 w-24 h-24 blur-3xl opacity-5 group-hover:opacity-10 transition-opacity bg-indigo-500" />
+  </motion.div>
 );
 
 // =====================================
@@ -247,7 +180,6 @@ const StatsSummaryCard: React.FC<StatsSummaryCardProps> = ({
 // =====================================
 
 const VendorDistribution: React.FC<{ layers: LayerStats[] }> = ({ layers }) => {
-  // Aggregate vendor data across all layers
   const vendorTotals: Record<string, number> = {};
   layers.forEach((layer) => {
     Object.entries(layer.devices_by_vendor).forEach(([vendor, count]) => {
@@ -259,41 +191,35 @@ const VendorDistribution: React.FC<{ layers: LayerStats[] }> = ({ layers }) => {
   const sortedVendors = Object.entries(vendorTotals).sort((a, b) => b[1] - a[1]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg dark:shadow-none">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Device Vendors</h3>
+    <div className="architect-card p-6 border-indigo-500/10">
+      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-6">Device Distribution</h3>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {sortedVendors.map(([vendor, count]) => {
           const percentage = ((count / total) * 100).toFixed(1);
           const vendorInfo = DeviceVendorInfo[vendor as keyof typeof DeviceVendorInfo];
-          const color = vendorInfo?.color || '#6b7280';
 
           return (
-            <div key={vendor}>
-              <div className="flex items-center justify-between text-sm mb-1">
+            <div key={vendor} className="group">
+              <div className="flex items-center justify-between text-[11px] font-semibold uppercase mb-1.5">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: color }} />
-                  <span className="text-gray-600 dark:text-gray-300 capitalize">{vendorInfo?.name || vendor}</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                  <span className="text-slate-300 group-hover:text-white transition-colors">{vendorInfo?.name || vendor}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-white font-medium">{count}</span>
-                  <span className="text-gray-400">({percentage}%)</span>
-                </div>
+                <div className="text-indigo-400">{count} Devices</div>
               </div>
-              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full transition-all duration-500"
-                  style={{ width: `${percentage}%`, backgroundColor: color }}
+              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${percentage}%` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  className="h-full bg-indigo-500"
                 />
               </div>
             </div>
           );
         })}
       </div>
-
-      {sortedVendors.length === 0 && (
-        <p className="text-gray-500 dark:text-gray-400 text-center py-4">No vendor data available</p>
-      )}
     </div>
   );
 };
@@ -303,57 +229,38 @@ const VendorDistribution: React.FC<{ layers: LayerStats[] }> = ({ layers }) => {
 // =====================================
 
 const NetworkZonesWidget: React.FC<{ zones: Record<string, number> }> = ({ zones }) => {
-  const zoneColors: Record<string, string> = {
-    gateway: '#ef4444',
-    public: '#f59e0b',
-    exchange: '#3b82f6',
-  };
-
   const zoneIcons: Record<string, React.ReactNode> = {
-    gateway: <Globe size={20} />,
-    public: <Wifi size={20} />,
-    exchange: <Share2 size={20} />,
-  };
-
-  const zoneDescriptions: Record<string, string> = {
-    gateway: 'WAN/Internet facing',
-    public: 'DMZ/Public services',
-    exchange: 'Internal/Core network',
+    gateway: <Globe size={18} />,
+    public: <Wifi size={18} />,
+    exchange: <Share2 size={18} />,
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg dark:shadow-none">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Network Zones</h3>
+    <div className="architect-card p-6 border-indigo-500/10">
+      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-6">Network Zones</h3>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {Object.entries(zones).map(([zone, count]) => (
           <div
             key={zone}
-            className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <div
-                className="p-2 rounded-lg"
-                style={{ backgroundColor: `${zoneColors[zone]}20`, color: zoneColors[zone] }}
-              >
-                {zoneIcons[zone] || <Lock size={20} />}
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                {zoneIcons[zone] || <Lock size={18} />}
               </div>
               <div>
-                <p className="text-white font-medium capitalize">{zone}</p>
-                <p className="text-xs text-gray-400">{zoneDescriptions[zone]}</p>
+                <p className="text-[11px] font-bold text-white uppercase tracking-tight">{zone}</p>
+                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter italic">Operational Hub</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{count}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">switches</p>
+              <p className="text-xl font-bold font-mono text-white tracking-tighter">{count}</p>
+              <p className="text-[8px] font-bold text-slate-500 uppercase">Nodes</p>
             </div>
           </div>
         ))}
       </div>
-
-      {Object.keys(zones).length === 0 && (
-        <p className="text-gray-400 text-center py-4">No zone data available</p>
-      )}
     </div>
   );
 };
@@ -365,74 +272,37 @@ const NetworkZonesWidget: React.FC<{ zones: Record<string, number> }> = ({ zones
 const VMPhysicalWidget: React.FC<{
   data: { physical: number; virtual: number; ratio: string };
 }> = ({ data }) => {
-  const total = data.physical + data.virtual;
-  const physicalPercent = total > 0 ? ((data.physical / total) * 100).toFixed(0) : 0;
-  const virtualPercent = total > 0 ? ((data.virtual / total) * 100).toFixed(0) : 0;
-
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg dark:shadow-none">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">VM to Physical Ratio</h3>
+    <div className="architect-card p-6 border-indigo-500/10 relative overflow-hidden">
+      <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-8">Virtual Density Vector</h3>
 
-      {/* Visual representation */}
-      <div className="flex justify-center mb-6">
-        <div className="relative w-32 h-32">
-          {/* Background circle */}
-          <svg className="w-full h-full transform -rotate-90">
-            <circle
-              cx="64"
-              cy="64"
-              r="56"
-              fill="none"
-              stroke="#374151"
-              strokeWidth="12"
-            />
-            {/* Physical segment */}
-            <circle
-              cx="64"
-              cy="64"
-              r="56"
-              fill="none"
-              stroke="#22c55e"
-              strokeWidth="12"
-              strokeDasharray={`${(Number(physicalPercent) / 100) * 352} 352`}
-              strokeLinecap="round"
-            />
-            {/* Virtual segment */}
-            <circle
-              cx="64"
-              cy="64"
-              r="56"
-              fill="none"
-              stroke="#8b5cf6"
-              strokeWidth="12"
-              strokeDasharray={`${(Number(virtualPercent) / 100) * 352} 352`}
-              strokeDashoffset={`-${(Number(physicalPercent) / 100) * 352}`}
-              strokeLinecap="round"
-            />
-          </svg>
-          {/* Center text */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-2xl font-bold text-white">{data.ratio}</span>
-            <span className="text-xs text-gray-400">ratio</span>
-          </div>
+      <div className="flex justify-center mb-8 relative">
+        <div className="relative w-32 h-32 flex items-center justify-center">
+            <svg className="absolute inset-0 w-full h-full transform -rotate-90">
+                <circle cx="64" cy="64" r="58" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+                <motion.circle 
+                    cx="64" cy="64" r="58" fill="none" stroke="#6366f1" strokeWidth="8" 
+                    strokeDasharray="364.4"
+                    initial={{ strokeDashoffset: 364.4 }}
+                    animate={{ strokeDashoffset: 364.4 * (1 - (data.virtual / (data.physical + data.virtual || 1))) }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                />
+            </svg>
+            <div className="text-center">
+                <div className="text-3xl font-bold text-white tracking-tighter font-mono">{data.ratio}</div>
+                <div className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Ratio</div>
+            </div>
         </div>
       </div>
 
-      {/* Legend */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="flex items-center gap-2">
-          <Server size={20} className="text-green-400" />
-          <div>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{data.physical}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Physical</p>
-          </div>
+        <div className="bg-white/5 rounded-xl p-3 border border-white/5 text-center">
+            <div className="text-lg font-bold text-emerald-400 font-mono">{data.physical}</div>
+            <div className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Physical</div>
         </div>
-        <div className="flex items-center gap-2">
-          <Box size={20} className="text-purple-400" />
-          <div>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{data.virtual}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Virtual</p>
-          </div>
+        <div className="bg-white/5 rounded-xl p-3 border border-white/5 text-center">
+            <div className="text-lg font-bold text-indigo-400 font-mono">{data.virtual}</div>
+            <div className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Virtual</div>
         </div>
       </div>
     </div>
@@ -445,33 +315,27 @@ const VMPhysicalWidget: React.FC<{
 
 const QuickActions: React.FC = () => {
   const actions = [
-    { icon: <Plus size={20} />, label: 'Add Device', path: '/infrastructure/catalog', color: '#3b82f6' },
-    { icon: <Map size={20} />, label: 'View Topology', path: '/infrastructure/topology', color: '#22c55e' },
-    { icon: <Server size={20} />, label: 'Server Racks', path: '/infrastructure/racks', color: '#f59e0b' },
-    { icon: <Box size={20} />, label: 'VM Mapping', path: '/infrastructure/vm-mapping', color: '#8b5cf6' },
+    { icon: <Plus size={18} />, label: 'Add Device', path: '/infrastructure/catalog' },
+    { icon: <Map size={18} />, label: 'View Topology', path: '/infrastructure/topology' },
+    { icon: <Server size={18} />, label: 'Server Racks', path: '/infrastructure/racks' },
+    { icon: <Box size={18} />, label: 'VM Mapping', path: '/infrastructure/vm-mapping' },
   ];
 
   return (
-    <div className="bg-white dark:bg-gradient-to-br dark:from-gray-800/90 dark:to-gray-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 dark:border-gray-700/50 shadow-lg dark:shadow-xl">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="h-6 w-1 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white">Quick Actions</h3>
-      </div>
+    <div className="architect-card p-6 border-indigo-500/10">
+      <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-6 px-1">Tactical Operations</h3>
 
       <div className="grid grid-cols-2 gap-3">
         {actions.map((action, index) => (
           <Link
             key={index}
             to={action.path}
-            className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-700/30 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-200 group border border-gray-200 dark:border-gray-700/50 hover:border-blue-300 dark:hover:border-gray-600/50 hover:shadow-md dark:hover:shadow-lg"
+            className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-indigo-500/10 hover:border-indigo-500/30 transition-all group"
           >
-            <div
-              className="p-2.5 rounded-lg transition-all duration-200 group-hover:scale-110 shadow-lg"
-              style={{ backgroundColor: `${action.color}20`, color: action.color, boxShadow: `0 4px 12px ${action.color}15` }}
-            >
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
               {action.icon}
             </div>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">
               {action.label}
             </span>
           </Link>
@@ -487,6 +351,8 @@ const QuickActions: React.FC = () => {
 
 const InfrastructureDashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { theme } = useAppSelector((state) => state.ui);
+  const isDark = theme === 'dark';
   const [stats, setStats] = useState<InfrastructureStats | null>(null);
   const [recentHosts, setRecentHosts] = useState<InfrastructureHost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -496,13 +362,13 @@ const InfrastructureDashboardPage: React.FC = () => {
     try {
       const [statsData, hostsData] = await Promise.all([
         infrastructureStatsService.getStats(),
-        infrastructureHostService.list(1, 5),
+        infrastructureHostService.list(1, 10),
       ]);
       setStats(statsData);
       setRecentHosts(hostsData.data);
     } catch (error) {
       console.error('Failed to fetch infrastructure data:', error);
-      toast.error('Failed to load infrastructure data');
+      toast.error('Sync failure detected');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -520,92 +386,78 @@ const InfrastructureDashboardPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="architect-root min-h-screen p-8 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="w-12 h-12 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full" />
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Scanning Grid Integrity...</p>
+        </div>
       </div>
     );
   }
 
-  if (!stats) {
-    return (
-      <div className="flex items-center justify-center h-screen text-gray-400">
-        <p>Failed to load infrastructure data</p>
-      </div>
-    );
-  }
+  if (!stats) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gradient-to-br dark:from-gray-900 dark:via-slate-900 dark:to-gray-900 p-6">
-      {/* Decorative Background Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-      </div>
+    <div className="space-y-10 reveal-stagger relative" style={{ background: isDark ? undefined : '#f9fafb' }}>
+       {/* Background Visual Artifact */}
+       {isDark && (
+       <div className="fixed inset-0 pointer-events-none opacity-5 z-0">
+          <img src={neuralGridImg} alt="" className="w-full h-full object-cover grayscale" />
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-transparent to-purple-500/20" />
+       </div>
+       )}
 
       {/* Header */}
-      <div className="relative flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
-            Infrastructure Dashboard
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">Network Flow Architecture Overview</p>
-        </div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <div className="flex items-center gap-3 mb-1">
+             <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                <Network size={20} />
+             </div>
+             <h1 className={`text-3xl font-bold tracking-tighter uppercase ${isDark ? 'text-white' : 'text-gray-900'}`}>Infrastructure <span className="text-indigo-500">Grid</span></h1>
+          </div>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-13">Network Flow Architecture Control Matrix</p>
+        </motion.div>
+        
         <div className="flex items-center gap-3">
           <button
             onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-800/80 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-700/80 rounded-xl text-gray-700 dark:text-gray-300 transition-all duration-200 border border-gray-200 dark:border-gray-700/50 hover:border-gray-300 dark:hover:border-gray-600/50 shadow-sm dark:shadow-lg hover:shadow-md dark:hover:shadow-blue-500/20"
+            title="Refresh Data"
+            aria-label="Refresh Data"
+            className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-indigo-400 transition-all group"
           >
-            <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
-            <span>Refresh</span>
+            <RefreshCw size={18} className={clsx(refreshing && "animate-spin", "group-hover:rotate-180 transition-transform")} />
           </button>
           <Link
             to="/infrastructure/topology"
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 rounded-xl text-white transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50"
+            className="px-6 h-12 rounded-2xl bg-indigo-500 text-white font-bold text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/20"
           >
-            <Map size={18} />
-            <span>View Topology</span>
+            <Map size={16} /> Deploy Visual Topology
           </Link>
         </div>
       </div>
 
-      {/* Summary Stats Row */}
-      <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatsSummaryCard
-          title="Total Hosts"
-          value={stats.total_hosts}
-          subtitle="Across all layers"
-          icon={<Server size={24} />}
-          color="#3b82f6"
-        />
-        <StatsSummaryCard
-          title="Total Ports"
-          value={stats.total_ports}
-          subtitle="Active interfaces"
-          icon={<Layers size={24} />}
-          color="#22c55e"
-        />
-        <StatsSummaryCard
-          title="Connections"
-          value={stats.total_connections}
-          subtitle="Network links"
-          icon={<Share2 size={24} />}
-          color="#f59e0b"
-        />
-        <StatsSummaryCard
-          title="Health Score"
-          value={`${stats.health_summary.healthy > 0 ? ((stats.health_summary.healthy / stats.total_hosts) * 100).toFixed(0) : 0}%`}
-          subtitle={`${stats.health_summary.critical} critical alerts`}
-          icon={<Activity size={24} />}
-          color={stats.health_summary.critical > 0 ? '#ef4444' : '#22c55e'}
+      {/* Summary Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+        <StatsSummaryCard title="Grid Nodes" value={stats.total_hosts} subtitle="ACTIVE_INSTANCES" icon={<Server size={20} />} color="#6366f1" />
+        <StatsSummaryCard title="Port Matrix" value={stats.total_ports} subtitle="VIRTUAL_VECTORS" icon={<Layers size={20} />} color="#6366f1" />
+        <StatsSummaryCard title="Neural Links" value={stats.total_connections} subtitle="MESH_DYNAMICS" icon={<Share2 size={20} />} color="#6366f1" />
+        <StatsSummaryCard 
+          title="Grid Integrity" 
+          value={`${stats.health_summary.healthy > 0 ? ((stats.health_summary.healthy / stats.total_hosts) * 100).toFixed(0) : 0}%`} 
+          subtitle="SYSTEM_RELIABILITY" 
+          icon={<Activity size={20} />} 
+          color="#6366f1" 
         />
       </div>
 
-      {/* Network Layers Grid */}
-      <div className="relative mb-8">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Network Layers</h2>
+      <QuickActions />
+
+      {/* Network Layers - Architect Visualization */}
+      <div className="relative z-10">
+        <div className="flex items-center gap-3 mb-6 px-1">
+          <div className="w-1.5 h-6 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
+          <h2 className="text-sm font-bold text-white uppercase tracking-[0.2em]">Architecture Layers</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.layers.map((layer) => (
@@ -618,100 +470,85 @@ const InfrastructureDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Secondary Widgets Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Vendor Distribution */}
+      {/* Visual Data Matrix */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
         <VendorDistribution layers={stats.layers} />
-
-        {/* Network Zones */}
         <NetworkZonesWidget zones={stats.network_zones} />
-
-        {/* VM Physical Ratio */}
         <VMPhysicalWidget data={stats.vm_physical_ratio} />
       </div>
 
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-        {/* Quick Actions */}
-        <QuickActions />
-
-        {/* Recent Devices */}
-        <div className="lg:col-span-2 bg-white dark:bg-gradient-to-br dark:from-gray-800/90 dark:to-gray-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 dark:border-gray-700/50 shadow-lg dark:shadow-xl">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="h-6 w-1 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Recent Devices</h3>
-            </div>
-            <Link
-              to="/infrastructure/hosts"
-              className="text-sm font-medium text-blue-400 hover:text-blue-300 flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-blue-500/10 transition-all duration-200"
-            >
-              View All <ArrowUpRight size={14} />
-            </Link>
+      {/* Real-time Telemetry Repository */}
+      <div className="relative z-10">
+        <div className="architect-card border-indigo-500/10 overflow-hidden">
+          {/* Decorative background image for the table section */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+             <img src={observabilityCoreImg} alt="" className="w-full h-full object-cover grayscale" />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-gray-500 dark:text-gray-400 text-sm">
-                  <th className="pb-3 font-medium">Hostname</th>
-                  <th className="pb-3 font-medium">Layer</th>
-                  <th className="pb-3 font-medium">Type</th>
-                  <th className="pb-3 font-medium">Status</th>
-                  <th className="pb-3 font-medium">IP Address</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
-                {recentHosts.map((host) => (
-                  <tr
-                    key={host.id}
-                    className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
-                    onClick={() => navigate(`/infrastructure/hosts/${host.id}`)}
-                  >
-                    <td className="py-3 text-gray-900 dark:text-white font-medium">{host.hostname}</td>
-                    <td className="py-3">
-                      <span
-                        className="px-2 py-1 rounded text-xs"
-                        style={{
-                          backgroundColor: `${NetworkLayerInfo[host.network_layer]?.color}20`,
-                          color: NetworkLayerInfo[host.network_layer]?.color,
-                        }}
-                      >
-                        {NetworkLayerInfo[host.network_layer]?.name || host.network_layer}
-                      </span>
-                    </td>
-                    <td className="py-3 text-gray-600 dark:text-gray-300 capitalize">{host.device_category}</td>
-                    <td className="py-3">
-                      <span
-                        className={`flex items-center gap-1 ${
-                          host.health_status === 'healthy'
-                            ? 'text-green-400'
-                            : host.health_status === 'warning'
-                            ? 'text-yellow-400'
-                            : 'text-red-400'
-                        }`}
-                      >
-                        {host.health_status === 'healthy' ? (
-                          <CheckCircle size={14} />
-                        ) : host.health_status === 'warning' ? (
-                          <AlertTriangle size={14} />
-                        ) : (
-                          <XCircle size={14} />
-                        )}
-                        <span className="capitalize">{host.health_status}</span>
-                      </span>
-                    </td>
-                    <td className="py-3 text-gray-500 dark:text-gray-400 font-mono text-xs">
-                      {host.management_ip || '-'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="p-8 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative">
+             <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                   <Monitor size={20} />
+                </div>
+                <div>
+                   <h3 className="text-lg font-bold text-white uppercase tracking-tight">Node Telemetry</h3>
+                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic font-mono">Real-time repository sync</p>
+                </div>
+             </div>
+             <Link to="/infrastructure/hosts" className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[10px] font-bold text-slate-400 hover:text-white uppercase tracking-widest transition-all border border-white/10">
+                Access Archive
+             </Link>
+          </div>
 
-            {recentHosts.length === 0 && (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-8">No devices found</p>
-            )}
+          <div className="overflow-x-auto relative">
+             <table className="w-full text-left tech-table">
+               <thead>
+                 <tr className="border-b border-white/5 bg-white/[0.02]">
+                   <th className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Hostname_Identifier</th>
+                   <th className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Layer_Vector</th>
+                   <th className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Entity_Type</th>
+                   <th className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Vital_Stats</th>
+                   <th className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Network_Address</th>
+                 </tr>
+               </thead>
+               <tbody className="divide-y divide-white/[0.02]">
+                 <AnimatePresence>
+                   {recentHosts.map((host, idx) => (
+                     <motion.tr
+                       key={host.id}
+                       initial={{ opacity: 0, y: 10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       transition={{ delay: idx * 0.05 }}
+                       className="group hover:bg-indigo-500/[0.02] cursor-pointer transition-colors"
+                       onClick={() => navigate(`/infrastructure/hosts/${host.id}`)}
+                     >
+                       <td className="px-8 py-5 text-sm font-bold text-white group-hover:text-indigo-400 transition-colors uppercase font-mono tracking-tight">{host.hostname}</td>
+                       <td className="px-8 py-5">
+                         <span className="px-3 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 text-[10px] font-bold uppercase tracking-widest border border-indigo-500/20">
+                           {NetworkLayerInfo[host.network_layer]?.name || host.network_layer}
+                         </span>
+                       </td>
+                       <td className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{host.device_category}</td>
+                       <td className="px-8 py-5">
+                         <div className={clsx(
+                           "flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest",
+                           host.health_status === 'healthy' ? 'text-emerald-400' : 
+                           host.health_status === 'warning' ? 'text-amber-400' : 'text-red-400'
+                         )}>
+                           <div className={clsx(
+                              "w-1.5 h-1.5 rounded-full shadow-[0_0_8px_currentColor]",
+                              host.health_status === 'healthy' ? 'bg-emerald-400 animate-pulse' : 
+                              host.health_status === 'warning' ? 'bg-amber-400' : 'bg-red-400 animate-ping'
+                           )} />
+                           {host.health_status}
+                         </div>
+                       </td>
+                       <td className="px-8 py-5 text-[10px] font-mono text-slate-500 font-bold">{host.management_ip || '---_---_---_---'}</td>
+                     </motion.tr>
+                   ))}
+                 </AnimatePresence>
+               </tbody>
+             </table>
           </div>
         </div>
       </div>

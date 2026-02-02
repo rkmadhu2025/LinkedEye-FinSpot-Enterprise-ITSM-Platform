@@ -4,13 +4,24 @@ import { Integration, MonitoringAlert, CreateIntegrationData } from '@/types';
 export const integrationService = {
   async getIntegrations(): Promise<Integration[]> {
     // Backend returns array directly, not wrapped in { success, data }
-    const response = await api.get<Integration[]>('/integrations');
-    return response.data;
+    try {
+      const response = await api.get<Integration[]>('/integrations');
+      return response.data || [];
+    } catch (error) {
+      console.error('Failed to fetch integrations:', error);
+      return [];
+    }
   },
 
   async getIntegrationById(id: string): Promise<Integration> {
     // Backend returns integration directly
+    if (!id) {
+      throw new Error('Integration ID is required');
+    }
     const response = await api.get<Integration>(`/integrations/${id}`);
+    if (!response.data) {
+      throw new Error('Integration not found');
+    }
     return response.data;
   },
 
@@ -57,29 +68,25 @@ export const integrationService = {
     limit?: number;
     offset?: number;
   }): Promise<MonitoringAlert[]> {
-    const response = await api.get<{ success: boolean; data: MonitoringAlert[] }>('/monitoring/alerts', {
-      params,
-    });
-    return response.data.data;
+    const response = await api.get<MonitoringAlert[]>('/monitoring/alerts', { params });
+    return response.data;
   },
 
   async getAlertById(id: string): Promise<MonitoringAlert> {
-    const response = await api.get<{ success: boolean; data: MonitoringAlert }>(`/monitoring/alerts/${id}`);
-    return response.data.data;
+    const response = await api.get<MonitoringAlert>(`/monitoring/alerts/${id}`);
+    return response.data;
   },
 
   async acknowledgeAlert(id: string): Promise<MonitoringAlert> {
-    const response = await api.post<{ success: boolean; data: MonitoringAlert }>(
-      `/monitoring/alerts/${id}/acknowledge`
-    );
-    return response.data.data;
+    const response = await api.post<MonitoringAlert>(`/monitoring/alerts/${id}/acknowledge`);
+    return response.data;
   },
 
   async createIncidentFromAlert(alertId: string): Promise<{ incidentId: string; incidentNumber: string }> {
-    const response = await api.post<{ success: boolean; data: { incidentId: string; incidentNumber: string } }>(
+    const response = await api.post<{ incidentId: string; incidentNumber: string }>(
       `/monitoring/alerts/${alertId}/create-incident`
     );
-    return response.data.data;
+    return response.data;
   },
 
   async silenceAlert(id: string, duration: number): Promise<void> {
@@ -94,12 +101,37 @@ export const integrationService = {
     return response.data.data;
   },
 
+  async getPrometheusMetricsRange(query: string, start?: string, end?: string, step?: string): Promise<unknown> {
+    const response = await api.get<{ success: boolean; data: unknown }>('/monitoring/prometheus/query_range', {
+      params: { query, start, end, step },
+    });
+    return response.data.data;
+  },
+
   // Grafana specific
   async getGrafanaDashboards(): Promise<Array<{ uid: string; title: string; url: string }>> {
     const response = await api.get<{ success: boolean; data: Array<{ uid: string; title: string; url: string }> }>(
       '/monitoring/grafana/dashboards'
     );
     return response.data.data;
+  },
+
+  // StackStorm specific
+  async getStackStormActions(): Promise<Array<any>> {
+    const response = await api.get<{ success: boolean; data: Array<any> }>('/monitoring/stackstorm/actions');
+    return response.data.data || [];
+  },
+
+  async getStackStormWorkflows(): Promise<Array<any>> {
+    const response = await api.get<{ success: boolean; data: Array<any> }>('/monitoring/stackstorm/workflows');
+    return response.data.data || [];
+  },
+
+  async getStackStormExecutions(limit: number = 50): Promise<Array<any>> {
+    const response = await api.get<{ success: boolean; data: Array<any> }>('/monitoring/stackstorm/executions', {
+      params: { limit },
+    });
+    return response.data.data || [];
   },
 
   // Kubernetes specific

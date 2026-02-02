@@ -31,28 +31,25 @@ class GroupType(str, enum.Enum):
 class Group(BaseModel):
     """Group model for user group management."""
     __tablename__ = "groups"
-    
+
+    # Organization association
+    organization_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+
     # Basic Information
     name = Column(String(255), nullable=False, index=True)
+    code = Column(String(100), nullable=True)
     description = Column(Text, nullable=True)
-    group_type = Column(SQLEnum(GroupType), default=GroupType.CUSTOM, nullable=False)
-    
-    # Ownership
-    owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    group_type = Column(String(50), default=GroupType.CUSTOM.value, nullable=True)
+
+    # Management
     manager_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    
+
     # Configuration
     email = Column(String(255), nullable=True)
-    distribution_list = Column(JSONB, default=list, nullable=False)
-    
-    # Permissions and Access
-    permissions = Column(JSONB, default=list, nullable=False)
-    default_role = Column(String(50), nullable=True)
-    
-    # Metadata
-    tags = Column(JSONB, default=list, nullable=False)
-    custom_fields = Column(JSONB, default=dict, nullable=False)
-    notes = Column(Text, nullable=True)
+    settings = Column(JSONB, default=dict, nullable=True)
+
+    # Audit
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     
     # Relationships
     members = relationship(

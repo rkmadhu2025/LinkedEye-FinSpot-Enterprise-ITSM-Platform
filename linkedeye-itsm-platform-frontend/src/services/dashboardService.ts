@@ -26,6 +26,13 @@ interface BackendEnvironmentStats {
   active?: number;
 }
 
+interface BackendProblemStats {
+  total?: number;
+  open?: number;
+  critical?: number;
+  high?: number;
+}
+
 // Backend environment type (snake_case)
 interface BackendEnvironment {
   id: string;
@@ -52,6 +59,7 @@ interface BackendDashboardStats {
   changes: BackendChangeStats;
   assets: BackendAssetStats;
   environments: BackendEnvironmentStats;
+  problems?: BackendProblemStats;
   mttr_minutes?: number;
   system_uptime?: number;
 }
@@ -96,6 +104,7 @@ const mapDashboardStats = (data: BackendDashboardStats | null | undefined): Dash
   const incidents = data.incidents || {};
   const changes = data.changes || {};
   const assets = data.assets || {};
+  const problems = data.problems || {};
 
   return {
     incidents: {
@@ -126,6 +135,12 @@ const mapDashboardStats = (data: BackendDashboardStats | null | undefined): Dash
       active: safeParseInt(assets.total) - safeParseInt(assets.critical),
       maintenance: 0,
       critical: safeParseInt(assets.critical),
+    },
+    problems: {
+      total: safeParseInt(problems.total),
+      open: safeParseInt(problems.open),
+      critical: safeParseInt(problems.critical),
+      high: safeParseInt(problems.high),
     },
     environments: [], // Environments are fetched separately
   };
@@ -162,12 +177,20 @@ const getDefaultDashboardStats = (): DashboardStats => ({
     maintenance: 0,
     critical: 0,
   },
+  problems: {
+    total: 0,
+    open: 0,
+    critical: 0,
+    high: 0,
+  },
   environments: [],
 });
 
 export const dashboardService = {
-  async getStats(): Promise<DashboardStats> {
-    const response = await api.get<BackendDashboardStats>('/dashboard/metrics');
+  async getStats(clientId?: string): Promise<DashboardStats> {
+    const params: Record<string, string> = {};
+    if (clientId) params.client_id = clientId;
+    const response = await api.get<BackendDashboardStats>('/dashboard/metrics', { params });
     return mapDashboardStats(response.data);
   },
 
@@ -333,5 +356,90 @@ export const dashboardService = {
     // TODO: Backend endpoint not yet implemented
     console.warn('getAiInsights: Backend endpoint not implemented');
     return [];
+  },
+
+  async getAlertFunnel(): Promise<{
+    stages: Array<{ label: string; count: number; color: string }>;
+    suppression_rate: number;
+    incident_rate: number;
+    resolution_rate: number;
+  }> {
+    try {
+      const response = await api.get('/dashboard/alert-funnel');
+      return response.data;
+    } catch {
+      return {
+        stages: [
+          { label: 'Total Alerts', count: 0, color: '#6366f1' },
+          { label: 'Deduplicated', count: 0, color: '#f59e0b' },
+          { label: 'Incidents Created', count: 0, color: '#ef4444' },
+          { label: 'Resolved', count: 0, color: '#10b981' },
+        ],
+        suppression_rate: 0,
+        incident_rate: 0,
+        resolution_rate: 0,
+      };
+    }
+  },
+
+  async getTeamWorkload(): Promise<{
+    teams: Array<{ name: string; active: number; capacity: number; critical: number; high: number; members: number; utilization: number }>;
+    summary: { total_active: number; total_capacity: number; avg_utilization: number; overloaded_teams: number };
+  }> {
+    try {
+      const response = await api.get('/dashboard/team-workload');
+      return response.data;
+    } catch {
+      return { teams: [], summary: { total_active: 0, total_capacity: 0, avg_utilization: 0, overloaded_teams: 0 } };
+    }
+  },
+
+  async getSlaAtRisk(): Promise<{
+    at_risk: Array<{ id: string; title: string; priority: string; sla_due: string; remaining_minutes: number }>;
+    breached: Array<{ id: string; title: string; priority: string; sla_due: string; breached_minutes: number }>;
+    at_risk_count: number;
+    breached_count: number;
+  }> {
+    try {
+      const response = await api.get('/dashboard/sla-at-risk');
+      return response.data;
+    } catch {
+      return { at_risk: [], breached: [], at_risk_count: 0, breached_count: 0 };
+    }
+  },
+
+  async getRecentIncidents(limit: number = 10): Promise<
+    Array<{
+      id: string;
+      title: string;
+      priority: string;
+      status: string;
+      assignee: string | null;
+      slaPercent: number;
+      age: string;
+      createdAt: string | null;
+    }>
+  > {
+    try {
+      const response = await api.get<{
+        incidents: Array<{
+          id: string;
+          title: string;
+          priority: string;
+          status: string;
+          assignee: string | null;
+          slaPercent: number;
+          age: string;
+          createdAt: string | null;
+        }>;
+        total: number;
+      }>('/dashboard/recent-incidents', {
+        params: { limit },
+      });
+      return response.data?.incidents || [];
+    } catch (error) {
+      console.error('Failed to fetch recent incidents:', error);
+      return [];
+    }
   },
 };

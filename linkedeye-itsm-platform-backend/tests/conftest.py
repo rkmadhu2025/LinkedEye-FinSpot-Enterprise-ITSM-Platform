@@ -2,15 +2,102 @@
 Test configuration and fixtures.
 """
 import pytest
-from sqlalchemy import create_engine
+import sqlalchemy
+from sqlalchemy import create_engine, Text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.types import TypeDecorator
+import json
+
+import uuid
+
+# Custom JSONB type for SQLite testing
+class JSONBSQLite(TypeDecorator):
+    """JSONB type that works with SQLite for testing."""
+    impl = Text
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            return json.dumps(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            return json.loads(value)
+        return value
+
+# Custom UUID type for SQLite testing
+class UUIDSQLite(TypeDecorator):
+    """UUID type that works with SQLite for testing."""
+    impl = Text
+    cache_ok = True
+    
+    def __init__(self, *args, **kwargs):
+        # Ignore arguments like as_uuid
+        super().__init__()
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        return str(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        return uuid.UUID(value)
+
+# Custom INET type for SQLite testing
+class INETSQLite(TypeDecorator):
+    """INET type that works with SQLite for testing."""
+    impl = Text
+    cache_ok = True
+    
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        return str(value)
+
+    def process_result_value(self, value, dialect):
+        return value
+
+# Custom MACADDR type for SQLite testing
+class MACADDRSQLite(TypeDecorator):
+    """MACADDR type that works with SQLite for testing."""
+    impl = Text
+    cache_ok = True
+    
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        return str(value)
+
+    def process_result_value(self, value, dialect):
+        return value
+
+# Monkey patch JSONB, UUID, INET and MACADDR for SQLite
+# This must serve BEFORE app imports to ensure models pick up the patched type
+# We replace the class directly so Column(JSONB) works
+sqlalchemy.dialects.postgresql.JSONB = JSONBSQLite
+sqlalchemy.dialects.postgresql.UUID = UUIDSQLite
+sqlalchemy.dialects.postgresql.INET = INETSQLite
+sqlalchemy.dialects.postgresql.MACADDR = MACADDRSQLite
+
 from fastapi.testclient import TestClient
 from app.main import app
 from app.core.database import get_db, Base
 from app.models.user import User, UserRole, UserStatus
 from app.core.security import get_password_hash
 import uuid
+
+# We don't need the specific model patches anymore since we patched the source
+# import app.models.integration
+# import app.models.user
+# import app.models.settings
+# app.models.integration.JSONB = patched_jsonb
+# app.models.user.JSONB = patched_jsonb
+# app.models.settings.JSONB = patched_jsonb
 
 
 # Test database URL (in-memory SQLite)
@@ -57,7 +144,7 @@ def test_user(db_session):
     user = User(
         id=uuid.uuid4(),
         email="test@example.com",
-        hashed_password=get_password_hash("testpassword123"),
+        password_hash=get_password_hash("testpassword123"),
         first_name="Test",
         last_name="User",
         role=UserRole.USER,
@@ -76,7 +163,7 @@ def admin_user(db_session):
     user = User(
         id=uuid.uuid4(),
         email="admin@example.com",
-        hashed_password=get_password_hash("adminpassword123"),
+        password_hash=get_password_hash("adminpassword123"),
         first_name="Admin",
         last_name="User",
         role=UserRole.ADMIN,

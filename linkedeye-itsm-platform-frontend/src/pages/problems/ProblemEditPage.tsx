@@ -43,6 +43,8 @@ const ProblemEditPage = () => {
   const dispatch = useAppDispatch();
   const { currentProblem: problem, isLoading, isSubmitting } = useAppSelector((state) => state.problems);
   const { users, groups } = useAppSelector((state) => state.users);
+  const { theme } = useAppSelector((state) => state.ui);
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     if (id) {
@@ -114,12 +116,12 @@ const ProblemEditPage = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link to={`/problems/${id}`} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+        <Link to={`/problems/${id}`} className="p-2 rounded-lg transition-colors" style={{ color: isDark ? '#f8fafc' : undefined }}>
           <ArrowLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Edit Problem</h1>
-          <p className="text-gray-500 mt-1">Update problem details</p>
+          <h1 className="text-2xl font-bold" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>Edit Problem</h1>
+          <p className="mt-1" style={{ color: isDark ? '#94a3b8' : '#6b7280' }}>Update problem details</p>
         </div>
       </div>
 
@@ -130,7 +132,7 @@ const ProblemEditPage = () => {
           </CardHeader>
           <CardBody className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Title <span className="text-danger-500">*</span>
               </label>
               <Input
@@ -140,7 +142,7 @@ const ProblemEditPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Description
               </label>
               <Textarea
@@ -152,7 +154,7 @@ const ProblemEditPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Status
                 </label>
                 <Select
@@ -169,7 +171,7 @@ const ProblemEditPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Priority <span className="text-danger-500">*</span>
                 </label>
                 <Select
@@ -185,7 +187,7 @@ const ProblemEditPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Category <span className="text-danger-500">*</span>
                 </label>
                 <Select
@@ -206,7 +208,7 @@ const ProblemEditPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Assigned To
                 </label>
                 <Select
@@ -222,7 +224,7 @@ const ProblemEditPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Assigned Group
                 </label>
                 <Select
@@ -239,7 +241,7 @@ const ProblemEditPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Root Cause
               </label>
               <Textarea
@@ -250,7 +252,7 @@ const ProblemEditPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Workaround
               </label>
               <Textarea
@@ -261,7 +263,7 @@ const ProblemEditPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Permanent Fix
               </label>
               <Textarea
@@ -272,7 +274,7 @@ const ProblemEditPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Tags
               </label>
               <Input

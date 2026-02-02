@@ -342,10 +342,20 @@ async def receive_alertmanager_webhook(
                         db.flush()
 
                     # Auto-create incident if not already linked
+                    # Also check if an incident with this fingerprint already exists (dedup across pods)
                     if not monitoring_alert.incident_id:
+                        existing_incident = db.query(Incident).filter(
+                            Incident.external_id == fingerprint,
+                            Incident.source == "Prometheus"
+                        ).first()
+                        if existing_incident:
+                            monitoring_alert.incident_id = existing_incident.id
+                            alerts_processed += 1
+                            continue
+
                         # Generate clear title with hostname, IP, client, and issue
                         incident_title = generate_incident_title(alert_name, alert.labels, alert.annotations, "Prometheus")
-                        
+
                         incident = Incident(
                             number=generate_incident_number(db),
                             title=incident_title,
@@ -395,6 +405,7 @@ async def receive_alertmanager_webhook(
 
             except Exception as alert_error:
                 logger.error(f"Error processing alert {alert.labels.get('alertname', 'unknown')}: {alert_error}")
+                db.rollback()
                 continue
 
         db.commit()

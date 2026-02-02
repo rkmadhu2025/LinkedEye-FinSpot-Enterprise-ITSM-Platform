@@ -48,6 +48,8 @@ const IncidentEditPage = () => {
     (state) => state.incidents
   );
   const { users, groups } = useAppSelector((state) => state.users);
+  const { theme } = useAppSelector((state) => state.ui);
+  const isDark = theme === 'dark';
 
   const [environments] = useState([
     { id: '1', name: 'Production' },
@@ -170,14 +172,14 @@ const IncidentEditPage = () => {
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Link to={`/incidents/${id}`} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-          <ArrowLeft size={20} />
+        <Link to={`/incidents/${id}`} className="p-2 rounded-lg transition-colors" style={{ background: 'transparent' }}>
+          <ArrowLeft size={20} style={{ color: isDark ? '#cbd5e1' : undefined }} />
         </Link>
         <div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-mono text-primary-600">{incident.incidentNumber}</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Edit Incident</h1>
+          <h1 className="text-2xl font-bold" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>Edit Incident</h1>
         </div>
       </div>
 

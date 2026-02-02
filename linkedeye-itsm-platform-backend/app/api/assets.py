@@ -10,10 +10,15 @@ from sqlalchemy import or_, func, String
 from pydantic import BaseModel, Field, validator
 import re
 from app.core.database import get_db
-from app.models.asset import Asset, AssetType, AssetStatus, HealthStatus
+from app.models.asset import Asset, AssetType, AssetStatus, HealthStatus, AssetRelationship, OwnershipType
+from app.models.incident import Incident
+from app.models.change import Change
 from app.models.user import User
 from app.api.dependencies import get_current_user, require_agent
 from app.core.logging import get_logger
+import csv
+from io import StringIO
+from fastapi.responses import StreamingResponse
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/assets", tags=["assets"])
@@ -51,6 +56,7 @@ class AssetCreate(BaseModel):
     criticality: str = "medium"
     cost_center: Optional[str] = None
     security_classification: Optional[str] = None
+    ownership_type: Optional[str] = "client_hosted"
     tags: List[str] = Field(default_factory=list)
     custom_fields: dict = Field(default_factory=dict)
     notes: Optional[str] = None
@@ -89,9 +95,21 @@ class AssetUpdate(BaseModel):
     criticality: Optional[str] = None
     cost_center: Optional[str] = None
     security_classification: Optional[str] = None
+    ownership_type: Optional[str] = None
     tags: Optional[List[str]] = None
     custom_fields: Optional[dict] = None
     notes: Optional[str] = None
+
+
+class UserSummary(BaseModel):
+    id: UUID
+    email: str
+    display_name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 
 class AssetResponse(BaseModel):
@@ -106,6 +124,7 @@ class AssetResponse(BaseModel):
     data_center: Optional[str]
     rack_location: Optional[str]
     owner_id: Optional[UUID]
+    owner: Optional[UserSummary] = None
     technical_contact_id: Optional[UUID]
     business_contact_id: Optional[UUID]
     status: AssetStatus
@@ -121,6 +140,7 @@ class AssetResponse(BaseModel):
     criticality: str
     cost_center: Optional[str]
     security_classification: Optional[str]
+    ownership_type: Optional[str] = "client_hosted"
     tags: List[str]
     custom_fields: dict
     notes: Optional[str]
@@ -213,6 +233,15 @@ async def list_assets(
     try:
         query = db.query(Asset).filter(Asset.is_active == True)
 
+        # Multi-tenant isolation: filter by current user's client
+        if hasattr(current_user, 'client_id') and current_user.client_id:
+            query = query.filter(
+                or_(
+                    Asset.client_id == current_user.client_id,
+                    Asset.client_id.is_(None)
+                )
+            )
+
         if asset_type:
             query = query.filter(Asset.asset_type == asset_type)
         if status_filter:
@@ -246,13 +275,133 @@ async def list_assets(
         response.headers["X-Total-Pages"] = str(total_pages)
 
         return assets
-
+    
     except Exception as e:
         logger.error(f"Error listing assets: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve assets"
         )
+
+
+@router.get("/export/csv")
+async def export_assets_csv(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Export assets to CSV using streaming to avoid loading all into memory."""
+    try:
+        query = db.query(Asset).filter(Asset.is_active == True)
+
+        # Multi-tenant isolation
+        if hasattr(current_user, 'client_id') and current_user.client_id:
+            query = query.filter(
+                or_(
+                    Asset.client_id == current_user.client_id,
+                    Asset.client_id.is_(None)
+                )
+            )
+
+        def generate_csv():
+            # Header
+            output = StringIO()
+            writer = csv.writer(output)
+            headers = [
+                "Hostname", "IP Address", "Type", "Category", "Subcategory",
+                "Location", "Status", "Health", "Manufacturer", "Model",
+                "Serial Number", "Created At"
+            ]
+            writer.writerow(headers)
+            yield output.getvalue()
+
+            # Stream rows in batches
+            for asset in query.yield_per(500):
+                row_buf = StringIO()
+                row_writer = csv.writer(row_buf)
+                row_writer.writerow([
+                    asset.hostname,
+                    asset.ip_address,
+                    asset.asset_type.value if hasattr(asset.asset_type, 'value') else str(asset.asset_type or ""),
+                    asset.category,
+                    asset.subcategory,
+                    asset.location,
+                    asset.status.value if hasattr(asset.status, 'value') else str(asset.status or ""),
+                    asset.health_status.value if hasattr(asset.health_status, 'value') else str(asset.health_status or ""),
+                    asset.manufacturer,
+                    asset.model,
+                    asset.serial_number,
+                    asset.created_at.isoformat() if asset.created_at else ""
+                ])
+                yield row_buf.getvalue()
+
+        response = StreamingResponse(
+            generate_csv(),
+            media_type="text/csv"
+        )
+        response.headers["Content-Disposition"] = "attachment; filename=assets_export.csv"
+        return response
+    except Exception as e:
+        logger.error(f"Error exporting assets: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to export assets"
+        )
+
+
+@router.get("/inventory-report")
+async def get_inventory_report(
+    client_id: Optional[UUID] = Query(None),
+    ownership_type: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get structured inventory report grouped by asset type."""
+    try:
+        query = db.query(Asset).filter(Asset.is_active == True)
+        if client_id:
+            query = query.filter(Asset.client_id == client_id)
+        if ownership_type:
+            query = query.filter(Asset.ownership_type == ownership_type)
+
+        assets = query.order_by(Asset.asset_type, Asset.hostname).all()
+
+        # Group by type
+        grouped = {}
+        for asset in assets:
+            atype = asset.asset_type or "other"
+            if atype not in grouped:
+                grouped[atype] = []
+            grouped[atype].append({
+                "id": str(asset.id),
+                "hostname": asset.hostname,
+                "ip_address": str(asset.ip_address) if asset.ip_address else None,
+                "manufacturer": asset.manufacturer,
+                "model": asset.model,
+                "serial_number": asset.serial_number,
+                "operating_system": asset.operating_system,
+                "version": asset.version,
+                "status": asset.status,
+                "health_status": asset.health_status,
+                "ownership_type": asset.ownership_type,
+                "location": asset.location,
+                "specifications": asset.specifications or {},
+            })
+
+        # Summary
+        ownership_counts = {}
+        for asset in assets:
+            ot = asset.ownership_type or "unknown"
+            ownership_counts[ot] = ownership_counts.get(ot, 0) + 1
+
+        return {
+            "total": len(assets),
+            "by_type": grouped,
+            "ownership_summary": ownership_counts,
+            "client_id": str(client_id) if client_id else None,
+        }
+    except Exception as e:
+        logger.error(f"Error generating inventory report: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate inventory report")
 
 
 @router.get("/{asset_id}", response_model=AssetResponse)
@@ -309,7 +458,7 @@ async def update_asset(
                     detail="Asset with this hostname already exists"
                 )
         
-        update_data = asset_data.dict(exclude_unset=True)
+        update_data = asset_data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             if value is not None:
                 setattr(asset, field, value)
@@ -352,9 +501,9 @@ async def delete_asset(
         db.commit()
         
         logger.info(f"Asset deleted: {asset.hostname} by user {current_user.id}")
-        
+
         return None
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -363,4 +512,254 @@ async def delete_asset(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete asset"
+        )
+
+
+# Asset Relationships Endpoints
+
+class AssetRelationshipCreate(BaseModel):
+    target_asset_id: UUID
+    relationship_type: str = Field(..., min_length=1, max_length=50)
+    description: Optional[str] = None
+
+
+class AssetRelationshipResponse(BaseModel):
+    id: UUID
+    source_asset_id: UUID
+    target_asset_id: UUID
+    relationship_type: str
+    description: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/{asset_id}/relationships", response_model=List[AssetRelationshipResponse])
+async def get_asset_relationships(
+    asset_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all relationships for an asset."""
+    try:
+        # Verify asset exists
+        asset = db.query(Asset).filter(Asset.id == asset_id).first()
+        if not asset:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Asset not found"
+            )
+
+        # Get relationships where this asset is the source
+        relationships = db.query(AssetRelationship).filter(
+            AssetRelationship.source_asset_id == asset_id
+        ).all()
+
+        return relationships
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching asset relationships: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch asset relationships"
+        )
+
+
+@router.post("/{asset_id}/relationships", response_model=AssetRelationshipResponse, status_code=status.HTTP_201_CREATED)
+async def create_asset_relationship(
+    asset_id: UUID,
+    relationship_data: AssetRelationshipCreate,
+    current_user: User = Depends(require_agent),
+    db: Session = Depends(get_db)
+):
+    """Create a relationship between assets."""
+    try:
+        # Verify source asset exists
+        source_asset = db.query(Asset).filter(Asset.id == asset_id).first()
+        if not source_asset:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Source asset not found"
+            )
+
+        # Verify target asset exists
+        target_asset = db.query(Asset).filter(Asset.id == relationship_data.target_asset_id).first()
+        if not target_asset:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Target asset not found"
+            )
+
+        # Check for duplicate relationship
+        existing = db.query(AssetRelationship).filter(
+            AssetRelationship.source_asset_id == asset_id,
+            AssetRelationship.target_asset_id == relationship_data.target_asset_id,
+            AssetRelationship.relationship_type == relationship_data.relationship_type
+        ).first()
+
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Relationship already exists"
+            )
+
+        # Create relationship
+        new_relationship = AssetRelationship(
+            source_asset_id=asset_id,
+            target_asset_id=relationship_data.target_asset_id,
+            relationship_type=relationship_data.relationship_type,
+            description=relationship_data.description
+        )
+
+        db.add(new_relationship)
+        db.commit()
+        db.refresh(new_relationship)
+
+        logger.info(f"Asset relationship created: {asset_id} -> {relationship_data.target_asset_id}")
+
+        return new_relationship
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error creating asset relationship: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create asset relationship"
+        )
+
+
+@router.delete("/{asset_id}/relationships/{relationship_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_asset_relationship(
+    asset_id: UUID,
+    relationship_id: UUID,
+    current_user: User = Depends(require_agent),
+    db: Session = Depends(get_db)
+):
+    """Delete an asset relationship."""
+    try:
+        relationship = db.query(AssetRelationship).filter(
+            AssetRelationship.id == relationship_id,
+            AssetRelationship.source_asset_id == asset_id
+        ).first()
+
+        if not relationship:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Relationship not found"
+            )
+
+        db.delete(relationship)
+        db.commit()
+
+        logger.info(f"Asset relationship deleted: {relationship_id}")
+
+        return None
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting asset relationship: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete asset relationship"
+        )
+
+
+# Asset Incidents and Changes Endpoints
+
+class IncidentSummary(BaseModel):
+    id: UUID
+    incident_number: str
+    title: str
+    status: str
+    priority: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ChangeSummary(BaseModel):
+    id: UUID
+    change_number: str
+    title: str
+    status: str
+    risk_level: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/{asset_id}/incidents", response_model=List[IncidentSummary])
+async def get_asset_incidents(
+    asset_id: UUID,
+    limit: int = Query(50, ge=1, le=500),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all incidents related to an asset."""
+    try:
+        # Verify asset exists
+        asset = db.query(Asset).filter(Asset.id == asset_id).first()
+        if not asset:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Asset not found"
+            )
+
+        # Get incidents related to this asset
+        incidents = db.query(Incident).filter(
+            Incident.asset_id == asset_id
+        ).order_by(Incident.created_at.desc()).limit(limit).all()
+
+        return incidents
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching asset incidents: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch asset incidents"
+        )
+
+
+@router.get("/{asset_id}/changes", response_model=List[ChangeSummary])
+async def get_asset_changes(
+    asset_id: UUID,
+    limit: int = Query(50, ge=1, le=500),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all change requests related to an asset."""
+    try:
+        # Verify asset exists
+        asset = db.query(Asset).filter(Asset.id == asset_id).first()
+        if not asset:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Asset not found"
+            )
+
+        # Get changes related to this asset via the many-to-many relationship
+        changes = db.query(Change).join(Change.affected_assets).filter(
+            Asset.id == asset_id
+        ).order_by(Change.created_at.desc()).limit(limit).all()
+
+        return changes
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching asset changes: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch asset changes"
         )

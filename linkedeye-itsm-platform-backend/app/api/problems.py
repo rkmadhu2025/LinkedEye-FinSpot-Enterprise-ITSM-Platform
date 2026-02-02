@@ -303,9 +303,9 @@ async def delete_problem(
         db.commit()
         
         logger.info(f"Problem deleted: {problem.number} by user {current_user.id}")
-        
+
         return None
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -315,3 +315,94 @@ async def delete_problem(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete problem"
         )
+
+
+class AttachmentUpload(BaseModel):
+    filename: str
+    content_type: str = "application/octet-stream"
+    data: str  # base64-encoded file data
+    description: Optional[str] = None
+
+
+@router.post("/{problem_id}/attachments")
+async def add_problem_attachment(
+    problem_id: UUID,
+    attachment: AttachmentUpload,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Add an attachment (RCA document, evidence) to a problem."""
+    try:
+        problem = db.query(Problem).filter(
+            Problem.id == problem_id,
+            Problem.is_active == True
+        ).first()
+        if not problem:
+            raise HTTPException(status_code=404, detail="Problem not found")
+
+        attachments = list(problem.attachments or [])
+        import uuid as _uuid
+        new_attachment = {
+            "id": str(_uuid.uuid4()),
+            "filename": attachment.filename,
+            "content_type": attachment.content_type,
+            "description": attachment.description,
+            "uploaded_by": str(current_user.id),
+            "uploaded_at": datetime.now(timezone.utc).isoformat(),
+            "size": len(attachment.data) * 3 // 4,  # approx decoded size
+        }
+        attachments.append(new_attachment)
+        problem.attachments = attachments
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(problem, "attachments")
+        db.commit()
+        db.refresh(problem)
+
+        logger.info(f"Attachment added to problem {problem.problem_number}: {attachment.filename}")
+        return {"attachments": problem.attachments, "added": new_attachment}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error adding attachment: {e}")
+        raise HTTPException(status_code=500, detail="Failed to add attachment")
+
+
+@router.get("/{problem_id}/attachments")
+async def get_problem_attachments(
+    problem_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all attachments for a problem."""
+    problem = db.query(Problem).filter(
+        Problem.id == problem_id,
+        Problem.is_active == True
+    ).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    return {"attachments": problem.attachments or []}
+
+
+@router.delete("/{problem_id}/attachments/{attachment_id}")
+async def delete_problem_attachment(
+    problem_id: UUID,
+    attachment_id: str,
+    current_user: User = Depends(require_agent),
+    db: Session = Depends(get_db)
+):
+    """Delete an attachment from a problem."""
+    problem = db.query(Problem).filter(
+        Problem.id == problem_id,
+        Problem.is_active == True
+    ).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+
+    attachments = list(problem.attachments or [])
+    problem.attachments = [a for a in attachments if a.get("id") != attachment_id]
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(problem, "attachments")
+    db.commit()
+    return {"status": "deleted", "attachment_id": attachment_id}

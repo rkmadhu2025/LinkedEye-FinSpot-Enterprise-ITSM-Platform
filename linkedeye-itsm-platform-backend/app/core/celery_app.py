@@ -16,7 +16,8 @@ celery_app = Celery(
         "app.tasks.incident_tasks",
         "app.tasks.notification_tasks",
         "app.tasks.report_tasks",
-        "app.tasks.sync_tasks"
+        "app.tasks.sync_tasks",
+        "app.tasks.integration_health_tasks"
     ]
 )
 
@@ -37,6 +38,11 @@ celery_app.conf.update(
         "app.tasks.notification_tasks.*": {"queue": "notifications"},
         "app.tasks.report_tasks.*": {"queue": "reports"},
         "app.tasks.sync_tasks.*": {"queue": "sync"},
+        "app.tasks.integration_health_tasks.*": {"queue": "sync"},
+        "tasks.integration_health_check": {"queue": "sync"},
+        "tasks.integration_scheduled_sync": {"queue": "sync"},
+        "tasks.integration_metrics_collect": {"queue": "sync"},
+        "tasks.resolve_integration_alerts": {"queue": "sync"},
     },
     task_default_queue="default",
     task_default_exchange="tasks",

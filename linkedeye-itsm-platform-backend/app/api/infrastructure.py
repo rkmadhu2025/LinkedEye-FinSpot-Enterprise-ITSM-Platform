@@ -190,6 +190,23 @@ class HostPortCreate(BaseModel):
     tags: Optional[List[str]] = None
 
 
+class HostPortUpdate(BaseModel):
+    port_name: Optional[str] = None
+    port_display_name: Optional[str] = None
+    port_description: Optional[str] = None
+    port_type: Optional[PortType] = None
+    port_number: Optional[int] = None
+    slot_number: Optional[int] = None
+    ip_address: Optional[str] = None
+    mac_address: Optional[str] = None
+    vlan_id: Optional[int] = None
+    vlan_mode: Optional[str] = None
+    speed_mbps: Optional[int] = None
+    admin_status: Optional[str] = None
+    operational_status: Optional[str] = None
+    tags: Optional[List[str]] = None
+
+
 class HostPortResponse(BaseModel):
     id: UUID
     host_id: UUID
@@ -226,6 +243,19 @@ class NetworkConnectionCreate(BaseModel):
     description: Optional[str] = None
     cable_type: Optional[str] = None
     bandwidth_mbps: Optional[int] = None
+    properties: Optional[dict] = None
+    tags: Optional[List[str]] = None
+
+
+class NetworkConnectionUpdate(BaseModel):
+    relationship_type: Optional[ConnectionRelationshipType] = None
+    target_host_id: Optional[UUID] = None
+    target_port_id: Optional[UUID] = None
+    connection_name: Optional[str] = None
+    description: Optional[str] = None
+    cable_type: Optional[str] = None
+    bandwidth_mbps: Optional[int] = None
+    connection_status: Optional[str] = None
     properties: Optional[dict] = None
     tags: Optional[List[str]] = None
 
@@ -268,6 +298,26 @@ class DeviceTemplateCreate(BaseModel):
     default_config: Optional[dict] = None
     default_specs: Optional[dict] = None
     template_file_name: Optional[str] = None
+
+
+class DeviceTemplateUpdate(BaseModel):
+    template_name: Optional[str] = None
+    display_name: Optional[str] = None
+    description: Optional[str] = None
+    network_layer: Optional[NetworkLayerType] = None
+    device_category: Optional[str] = None
+    device_vendor: Optional[DeviceVendor] = None
+    device_model: Optional[str] = None
+    device_series: Optional[str] = None
+    switch_network_type: Optional[SwitchNetworkType] = None
+    is_stack_template: Optional[bool] = None
+    default_ports: Optional[int] = None
+    port_template: Optional[List[dict]] = None
+    service_type_template: Optional[str] = None
+    default_config: Optional[dict] = None
+    default_specs: Optional[dict] = None
+    template_file_name: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class DeviceTemplateResponse(BaseModel):
@@ -448,7 +498,7 @@ async def list_infrastructure_hosts(
     data_center: Optional[str] = None,
     search: Optional[str] = None,
     page: int = Query(1, ge=1),
-    limit: int = Query(50, ge=1, le=200),
+    limit: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -695,6 +745,34 @@ async def create_host_port(
     return port
 
 
+@router.put("/ports/{port_id}", response_model=HostPortResponse)
+async def update_host_port(
+    port_id: UUID,
+    port_data: HostPortUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a host port."""
+    port = db.query(HostPort).filter(HostPort.id == port_id).first()
+
+    if not port:
+        raise HTTPException(status_code=404, detail="Port not found")
+
+    # Verify access through host
+    host_query = db.query(InfrastructureHost).filter(InfrastructureHost.id == port.host_id)
+    host_query = filter_by_client(host_query, InfrastructureHost, current_user, db)
+    if not host_query.first():
+        raise HTTPException(status_code=404, detail="Port not found")
+
+    update_data = port_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(port, field, value)
+
+    db.commit()
+    db.refresh(port)
+    return port
+
+
 @router.delete("/ports/{port_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_host_port(
     port_id: UUID,
@@ -728,7 +806,7 @@ async def list_network_connections(
     target_host_id: Optional[UUID] = None,
     connection_status: Optional[str] = None,
     page: int = Query(1, ge=1),
-    limit: int = Query(50, ge=1, le=200),
+    limit: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -808,6 +886,30 @@ async def create_network_connection(
     )
 
     db.add(connection)
+    db.commit()
+    db.refresh(connection)
+    return connection
+
+
+@router.put("/connections/{connection_id}", response_model=NetworkConnectionResponse)
+async def update_network_connection(
+    connection_id: UUID,
+    conn_data: NetworkConnectionUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a network connection."""
+    query = db.query(NetworkConnection).filter(NetworkConnection.id == connection_id)
+    query = filter_by_client(query, NetworkConnection, current_user, db)
+    connection = query.first()
+
+    if not connection:
+        raise HTTPException(status_code=404, detail="Connection not found")
+
+    update_data = conn_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(connection, field, value)
+
     db.commit()
     db.refresh(connection)
     return connection
@@ -901,6 +1003,54 @@ async def create_device_template(
     db.commit()
     db.refresh(template)
     return template
+
+
+@router.put("/templates/{template_id}", response_model=DeviceTemplateResponse)
+async def update_device_template(
+    template_id: UUID,
+    template_data: DeviceTemplateUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a device template (admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    template = db.query(DeviceTemplate).filter(
+        DeviceTemplate.id == template_id
+    ).first()
+
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    update_data = template_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(template, field, value)
+
+    db.commit()
+    db.refresh(template)
+    return template
+
+
+@router.delete("/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_device_template(
+    template_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Soft delete a device template (admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    template = db.query(DeviceTemplate).filter(
+        DeviceTemplate.id == template_id
+    ).first()
+
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    template.is_active = False
+    db.commit()
 
 
 # =====================================
@@ -1489,3 +1639,577 @@ async def create_vm_physical_mapping(
         "vm_id": str(vm_id),
         "physical_host_id": str(physical_host_id)
     }
+
+
+@router.delete("/vm-physical-mapping/{vm_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_vm_physical_mapping(
+    vm_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Remove VM mapping (unassign from physical host)."""
+    # Get VM
+    vm_query = db.query(InfrastructureHost).filter(
+        InfrastructureHost.id == vm_id,
+        InfrastructureHost.server_type == ServerType.VIRTUAL
+    )
+    vm_query = filter_by_client(vm_query, InfrastructureHost, current_user, db)
+    vm = vm_query.first()
+
+    if not vm:
+        raise HTTPException(status_code=404, detail="Virtual machine not found")
+
+    if not vm.hypervisor_id:
+        return # Already unassigned
+
+    # Remove relationships
+    db.query(NetworkConnection).filter(
+        NetworkConnection.source_host_id == vm_id,
+        NetworkConnection.target_host_id == vm.hypervisor_id,
+        NetworkConnection.relationship_type == ConnectionRelationshipType.RUNS_ON
+    ).delete()
+
+    # Clear VM fields
+    vm.hypervisor_id = None
+    vm.physical_host_ip = None
+
+    db.commit()
+
+
+# =====================================
+# Prometheus Metrics Endpoints
+# =====================================
+
+class HostMetricsResponse(BaseModel):
+    """Host metrics from Prometheus."""
+    host_id: str
+    hostname: str
+    management_ip: Optional[str]
+    cpu_usage: Optional[float] = None
+    memory_usage: Optional[float] = None
+    memory_total_gb: Optional[float] = None
+    memory_used_gb: Optional[float] = None
+    disk_usage: Optional[float] = None
+    disk_total_gb: Optional[float] = None
+    disk_used_gb: Optional[float] = None
+    network_in_mbps: Optional[float] = None
+    network_out_mbps: Optional[float] = None
+    uptime_seconds: Optional[int] = None
+    temperature: Optional[float] = None
+    ports: List[dict] = []
+    vlans: List[dict] = []
+    hardware: dict = {}
+    last_updated: Optional[datetime] = None
+
+
+class PortMetrics(BaseModel):
+    """Port/Interface metrics from Prometheus."""
+    port_name: str
+    port_description: Optional[str] = None
+    operational_status: str = "unknown"
+    admin_status: str = "unknown"
+    speed_mbps: Optional[int] = None
+    mac_address: Optional[str] = None
+    ip_address: Optional[str] = None
+    vlan_id: Optional[int] = None
+    rx_bytes: Optional[int] = None
+    tx_bytes: Optional[int] = None
+    rx_rate_mbps: Optional[float] = None
+    tx_rate_mbps: Optional[float] = None
+    errors_in: Optional[int] = None
+    errors_out: Optional[int] = None
+
+
+@router.get("/hosts/{host_id}/metrics", response_model=HostMetricsResponse)
+async def get_host_metrics(
+    host_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get Prometheus metrics for a specific infrastructure host.
+    Queries metrics by IP address or hostname.
+    """
+    import httpx
+
+    # Get the host
+    query = db.query(InfrastructureHost).filter(InfrastructureHost.id == host_id)
+    query = filter_by_client(query, InfrastructureHost, current_user, db)
+    host = query.first()
+
+    if not host:
+        raise HTTPException(status_code=404, detail="Host not found")
+
+    # Get Prometheus integration
+    from app.models.integration import Integration
+    prometheus = db.query(Integration).filter(
+        Integration.provider == 'prometheus',
+        Integration.status == 'active'
+    ).first()
+
+    metrics_response = HostMetricsResponse(
+        host_id=str(host.id),
+        hostname=host.hostname,
+        management_ip=str(host.management_ip) if host.management_ip else None,
+        last_updated=datetime.now(timezone.utc)
+    )
+
+    if not prometheus or not prometheus.configuration.get('url'):
+        logger.warning("No active Prometheus integration found, returning database values only")
+        # Return what we have from the database
+        metrics_response.cpu_usage = host.cpu_usage
+        metrics_response.memory_usage = host.memory_usage
+        metrics_response.uptime_seconds = host.uptime_seconds
+        metrics_response.hardware = host.hardware_specs or {}
+        return metrics_response
+
+    prom_url = prometheus.configuration.get('url', '').rstrip('/')
+    target_ip = str(host.management_ip) if host.management_ip else None
+    target_hostname = host.hostname
+
+    if not target_ip:
+        logger.warning(f"No management IP for host {host.hostname}")
+        return metrics_response
+
+    # Build headers for Prometheus
+    headers = {}
+    if prometheus.auth_type == 'bearer_token':
+        token = (prometheus.auth_config or {}).get('token') or (prometheus.credentials or {}).get('token')
+        if token:
+            headers['Authorization'] = f"Bearer {token}"
+
+    async def query_prometheus(promql: str) -> Optional[dict]:
+        """Execute a PromQL query."""
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(
+                    f"{prom_url}/api/v1/query",
+                    params={'query': promql},
+                    headers=headers
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get('status') == 'success':
+                        return data.get('data', {})
+        except Exception as e:
+            logger.error(f"Prometheus query error: {e}")
+        return None
+
+    def extract_value(data: Optional[dict]) -> Optional[float]:
+        """Extract single value from Prometheus response."""
+        if not data or not data.get('result'):
+            return None
+        result = data.get('result', [])
+        if result and len(result) > 0:
+            value = result[0].get('value', [])
+            if len(value) > 1:
+                try:
+                    return float(value[1])
+                except (ValueError, TypeError):
+                    pass
+        return None
+
+    try:
+        # Query CPU usage (node_exporter or snmp_exporter metrics)
+        cpu_queries = [
+            f'100 - (avg by(instance) (rate(node_cpu_seconds_total{{instance=~"{target_ip}:.*", mode="idle"}}[5m])) * 100)',
+            f'hrProcessorLoad{{instance=~"{target_ip}:.*"}}',
+            f'avg(snmp_hrProcessorLoad{{instance=~"{target_ip}:.*"}})',
+        ]
+        for q in cpu_queries:
+            result = await query_prometheus(q)
+            val = extract_value(result)
+            if val is not None:
+                metrics_response.cpu_usage = round(val, 2)
+                break
+
+        # Query Memory usage
+        mem_queries = [
+            f'(1 - (node_memory_MemAvailable_bytes{{instance=~"{target_ip}:.*"}} / node_memory_MemTotal_bytes{{instance=~"{target_ip}:.*"}})) * 100',
+            f'hrStorageUsed{{instance=~"{target_ip}:.*", hrStorageDescr="Physical memory"}} / hrStorageSize{{instance=~"{target_ip}:.*", hrStorageDescr="Physical memory"}} * 100',
+        ]
+        for q in mem_queries:
+            result = await query_prometheus(q)
+            val = extract_value(result)
+            if val is not None:
+                metrics_response.memory_usage = round(val, 2)
+                break
+
+        # Total memory
+        mem_total = await query_prometheus(f'node_memory_MemTotal_bytes{{instance=~"{target_ip}:.*"}}')
+        if mem_total:
+            val = extract_value(mem_total)
+            if val:
+                metrics_response.memory_total_gb = round(val / (1024**3), 2)
+
+        # Query Disk usage (root filesystem)
+        disk_query = f'(1 - (node_filesystem_avail_bytes{{instance=~"{target_ip}:.*", mountpoint="/"}} / node_filesystem_size_bytes{{instance=~"{target_ip}:.*", mountpoint="/"}})) * 100'
+        result = await query_prometheus(disk_query)
+        val = extract_value(result)
+        if val is not None:
+            metrics_response.disk_usage = round(val, 2)
+
+        # Query Network throughput
+        net_in = await query_prometheus(f'sum(rate(node_network_receive_bytes_total{{instance=~"{target_ip}:.*", device!="lo"}}[5m])) * 8 / 1000000')
+        net_out = await query_prometheus(f'sum(rate(node_network_transmit_bytes_total{{instance=~"{target_ip}:.*", device!="lo"}}[5m])) * 8 / 1000000')
+
+        if net_in:
+            val = extract_value(net_in)
+            if val is not None:
+                metrics_response.network_in_mbps = round(val, 2)
+        if net_out:
+            val = extract_value(net_out)
+            if val is not None:
+                metrics_response.network_out_mbps = round(val, 2)
+
+        # Query Uptime
+        uptime_queries = [
+            f'node_time_seconds{{instance=~"{target_ip}:.*"}} - node_boot_time_seconds{{instance=~"{target_ip}:.*"}}',
+            f'sysUpTime{{instance=~"{target_ip}:.*"}} / 100',  # SNMP uptime in centiseconds
+        ]
+        for q in uptime_queries:
+            result = await query_prometheus(q)
+            val = extract_value(result)
+            if val is not None:
+                metrics_response.uptime_seconds = int(val)
+                break
+
+        # Query Temperature (if available)
+        temp_query = f'node_hwmon_temp_celsius{{instance=~"{target_ip}:.*"}}'
+        result = await query_prometheus(temp_query)
+        val = extract_value(result)
+        if val is not None:
+            metrics_response.temperature = round(val, 1)
+
+        # Query Interface/Port metrics (SNMP style)
+        ports_data = []
+
+        # Get interface names and status
+        if_names = await query_prometheus(f'ifDescr{{instance=~"{target_ip}:.*"}}')
+        if if_names and if_names.get('result'):
+            for metric in if_names.get('result', []):
+                labels = metric.get('metric', {})
+                if_index = labels.get('ifIndex', '')
+                if_name = labels.get('ifDescr', f'Interface {if_index}')
+
+                port_info = {
+                    'port_name': if_name,
+                    'port_description': labels.get('ifAlias', ''),
+                    'operational_status': 'unknown',
+                    'admin_status': 'unknown',
+                    'speed_mbps': None,
+                    'vlan_id': None,
+                    'rx_rate_mbps': None,
+                    'tx_rate_mbps': None,
+                }
+
+                # Get status
+                if_status = await query_prometheus(f'ifOperStatus{{instance=~"{target_ip}:.*", ifIndex="{if_index}"}}')
+                if if_status:
+                    status_val = extract_value(if_status)
+                    if status_val == 1:
+                        port_info['operational_status'] = 'up'
+                    elif status_val == 2:
+                        port_info['operational_status'] = 'down'
+
+                # Get speed
+                if_speed = await query_prometheus(f'ifHighSpeed{{instance=~"{target_ip}:.*", ifIndex="{if_index}"}}')
+                if if_speed:
+                    speed_val = extract_value(if_speed)
+                    if speed_val:
+                        port_info['speed_mbps'] = int(speed_val)
+
+                ports_data.append(port_info)
+
+        # Fallback: get ports from node_network metrics
+        if not ports_data:
+            net_info = await query_prometheus(f'node_network_info{{instance=~"{target_ip}:.*"}}')
+            if net_info and net_info.get('result'):
+                for metric in net_info.get('result', []):
+                    labels = metric.get('metric', {})
+                    device = labels.get('device', 'unknown')
+                    if device == 'lo':
+                        continue
+
+                    port_info = {
+                        'port_name': device,
+                        'port_description': labels.get('address', ''),
+                        'operational_status': 'up' if labels.get('operstate') == 'up' else 'down',
+                        'admin_status': 'up',
+                        'speed_mbps': None,
+                        'mac_address': labels.get('address', ''),
+                    }
+
+                    # Get speed
+                    speed_result = await query_prometheus(f'node_network_speed_bytes{{instance=~"{target_ip}:.*", device="{device}"}}')
+                    if speed_result:
+                        speed_val = extract_value(speed_result)
+                        if speed_val:
+                            port_info['speed_mbps'] = int(speed_val * 8 / 1000000)
+
+                    ports_data.append(port_info)
+
+        metrics_response.ports = ports_data
+
+        # Get VLAN information (if available via SNMP)
+        vlans_data = []
+        vlan_info = await query_prometheus(f'dot1qVlanStaticName{{instance=~"{target_ip}:.*"}}')
+        if vlan_info and vlan_info.get('result'):
+            for metric in vlan_info.get('result', []):
+                labels = metric.get('metric', {})
+                vlans_data.append({
+                    'vlan_id': labels.get('dot1qVlanIndex', ''),
+                    'vlan_name': labels.get('dot1qVlanStaticName', ''),
+                })
+        metrics_response.vlans = vlans_data
+
+        # Build hardware info
+        hardware = {}
+
+        # System description
+        sys_desc = await query_prometheus(f'sysDescr{{instance=~"{target_ip}:.*"}}')
+        if sys_desc and sys_desc.get('result'):
+            labels = sys_desc['result'][0].get('metric', {})
+            hardware['system_description'] = labels.get('sysDescr', '')
+
+        # System name
+        sys_name = await query_prometheus(f'sysName{{instance=~"{target_ip}:.*"}}')
+        if sys_name and sys_name.get('result'):
+            labels = sys_name['result'][0].get('metric', {})
+            hardware['system_name'] = labels.get('sysName', '')
+
+        # OS info from node_exporter
+        os_info = await query_prometheus(f'node_uname_info{{instance=~"{target_ip}:.*"}}')
+        if os_info and os_info.get('result'):
+            labels = os_info['result'][0].get('metric', {})
+            hardware['os_name'] = labels.get('sysname', '')
+            hardware['os_release'] = labels.get('release', '')
+            hardware['os_version'] = labels.get('version', '')
+            hardware['machine'] = labels.get('machine', '')
+            hardware['nodename'] = labels.get('nodename', '')
+
+        metrics_response.hardware = hardware
+
+        # Update host record with latest metrics
+        if metrics_response.cpu_usage is not None:
+            host.cpu_usage = metrics_response.cpu_usage
+        if metrics_response.memory_usage is not None:
+            host.memory_usage = metrics_response.memory_usage
+        if metrics_response.uptime_seconds is not None:
+            host.uptime_seconds = metrics_response.uptime_seconds
+        host.last_seen = datetime.now(timezone.utc)
+        db.commit()
+
+    except Exception as e:
+        logger.error(f"Error fetching metrics for host {host_id}: {e}", exc_info=True)
+        # Return whatever we have
+
+    return metrics_response
+
+
+@router.get("/hosts/{host_id}/ports/metrics")
+async def get_host_ports_metrics(
+    host_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get detailed port/interface metrics from Prometheus for a host.
+    Returns current traffic rates, errors, and status for each interface.
+    """
+    import httpx
+
+    # Get the host
+    query = db.query(InfrastructureHost).filter(InfrastructureHost.id == host_id)
+    query = filter_by_client(query, InfrastructureHost, current_user, db)
+    host = query.first()
+
+    if not host:
+        raise HTTPException(status_code=404, detail="Host not found")
+
+    target_ip = str(host.management_ip) if host.management_ip else None
+    if not target_ip:
+        return {"ports": [], "message": "No management IP configured"}
+
+    # Get Prometheus integration
+    from app.models.integration import Integration
+    prometheus = db.query(Integration).filter(
+        Integration.provider == 'prometheus',
+        Integration.status == 'active'
+    ).first()
+
+    if not prometheus or not prometheus.configuration.get('url'):
+        # Return existing port data from database
+        existing_ports = db.query(HostPort).filter(
+            HostPort.host_id == host_id,
+            HostPort.is_active == True
+        ).all()
+        return {
+            "ports": [
+                {
+                    "id": str(p.id),
+                    "port_name": p.port_name,
+                    "port_description": p.port_description,
+                    "operational_status": p.operational_status,
+                    "admin_status": p.admin_status,
+                    "ip_address": str(p.ip_address) if p.ip_address else None,
+                    "mac_address": p.mac_address,
+                    "vlan_id": p.vlan_id,
+                    "speed_mbps": p.speed_mbps,
+                    "rx_bytes": p.rx_bytes,
+                    "tx_bytes": p.tx_bytes,
+                } for p in existing_ports
+            ],
+            "source": "database"
+        }
+
+    prom_url = prometheus.configuration.get('url', '').rstrip('/')
+    headers = {}
+    if prometheus.auth_type == 'bearer_token':
+        token = (prometheus.auth_config or {}).get('token') or (prometheus.credentials or {}).get('token')
+        if token:
+            headers['Authorization'] = f"Bearer {token}"
+
+    ports = []
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            # Get interface list from node_exporter
+            response = await client.get(
+                f"{prom_url}/api/v1/query",
+                params={'query': f'node_network_info{{instance=~"{target_ip}:.*"}}'},
+                headers=headers
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('status') == 'success' and data.get('data', {}).get('result'):
+                    for metric in data['data']['result']:
+                        labels = metric.get('metric', {})
+                        device = labels.get('device', '')
+                        if device == 'lo':
+                            continue
+
+                        port_data = {
+                            "port_name": device,
+                            "mac_address": labels.get('address', ''),
+                            "operational_status": labels.get('operstate', 'unknown'),
+                            "admin_status": "up",
+                            "speed_mbps": None,
+                            "rx_rate_mbps": None,
+                            "tx_rate_mbps": None,
+                            "rx_bytes_total": None,
+                            "tx_bytes_total": None,
+                            "rx_errors": None,
+                            "tx_errors": None,
+                        }
+
+                        # Get speed
+                        speed_resp = await client.get(
+                            f"{prom_url}/api/v1/query",
+                            params={'query': f'node_network_speed_bytes{{instance=~"{target_ip}:.*", device="{device}"}}'},
+                            headers=headers
+                        )
+                        if speed_resp.status_code == 200:
+                            speed_data = speed_resp.json()
+                            if speed_data.get('data', {}).get('result'):
+                                val = speed_data['data']['result'][0].get('value', [None, None])[1]
+                                if val:
+                                    port_data['speed_mbps'] = int(float(val) * 8 / 1000000)
+
+                        # Get RX rate
+                        rx_resp = await client.get(
+                            f"{prom_url}/api/v1/query",
+                            params={'query': f'rate(node_network_receive_bytes_total{{instance=~"{target_ip}:.*", device="{device}"}}[5m]) * 8 / 1000000'},
+                            headers=headers
+                        )
+                        if rx_resp.status_code == 200:
+                            rx_data = rx_resp.json()
+                            if rx_data.get('data', {}).get('result'):
+                                val = rx_data['data']['result'][0].get('value', [None, None])[1]
+                                if val:
+                                    port_data['rx_rate_mbps'] = round(float(val), 2)
+
+                        # Get TX rate
+                        tx_resp = await client.get(
+                            f"{prom_url}/api/v1/query",
+                            params={'query': f'rate(node_network_transmit_bytes_total{{instance=~"{target_ip}:.*", device="{device}"}}[5m]) * 8 / 1000000'},
+                            headers=headers
+                        )
+                        if tx_resp.status_code == 200:
+                            tx_data = tx_resp.json()
+                            if tx_data.get('data', {}).get('result'):
+                                val = tx_data['data']['result'][0].get('value', [None, None])[1]
+                                if val:
+                                    port_data['tx_rate_mbps'] = round(float(val), 2)
+
+                        # Get errors
+                        err_in_resp = await client.get(
+                            f"{prom_url}/api/v1/query",
+                            params={'query': f'node_network_receive_errs_total{{instance=~"{target_ip}:.*", device="{device}"}}'},
+                            headers=headers
+                        )
+                        if err_in_resp.status_code == 200:
+                            err_data = err_in_resp.json()
+                            if err_data.get('data', {}).get('result'):
+                                val = err_data['data']['result'][0].get('value', [None, None])[1]
+                                if val:
+                                    port_data['rx_errors'] = int(float(val))
+
+                        ports.append(port_data)
+
+            # Try SNMP metrics if no node_exporter data
+            if not ports:
+                response = await client.get(
+                    f"{prom_url}/api/v1/query",
+                    params={'query': f'ifDescr{{instance=~"{target_ip}:.*"}}'},
+                    headers=headers
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get('status') == 'success' and data.get('data', {}).get('result'):
+                        for metric in data['data']['result']:
+                            labels = metric.get('metric', {})
+                            if_index = labels.get('ifIndex', '')
+
+                            port_data = {
+                                "port_name": labels.get('ifDescr', f'Port {if_index}'),
+                                "port_index": if_index,
+                                "operational_status": "unknown",
+                                "admin_status": "unknown",
+                                "speed_mbps": None,
+                            }
+
+                            # Get status
+                            status_resp = await client.get(
+                                f"{prom_url}/api/v1/query",
+                                params={'query': f'ifOperStatus{{instance=~"{target_ip}:.*", ifIndex="{if_index}"}}'},
+                                headers=headers
+                            )
+                            if status_resp.status_code == 200:
+                                status_data = status_resp.json()
+                                if status_data.get('data', {}).get('result'):
+                                    val = status_data['data']['result'][0].get('value', [None, None])[1]
+                                    if val:
+                                        port_data['operational_status'] = 'up' if float(val) == 1 else 'down'
+
+                            # Get speed
+                            speed_resp = await client.get(
+                                f"{prom_url}/api/v1/query",
+                                params={'query': f'ifHighSpeed{{instance=~"{target_ip}:.*", ifIndex="{if_index}"}}'},
+                                headers=headers
+                            )
+                            if speed_resp.status_code == 200:
+                                speed_data = speed_resp.json()
+                                if speed_data.get('data', {}).get('result'):
+                                    val = speed_data['data']['result'][0].get('value', [None, None])[1]
+                                    if val:
+                                        port_data['speed_mbps'] = int(float(val))
+
+                            ports.append(port_data)
+
+    except Exception as e:
+        logger.error(f"Error fetching port metrics: {e}", exc_info=True)
+
+    return {"ports": ports, "source": "prometheus"}

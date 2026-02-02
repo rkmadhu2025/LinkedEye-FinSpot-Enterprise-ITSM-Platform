@@ -128,6 +128,8 @@ class IncidentResponse(BaseModel):
     source: Optional[str] = None
     alert_rule: Optional[str] = None
     external_id: Optional[str] = None
+    tat_target_minutes: Optional[int] = None
+    tat_breach_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
@@ -225,7 +227,35 @@ async def create_incident(
             sla_target = datetime.now(timezone.utc) + timedelta(hours=8)
         else:
             sla_target = datetime.now(timezone.utc) + timedelta(hours=24)
-        
+
+        # TAT (Turnaround Time) based on priority
+        tat_map = {
+            IncidentPriority.CRITICAL: 15,
+            IncidentPriority.HIGH: 60,
+            IncidentPriority.MEDIUM: 240,
+            IncidentPriority.LOW: 1440,
+        }
+        tat_minutes = tat_map.get(incident_data.priority, 240)
+        tat_breach_at = datetime.now(timezone.utc) + timedelta(minutes=tat_minutes)
+
+        # Auto-assignment: map category to group if no group specified
+        assigned_group = incident_data.assigned_group
+        if not assigned_group and incident_data.category:
+            category_group_map = {
+                "network": "Network Team",
+                "server": "Infrastructure Team",
+                "infrastructure": "Infrastructure Team",
+                "application": "Application Support",
+                "database": "Database Team",
+                "security": "Security Team",
+                "cloud": "Cloud Operations",
+                "hardware": "Infrastructure Team",
+                "software": "Application Support",
+            }
+            assigned_group = category_group_map.get(
+                (incident_data.category or "").lower(), None
+            )
+
         # Create incident
         new_incident = Incident(
             number=incident_number,
@@ -238,14 +268,16 @@ async def create_incident(
             urgency=incident_data.urgency,
             status=IncidentStatus.NEW,
             assigned_to_id=incident_data.assigned_to_id,
-            assigned_group=incident_data.assigned_group,
+            assigned_group=assigned_group,
             created_by_id=current_user.id,
             environment_id=incident_data.environment_id,
             affected_assets=incident_data.affected_assets,
             tags=incident_data.tags,
             custom_fields=incident_data.custom_fields,
             sla_target=sla_target,
-            sla_breached=False
+            sla_breached=False,
+            tat_target_minutes=tat_minutes,
+            tat_breach_at=tat_breach_at
         )
         
         db.add(new_incident)

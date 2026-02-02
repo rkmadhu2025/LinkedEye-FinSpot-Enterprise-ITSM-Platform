@@ -349,11 +349,18 @@ async def get_device_metrics(
 
         # Interface details with metrics
         interfaces = []
-        port_status = device.port_status or []
-        if isinstance(port_status, list):
-            for idx, port in enumerate(port_status):
+        port_status = device.port_status or {}
+        # Normalize: dict keyed by interface name or list of port dicts
+        port_list = []
+        if isinstance(port_status, dict):
+            port_list = list(port_status.values()) if port_status else []
+        elif isinstance(port_status, list):
+            port_list = port_status
+
+        for idx, port in enumerate(port_list):
+            if isinstance(port, dict):
                 interfaces.append({
-                    "id": f"eth{idx}",
+                    "id": port.get("name", f"eth{idx}"),
                     "name": port.get("name", f"eth{idx}"),
                     "type": port.get("type", "ethernet"),
                     "status": port.get("status", "up"),
@@ -361,12 +368,14 @@ async def get_device_metrics(
                     "mac_address": port.get("mac_address", f"00:11:22:33:44:{idx:02x}"),
                     "mtu": port.get("mtu", 1500),
                     "duplex": port.get("duplex", "full"),
-                    "rx_bytes": port.get("rx_bytes", random.randint(1000000, 100000000)),
-                    "tx_bytes": port.get("tx_bytes", random.randint(1000000, 100000000)),
+                    "ip_address": port.get("ip_address", ""),
+                    "description": port.get("description", ""),
+                    "rx_bytes": port.get("rx_bytes", 0),
+                    "tx_bytes": port.get("tx_bytes", 0),
                     "rx_errors": port.get("rx_errors", 0),
                     "tx_errors": port.get("tx_errors", 0),
-                    "rx_packets": port.get("rx_packets", random.randint(10000, 1000000)),
-                    "tx_packets": port.get("tx_packets", random.randint(10000, 1000000)),
+                    "rx_packets": port.get("rx_packets", 0),
+                    "tx_packets": port.get("tx_packets", 0),
                     "admin_status": port.get("admin_status", "enabled"),
                     "oper_status": port.get("status", "up"),
                     "last_change": (now - timedelta(hours=random.randint(1, 100))).isoformat(),

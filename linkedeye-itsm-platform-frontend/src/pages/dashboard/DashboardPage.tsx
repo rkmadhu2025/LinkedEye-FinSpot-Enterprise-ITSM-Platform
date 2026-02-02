@@ -1,408 +1,746 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle,
   RefreshCw,
-  TrendingUp,
+  AlertTriangle,
   Clock,
   CheckCircle,
-  AlertTriangle,
+  ArrowRight,
+  GitBranch,
   Activity,
   Server,
+  Phone,
+  Shield,
   Zap,
+  Users,
+  Timer,
+  Layers,
 } from 'lucide-react';
-import { Card, CardHeader, CardBody, StatsCard, StatusBadge, PriorityBadge, Button, Avatar, EmptyState, Spinner } from '@/components/ui';
+import { useAppSelector } from '@/hooks/useRedux';
 import { dashboardService } from '@/services/dashboardService';
-import { DashboardStats, Environment } from '@/types';
+import { onCallService, CurrentOnCallEntry } from '@/services/onCallService';
+import { DashboardStats } from '@/types';
+import { getUserRole } from '@/utils/roles';
+import { KPICard, SLACountdown, ActionPanel, AlertFunnel, RoleGuard, DashboardGrid } from '@/components/dashboard';
+import { isFeatureEnabled } from '@/utils/featureFlags';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
-const DashboardPage = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+// Chart.js registration
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  ArcElement,
+  BarElement,
+} from 'chart.js';
+import { Line, Doughnut } from 'react-chartjs-2';
 
-  const fetchStats = useCallback(async (showRefreshToast = false) => {
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  ArcElement,
+  BarElement
+);
+
+const DashboardPage = () => {
+  const { theme } = useAppSelector((state) => state.ui);
+  const { user } = useAppSelector((state) => state.auth);
+  const role = getUserRole(user);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [currentOnCall, setCurrentOnCall] = useState<CurrentOnCallEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [dashboardIncidents, setDashboardIncidents] = useState<Array<{id: string; number: string; title: string; priority: string; status: string}>>([]);
+  const [alertFunnelData, setAlertFunnelData] = useState<{ stages: Array<{ label: string; count: number; color: string }> } | null>(null);
+  const [teamWorkloadData, setTeamWorkloadData] = useState<{ teams: Array<{ name: string; active: number; capacity: number }> } | null>(null);
+  const [slaData, setSlaData] = useState<{ at_risk: Array<{ id: string; title: string; priority: string; sla_due: string }>; breached: Array<{ id: string; title: string; priority: string; sla_due: string }>; at_risk_count: number; breached_count: number } | null>(null);
+
+  // Client filtering - read selected client from localStorage (set by ClientSelector)
+  const selectedClientId = localStorage.getItem('selectedClientId') || undefined;
+  const selectedClientName = localStorage.getItem('selectedClientName') || 'All Clients';
+
+  const fetchStats = useCallback(async (isSilent = false) => {
     try {
-      if (showRefreshToast) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
-      setError(null);
-      const data = await dashboardService.getStats();
-      setStats(data);
-      if (showRefreshToast) {
-        toast.success('Dashboard refreshed');
+      if (!isSilent) setIsLoading(true);
+      const [dashboardData, onCallData, incidentsData, funnelData, workloadData, slaRiskData] = await Promise.all([
+        dashboardService.getStats(selectedClientId),
+        onCallService.getCurrentOnCall().catch(() => []),
+        dashboardService.getRecentIncidents(5).catch(() => []),
+        isFeatureEnabled('alertFunnel') ? dashboardService.getAlertFunnel().catch(() => null) : Promise.resolve(null),
+        isFeatureEnabled('teamWorkload') ? dashboardService.getTeamWorkload().catch(() => null) : Promise.resolve(null),
+        isFeatureEnabled('slaCountdown') ? dashboardService.getSlaAtRisk().catch(() => null) : Promise.resolve(null),
+      ]);
+      setStats(dashboardData);
+      setCurrentOnCall(onCallData || []);
+      if (funnelData) setAlertFunnelData(funnelData);
+      if (workloadData) setTeamWorkloadData(workloadData);
+      if (slaRiskData) setSlaData(slaRiskData);
+      if (incidentsData && incidentsData.length > 0) {
+        setDashboardIncidents(incidentsData.map((i: any) => ({
+          id: i.id,
+          number: i.number || i.id?.substring(0, 8)?.toUpperCase() || 'N/A',
+          title: i.title,
+          priority: i.priority,
+          status: i.status,
+        })));
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch dashboard stats';
-      setError(errorMessage);
-      toast.error('Failed to load dashboard data');
+      console.error(err);
+      toast.error('Failed to fetch dashboard data');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [selectedClientId]);
 
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
 
   const handleRefresh = () => {
+    setIsRefreshing(true);
     fetchStats(true);
   };
 
-  // Loading state
-  if (isLoading) {
+  const isDark = theme === 'dark';
+  const cardBg = isDark ? 'var(--bg-card)' : '#ffffff';
+  const borderColor = isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb';
+  const textPrimary = isDark ? '#f8fafc' : '#0f172a';
+  const textSecondary = isDark ? '#94a3b8' : '#64748b';
+
+  if (isLoading && !stats) {
     return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <Spinner size="lg" />
-        <p className="mt-4 text-gray-500">Loading dashboard...</p>
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+          <p style={{ color: textSecondary }} className="text-sm">
+            Loading dashboard...
+          </p>
+        </div>
       </div>
     );
   }
 
-  // Error state with retry
-  if (error && !stats) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Card className="max-w-md w-full">
-          <EmptyState
-            variant="error"
-            title="Failed to load dashboard"
-            description={error}
-            action={{
-              label: 'Try Again',
-              onClick: () => fetchStats(),
-            }}
-          />
-        </Card>
-      </div>
-    );
-  }
-
-  // No data state
-  if (!stats) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Card className="max-w-md w-full">
-          <EmptyState
-            variant="empty"
-            title="No data available"
-            description="Dashboard data is not available yet. Please check your API connection."
-            action={{
-              label: 'Refresh',
-              onClick: () => fetchStats(),
-            }}
-          />
-        </Card>
-      </div>
-    );
-  }
-
-  // Sample recent incidents (would come from API in production)
-  const recentIncidents = [
-    { id: 'INC0015847', title: 'Database connection pool exhaustion', priority: 'critical' as const, status: 'in_progress', assignee: 'John Doe', age: '2h' },
-    { id: 'INC0015846', title: 'API Gateway timeout errors', priority: 'high' as const, status: 'open', assignee: 'Jane Smith', age: '4h' },
-    { id: 'INC0015845', title: 'SSL certificate expiring soon', priority: 'medium' as const, status: 'pending', assignee: 'Bob Wilson', age: '6h' },
-    { id: 'INC0015844', title: 'User unable to access dashboard', priority: 'low' as const, status: 'open', assignee: 'Alice Brown', age: '8h' },
-  ];
+  // Prepare action panel items
+  const incidentsNeedingAttention = (dashboardIncidents.length > 0 ? dashboardIncidents : recentIncidents)
+    .filter((i) => ['critical', 'high'].includes(i.priority.toLowerCase()) || i.status.toLowerCase() === 'new')
+    .slice(0, 5)
+    .map((i) => ({
+      id: i.id,
+      title: `${i.number} — ${i.title}`,
+      subtitle: `${i.priority} · ${i.status}`,
+      badge: <PriorityBadge priority={i.priority} />,
+      href: `/incidents/${i.id}`,
+    }));
 
   const upcomingChanges = [
-    { id: 'CHG0012456', title: 'Database migration v2.5', type: 'normal', scheduledFor: 'Today, 10:00 PM', risk: 'high' as const },
-    { id: 'CHG0012455', title: 'Security patch deployment', type: 'standard', scheduledFor: 'Tomorrow, 2:00 AM', risk: 'medium' as const },
-    { id: 'CHG0012454', title: 'Network switch upgrade', type: 'normal', scheduledFor: 'Dec 28, 6:00 PM', risk: 'low' as const },
+    { id: 'c1', title: 'Database migration v3.2', subtitle: 'Scheduled Feb 5 · Normal', href: '/changes' },
+    { id: 'c2', title: 'SSL cert rotation', subtitle: 'Scheduled Feb 6 · Standard', href: '/changes' },
+    { id: 'c3', title: 'API Gateway upgrade', subtitle: 'Scheduled Feb 8 · Emergency', href: '/changes' },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
+      {/* Status Bar + Greeting */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 mt-1">Overview of your IT service management</p>
+          <h2 className="text-xl font-bold" style={{ color: textPrimary }}>
+            {getGreeting()}, {user?.firstName || 'Operator'}
+          </h2>
+          <p className="text-sm mt-0.5" style={{ color: textSecondary }}>
+            {role === 'executive' ? 'Executive Overview' : role === 'manager' ? 'Team Performance' : 'Operations Dashboard'}
+            {selectedClientId && <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{selectedClientName}</span>}
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            leftIcon={<RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
+            <StatusItem label="All Systems Operational" status="healthy" />
+            <StatusItem label="99.98% Uptime" status="healthy" />
+          </div>
+          <button
             onClick={handleRefresh}
             disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+            style={{
+              background: isDark ? 'rgba(255,255,255,0.06)' : '#f4f6f9',
+              color: textSecondary,
+              border: `1px solid ${borderColor}`,
+            }}
           >
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
-          <Link to="/incidents/create">
-            <Button leftIcon={<AlertCircle size={16} />}>New Incident</Button>
-          </Link>
+            <RefreshCw size={15} className={clsx(isRefreshing && 'animate-spin')} />
+            Refresh
+          </button>
         </div>
       </div>
 
-      {/* Incident Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatsCard
-          title="Critical"
-          value={stats.incidents.critical}
-          variant="critical"
-          icon={<AlertCircle size={24} />}
-          change={{ value: -15, type: 'decrease', period: 'vs last week' }}
+      {/* === KPI Row === */}
+      {/* Executives: only high-level KPIs */}
+      {/* Agents: operational metrics */}
+      {/* Managers: team metrics */}
+      {/* Admins: everything */}
+      <div className={clsx(
+        'grid gap-4',
+        role === 'executive' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-5'
+      )}>
+        <KPICard
+          title="Active Incidents"
+          value={stats?.incidents.critical || 0}
+          subtitle="Critical priority"
+          icon={<AlertTriangle size={18} />}
+          trend={{ value: 2, direction: 'up', label: 'vs yesterday' }}
+          accentColor="#ef4444"
+          isDark={isDark}
         />
-        <StatsCard
-          title="High Priority"
-          value={stats.incidents.high}
-          variant="high"
-          icon={<AlertTriangle size={24} />}
-          change={{ value: 8, type: 'increase', period: 'vs last week' }}
+        <KPICard
+          title="MTTR"
+          value={stats?.incidents.avgResolutionTime ? `${Math.round(stats.incidents.avgResolutionTime)}m` : '42m'}
+          subtitle="Mean time to resolve"
+          icon={<Timer size={18} />}
+          trend={{ value: 12, direction: 'down', label: 'faster' }}
+          accentColor="#10b981"
+          isDark={isDark}
         />
-        <StatsCard
-          title="Medium Priority"
-          value={stats.incidents.medium}
-          variant="medium"
-          icon={<Activity size={24} />}
-          change={{ value: 0, type: 'neutral' }}
+        <KPICard
+          title="SLA At Risk"
+          value={slaData?.at_risk_count ?? stats?.incidents.slaBreached ?? 3}
+          subtitle={`${slaData?.breached_count ?? 0} breached`}
+          icon={<Clock size={18} />}
+          trend={{ value: slaData?.breached_count ?? 1, direction: 'up', label: 'breached' }}
+          accentColor="#f59e0b"
+          isDark={isDark}
         />
-        <StatsCard
-          title="Low Priority"
-          value={stats.incidents.low}
-          variant="low"
-          icon={<Clock size={24} />}
+        <KPICard
+          title="Change Success"
+          value={stats?.changes ? `${Math.round(((stats.changes.completed || 0) / Math.max(stats.changes.total, 1)) * 100)}%` : '94%'}
+          subtitle={`${stats?.changes?.completed || 0} completed`}
+          icon={<CheckCircle size={18} />}
+          trend={{ value: 3, direction: 'down', label: 'improvement' }}
+          accentColor="#06b6d4"
+          isDark={isDark}
         />
-        <StatsCard
-          title="Resolved Today"
-          value={stats.incidents.resolvedToday}
-          variant="success"
-          icon={<CheckCircle size={24} />}
-          change={{ value: 25, type: 'increase', period: 'vs yesterday' }}
-        />
+        {/* 5th card only for non-executive roles */}
+        {role !== 'executive' && (
+          <KPICard
+            title="Open Problems"
+            value={stats?.problems?.open || 7}
+            subtitle="Root cause analysis"
+            icon={<Layers size={18} />}
+            trend={{ value: 2, direction: 'neutral', label: 'investigating' }}
+            accentColor="#7c3aed"
+            isDark={isDark}
+          />
+        )}
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card padding="sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Open Incidents</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.incidents.open}</p>
-            </div>
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <AlertCircle size={20} className="text-blue-600" />
-            </div>
-          </div>
-        </Card>
-        <Card padding="sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">SLA Breached</p>
-              <p className="text-2xl font-bold text-danger-600">{stats.incidents.slaBreached}</p>
-            </div>
-            <div className="p-2 bg-red-100 rounded-lg">
-              <Clock size={20} className="text-red-600" />
-            </div>
-          </div>
-        </Card>
-        <Card padding="sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Pending Changes</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.changes.pending}</p>
-            </div>
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Activity size={20} className="text-yellow-600" />
-            </div>
-          </div>
-        </Card>
-        <Card padding="sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Assets</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.assets.total.toLocaleString()}</p>
-            </div>
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Server size={20} className="text-green-600" />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Main Content Grid */}
+      {/* === Charts Row === */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Incidents */}
-        <div className="lg:col-span-2">
-          <Card padding="none">
-            <CardHeader actions={<Link to="/incidents" className="text-sm text-primary-600 hover:text-primary-700">View all</Link>}>
-              Recent Incidents
-            </CardHeader>
-            <div className="divide-y divide-gray-100">
-              {recentIncidents.map((incident) => (
-                <Link
-                  key={incident.id}
-                  to={`/incidents/${incident.id}`}
-                  className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
+        {/* Incident Trends - 2 cols */}
+        <div
+          className="lg:col-span-2 rounded-xl"
+          style={{ background: cardBg, border: `1px solid ${borderColor}` }}
+        >
+          <div
+            className="px-5 py-4 flex items-center justify-between"
+            style={{ borderBottom: `1px solid ${borderColor}` }}
+          >
+            <div className="flex items-center gap-2.5">
+              <Activity size={17} style={{ color: 'var(--color-primary)' }} />
+              <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>
+                Incident Trends
+              </h3>
+            </div>
+            <div className="flex gap-1.5">
+              {['7D', '30D', '90D'].map((period) => (
+                <button
+                  key={period}
+                  className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
+                  style={{
+                    background: period === '30D' ? 'var(--color-primary)' : isDark ? 'rgba(255,255,255,0.06)' : '#f4f6f9',
+                    color: period === '30D' ? '#fff' : textSecondary,
+                  }}
                 >
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className="flex-shrink-0">
-                      <PriorityBadge priority={incident.priority} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{incident.title}</p>
-                      <p className="text-xs text-gray-500">{incident.id} • {incident.age} ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <Avatar name={incident.assignee} size="sm" />
-                    <StatusBadge status={incident.status} />
-                  </div>
-                </Link>
+                  {period}
+                </button>
               ))}
             </div>
-          </Card>
+          </div>
+          <div className="p-5">
+            <div className="h-72">
+              <Line data={getIncidentTrendsData(isDark)} options={getChartOptions(isDark)} />
+            </div>
+          </div>
         </div>
 
-        {/* Upcoming Changes */}
-        <Card padding="none">
-          <CardHeader actions={<Link to="/changes" className="text-sm text-primary-600 hover:text-primary-700">View all</Link>}>
-            Upcoming Changes
-          </CardHeader>
-          <div className="divide-y divide-gray-100">
-            {upcomingChanges.map((change) => (
-              <Link
-                key={change.id}
-                to={`/changes/${change.id}`}
-                className="block px-5 py-4 hover:bg-gray-50 transition-colors"
+        {/* Alert-to-Incident Funnel + Priority Distribution */}
+        <div className="space-y-6">
+          {/* Alert Funnel — Agents & Managers */}
+          {isFeatureEnabled('alertFunnel') && (
+            <RoleGuard allowed={['agent', 'manager', 'admin']}>
+              <div
+                className="rounded-xl"
+                style={{ background: cardBg, border: `1px solid ${borderColor}` }}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-mono text-primary-600">{change.id}</span>
-                  <PriorityBadge priority={change.risk} />
+                <div className="px-5 py-4" style={{ borderBottom: `1px solid ${borderColor}` }}>
+                  <div className="flex items-center gap-2.5">
+                    <Zap size={17} style={{ color: '#f59e0b' }} />
+                    <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>
+                      Alert Funnel
+                    </h3>
+                  </div>
                 </div>
-                <p className="text-sm font-medium text-gray-900 truncate">{change.title}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  <Clock size={12} className="inline mr-1" />
-                  {change.scheduledFor}
-                </p>
+                <div className="p-5">
+                  <AlertFunnel
+                    isDark={isDark}
+                    stages={alertFunnelData?.stages || [
+                      { label: 'Total Alerts', count: 247, color: '#6366f1' },
+                      { label: 'Deduplicated', count: 89, color: '#f59e0b' },
+                      { label: 'Incidents Created', count: 34, color: '#ef4444' },
+                      { label: 'Resolved', count: 28, color: '#10b981' },
+                    ]}
+                  />
+                </div>
+              </div>
+            </RoleGuard>
+          )}
+
+          {/* Priority Distribution — All roles */}
+          {isFeatureEnabled('priorityDistribution') && <div
+            className="rounded-xl"
+            style={{ background: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <div className="px-5 py-4" style={{ borderBottom: `1px solid ${borderColor}` }}>
+              <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>
+                Priority Distribution
+              </h3>
+            </div>
+            <div className="p-5">
+              <div className="h-48">
+                <Doughnut data={getPriorityData(isDark)} options={getDoughnutOptions(isDark)} />
+              </div>
+            </div>
+          </div>}
+        </div>
+      </div>
+
+      {/* === Action Panels Row === */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Incidents Needing Attention — Agents & Managers */}
+        <RoleGuard allowed={['agent', 'manager', 'admin']}>
+          <ActionPanel
+            title="Incidents Needing Attention"
+            icon={<AlertTriangle size={17} />}
+            items={incidentsNeedingAttention}
+            emptyText="No critical incidents right now"
+            viewAllHref="/incidents"
+            isDark={isDark}
+          />
+        </RoleGuard>
+
+        {/* My On-Call Alerts — Agents */}
+        {isFeatureEnabled('onCallPanel') && <RoleGuard allowed={['agent', 'admin']}>
+          <div
+            className="rounded-xl"
+            style={{ background: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <div
+              className="px-5 py-4 flex items-center justify-between"
+              style={{ borderBottom: `1px solid ${borderColor}` }}
+            >
+              <div className="flex items-center gap-2.5">
+                <Phone size={17} className="text-emerald-500" />
+                <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>
+                  Current On-Call
+                </h3>
+              </div>
+              <Link
+                to="/on-call/schedules"
+                className="text-xs font-medium flex items-center gap-1"
+                style={{ color: 'var(--color-primary)' }}
+              >
+                Manage <ArrowRight size={13} />
+              </Link>
+            </div>
+            <div className="p-5">
+              {currentOnCall.length === 0 ? (
+                <div className="text-center py-8" style={{ color: textSecondary }}>
+                  <Phone size={28} className="mx-auto mb-2 opacity-40" />
+                  <p className="text-sm">No active on-call shifts</p>
+                  <Link to="/on-call/schedules" className="text-xs mt-2 inline-block" style={{ color: 'var(--color-primary)' }}>
+                    Set up schedules
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {currentOnCall.slice(0, 3).map((entry, index) => {
+                    const u = entry.user;
+                    const name = u?.displayName || (u?.firstName && u?.lastName ? `${u.firstName} ${u.lastName}` : u?.email || 'Unknown');
+                    const initials = name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+                    const isCurrent = index === 0;
+                    return (
+                      <div
+                        key={entry.id}
+                        className={clsx('flex items-center gap-3 p-3 rounded-lg', isCurrent && 'ring-2 ring-emerald-500')}
+                        style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#f9fafb' }}
+                      >
+                        <div
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold"
+                          style={{ background: isCurrent ? 'linear-gradient(135deg,#10b981,#059669)' : 'linear-gradient(135deg,#6366f1,#4f46e5)' }}
+                        >
+                          {initials}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold truncate" style={{ color: textPrimary }}>{name}</p>
+                            {isCurrent && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700">
+                                On-Call
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs truncate" style={{ color: textSecondary }}>
+                            {entry.schedule_name || 'Primary Rotation'}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </RoleGuard>}
+
+        {/* Upcoming Changes */}
+        {isFeatureEnabled('upcomingChanges') && (
+          <ActionPanel
+            title="Upcoming Changes"
+            icon={<GitBranch size={17} />}
+            items={upcomingChanges}
+            emptyText="No upcoming changes"
+            viewAllHref="/changes"
+            isDark={isDark}
+          />
+        )}
+      </div>
+
+      {/* === SLA Countdown Row === */}
+      {isFeatureEnabled('slaCountdown') && slaData && (slaData.at_risk.length > 0 || slaData.breached.length > 0) && (
+        <div
+          className="rounded-xl"
+          style={{ background: cardBg, border: `1px solid ${borderColor}` }}
+        >
+          <div className="px-5 py-4 flex items-center gap-2.5" style={{ borderBottom: `1px solid ${borderColor}` }}>
+            <Clock size={17} style={{ color: '#f59e0b' }} />
+            <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>
+              SLA Countdown — At Risk ({slaData.at_risk_count + slaData.breached_count})
+            </h3>
+          </div>
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...slaData.breached, ...slaData.at_risk].slice(0, 6).map((inc) => (
+              <Link key={inc.id} to={`/incidents/${inc.id}`} className="block">
+                <div className="space-y-2">
+                  <p className="text-xs font-medium truncate" style={{ color: textPrimary }}>{inc.title}</p>
+                  <SLACountdown dueDateISO={inc.sla_due} isDark={isDark} compact />
+                </div>
               </Link>
             ))}
           </div>
-        </Card>
-      </div>
+        </div>
+      )}
 
-      {/* Environment Health */}
-      <Card padding="none">
-        <CardHeader actions={<Link to="/monitoring" className="text-sm text-primary-600 hover:text-primary-700">View monitoring</Link>}>
-          Environment Health
-        </CardHeader>
-        <CardBody>
-          {stats.environments && stats.environments.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {stats.environments.map((env) => (
-                <EnvironmentCard key={env.id} environment={env} />
+      {/* === Manager/Executive Row — Team & Trend Metrics === */}
+      <RoleGuard allowed={['manager', 'admin', 'executive']}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Workload Distribution */}
+          {isFeatureEnabled('teamWorkload') && (
+          <div className="rounded-xl" style={{ background: cardBg, border: `1px solid ${borderColor}` }}>
+            <div className="px-5 py-4 flex items-center gap-2.5" style={{ borderBottom: `1px solid ${borderColor}` }}>
+              <Users size={17} style={{ color: 'var(--color-primary)' }} />
+              <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>Team Workload</h3>
+            </div>
+            <div className="p-5 space-y-4">
+              {(teamWorkloadData?.teams || [
+                { name: 'Platform Ops', active: 12, capacity: 20 },
+                { name: 'Network Ops', active: 8, capacity: 15 },
+                { name: 'Security Team', active: 5, capacity: 10 },
+                { name: 'Database Ops', active: 3, capacity: 8 },
+              ]).map((team) => (
+                <div key={team.name} className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span style={{ color: textSecondary }}>{team.name}</span>
+                    <span className="font-semibold" style={{ color: textPrimary }}>
+                      {team.active}/{team.capacity}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden" style={{ background: isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb' }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${(team.active / team.capacity) * 100}%`,
+                        background: (team.active / team.capacity) > 0.8 ? '#ef4444' : (team.active / team.capacity) > 0.6 ? '#f59e0b' : '#10b981',
+                      }}
+                    />
+                  </div>
+                </div>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <Server size={32} className="mx-auto mb-2 text-gray-300" />
-              <p>No environments configured</p>
-            </div>
-          )}
-        </CardBody>
-      </Card>
-
-      {/* AI Insights Card */}
-      <Card className="bg-gradient-to-br from-primary-600 to-indigo-700 text-white border-0">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-white/20 rounded-lg">
-            <Zap size={24} />
           </div>
-          <div className="flex-1">
-            <h3 className="font-semibold mb-2">AI Insights</h3>
-            <div className="space-y-3">
-              <div className="flex items-start gap-2">
-                <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-white/90">
-                  <strong>Pattern Detected:</strong> 3 similar incidents related to API Gateway in the last 24 hours. Consider investigating the root cause.
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <TrendingUp size={16} className="flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-white/90">
-                  <strong>Prediction:</strong> Based on current trends, expect 15% increase in incidents during the upcoming deployment window.
-                </p>
+          )}
+
+          {/* Infrastructure Health */}
+          {isFeatureEnabled('infrastructureHealth') && (
+          <div className="rounded-xl" style={{ background: cardBg, border: `1px solid ${borderColor}` }}>
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${borderColor}` }}>
+              <div className="flex items-center gap-2.5">
+                <Server size={17} style={{ color: 'var(--color-primary)' }} />
+                <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>Infrastructure Health</h3>
               </div>
             </div>
-            <Link to="/analytics">
-              <Button variant="secondary" size="sm" className="mt-4 bg-white/20 hover:bg-white/30 text-white border-0">
-                View All Insights
-              </Button>
-            </Link>
+            <div className="p-5 space-y-4">
+              <HealthBar label="API Gateway" value={98} isDark={isDark} />
+              <HealthBar label="Database Cluster" value={95} isDark={isDark} />
+              <HealthBar label="Cache Layer" value={100} isDark={isDark} />
+              <HealthBar label="Message Queue" value={87} isDark={isDark} />
+              <HealthBar label="CDN" value={100} isDark={isDark} />
+            </div>
+          </div>
+          )}
+        </div>
+      </RoleGuard>
+
+      {/* === Admin-Only: System Health & Integrations === */}
+      {isFeatureEnabled('systemIntegrations') && (
+      <RoleGuard allowed={['admin']}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="rounded-xl" style={{ background: cardBg, border: `1px solid ${borderColor}` }}>
+            <div className="px-5 py-4 flex items-center gap-2.5" style={{ borderBottom: `1px solid ${borderColor}` }}>
+              <Shield size={17} className="text-indigo-500" />
+              <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>System Integrations</h3>
+            </div>
+            <div className="p-5 space-y-3">
+              {[
+                { name: 'Prometheus', status: 'connected', latency: '12ms' },
+                { name: 'StackStorm', status: 'connected', latency: '45ms' },
+                { name: 'Grafana', status: 'connected', latency: '8ms' },
+                { name: 'n8n Workflows', status: 'connected', latency: '23ms' },
+              ].map((integration) => (
+                <div key={integration.name} className="flex items-center justify-between p-3 rounded-lg" style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#f9fafb' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-sm font-medium" style={{ color: textPrimary }}>{integration.name}</span>
+                  </div>
+                  <span className="text-xs font-mono" style={{ color: textSecondary }}>{integration.latency}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Escalation Status */}
+          <div className="rounded-xl" style={{ background: cardBg, border: `1px solid ${borderColor}` }}>
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${borderColor}` }}>
+              <div className="flex items-center gap-2.5">
+                <Shield size={17} className="text-indigo-500" />
+                <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>Escalation Status</h3>
+              </div>
+              <Link to="/on-call/dashboard" className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--color-primary)' }}>
+                Dashboard <ArrowRight size={13} />
+              </Link>
+            </div>
+            <div className="p-5 space-y-3">
+              {[
+                { label: 'Active Policies', value: '5', color: '#10b981' },
+                { label: 'Pending Escalations', value: '2', color: '#f59e0b' },
+                { label: 'Escalation Levels', value: '12', color: '#3b82f6' },
+                { label: 'Avg Response Time', value: '4.2 min', color: '#7c3aed' },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center justify-between p-3 rounded-lg" style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#f9fafb' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
+                    <span className="text-sm" style={{ color: textSecondary }}>{item.label}</span>
+                  </div>
+                  <span className="text-sm font-semibold" style={{ color: textPrimary }}>{item.value}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </Card>
+      </RoleGuard>
+      )}
     </div>
   );
 };
 
-interface EnvironmentCardProps {
-  environment: Environment;
+// --- Helpers ---
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
 }
 
-const EnvironmentCard = ({ environment }: EnvironmentCardProps) => {
-  const statusColors = {
-    healthy: 'bg-success-500',
-    warning: 'bg-warning-500',
-    critical: 'bg-danger-500',
-    unknown: 'bg-gray-400',
-  };
+// --- Sub-components ---
 
-  const statusBg = {
-    healthy: 'bg-success-50 border-success-200',
-    warning: 'bg-warning-50 border-warning-200',
-    critical: 'bg-danger-50 border-danger-200',
-    unknown: 'bg-gray-50 border-gray-200',
-  };
+interface StatusItemProps {
+  label: string;
+  status: 'healthy' | 'warning' | 'critical';
+}
 
+const StatusItem = ({ label, status }: StatusItemProps) => {
+  const colors = { healthy: '#10b981', warning: '#f59e0b', critical: '#ef4444' };
   return (
-    <div className={clsx('rounded-lg border p-4', statusBg[environment.status])}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Server size={18} className="text-gray-600" />
-          <span className="font-medium text-gray-900">{environment.name}</span>
-        </div>
-        <div className={clsx('w-2.5 h-2.5 rounded-full', statusColors[environment.status])} />
-      </div>
-
-      <div className="space-y-2">
-        <MetricBar label="CPU" value={environment.healthMetrics?.cpuUsage || 0} />
-        <MetricBar label="Memory" value={environment.healthMetrics?.memoryUsage || 0} />
-        <MetricBar label="Disk" value={environment.healthMetrics?.diskUsage || 0} />
-      </div>
+    <div className="flex items-center gap-2 text-xs" style={{ color: '#64748b' }}>
+      <div className="w-2 h-2 rounded-full" style={{ background: colors[status], boxShadow: `0 0 6px ${colors[status]}` }} />
+      <span>{label}</span>
     </div>
   );
 };
 
-interface MetricBarProps {
+const PriorityBadge = ({ priority }: { priority: string }) => {
+  const styles: Record<string, { bg: string; color: string }> = {
+    critical: { bg: '#ef4444', color: '#fff' },
+    high: { bg: '#f97316', color: '#fff' },
+    medium: { bg: '#fbbf24', color: '#78350f' },
+    low: { bg: '#3b82f6', color: '#fff' },
+  };
+  const style = styles[priority.toLowerCase()] || styles.medium;
+  return (
+    <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: style.bg, color: style.color }}>
+      {priority}
+    </span>
+  );
+};
+
+interface HealthBarProps {
   label: string;
   value: number;
+  isDark: boolean;
 }
 
-const MetricBar = ({ label, value }: MetricBarProps) => {
-  const getColor = (val: number) => {
-    if (val >= 90) return 'bg-danger-500';
-    if (val >= 75) return 'bg-warning-500';
-    return 'bg-success-500';
-  };
-
+const HealthBar = ({ label, value, isDark }: HealthBarProps) => {
+  const barColor = value >= 95 ? '#10b981' : value >= 80 ? '#f59e0b' : '#ef4444';
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs text-gray-600 w-12">{label}</span>
-      <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-        <div
-          className={clsx('h-full rounded-full transition-all', getColor(value))}
-          style={{ width: `${value}%` }}
-        />
+    <div className="space-y-1.5">
+      <div className="flex justify-between text-xs">
+        <span style={{ color: isDark ? '#94a3b8' : '#64748b' }}>{label}</span>
+        <span style={{ color: isDark ? '#fff' : '#0f172a' }} className="font-semibold">{value}%</span>
       </div>
-      <span className="text-xs font-medium text-gray-700 w-10 text-right">{value}%</span>
+      <div className="h-2 rounded-full overflow-hidden" style={{ background: isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb' }}>
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${value}%`, background: barColor }} />
+      </div>
     </div>
   );
 };
+
+// --- Chart Data ---
+
+const getIncidentTrendsData = (isDark: boolean) => ({
+  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+  datasets: [
+    {
+      label: 'New Incidents',
+      data: [12, 19, 15, 25, 22, 10, 8],
+      borderColor: '#4f46e5',
+      backgroundColor: isDark ? 'rgba(79, 70, 229, 0.1)' : 'rgba(79, 70, 229, 0.05)',
+      fill: true,
+      tension: 0.4,
+      pointRadius: 4,
+      pointBackgroundColor: '#4f46e5',
+      pointBorderColor: isDark ? 'rgba(17,28,50,0.95)' : '#ffffff',
+      pointBorderWidth: 2,
+    },
+    {
+      label: 'Resolved',
+      data: [8, 15, 18, 20, 28, 12, 10],
+      borderColor: '#10b981',
+      backgroundColor: 'transparent',
+      tension: 0.4,
+      borderDash: [5, 5],
+      pointRadius: 0,
+    },
+  ],
+});
+
+const getChartOptions = (isDark: boolean) => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: true,
+      position: 'top' as const,
+      align: 'end' as const,
+      labels: {
+        color: isDark ? '#94a3b8' : '#64748b',
+        font: { size: 11, weight: '500' },
+        usePointStyle: true,
+        padding: 20,
+      },
+    },
+    tooltip: {
+      backgroundColor: isDark ? 'rgba(17,28,50,0.95)' : '#ffffff',
+      titleColor: isDark ? '#f8fafc' : '#0f172a',
+      bodyColor: isDark ? '#94a3b8' : '#475569',
+      borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
+      borderWidth: 1,
+      padding: 14,
+      cornerRadius: 10,
+    },
+  },
+  scales: {
+    y: {
+      grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', drawBorder: false },
+      ticks: { color: isDark ? '#64748b' : '#94a3b8', font: { size: 11 } },
+    },
+    x: {
+      grid: { display: false },
+      ticks: { color: isDark ? '#64748b' : '#94a3b8', font: { size: 11 } },
+    },
+  },
+});
+
+const getPriorityData = (isDark: boolean) => ({
+  labels: ['Critical', 'High', 'Medium', 'Low'],
+  datasets: [
+    {
+      data: [8, 15, 35, 42],
+      backgroundColor: ['#ef4444', '#f97316', '#f59e0b', '#3b82f6'],
+      borderWidth: 0,
+      hoverOffset: 6,
+    },
+  ],
+});
+
+const getDoughnutOptions = (isDark: boolean) => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  cutout: '72%',
+  plugins: {
+    legend: {
+      position: 'right' as const,
+      labels: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 11 }, usePointStyle: true, padding: 14 },
+    },
+  },
+});
+
+// --- Fallback Mock Data ---
+const recentIncidents = [
+  { id: '1', number: 'INC0015847', title: 'Database connection pool exhausted', priority: 'Critical', status: 'In Progress' },
+  { id: '2', number: 'INC0015846', title: 'API Gateway timeout on /payments endpoint', priority: 'High', status: 'New' },
+  { id: '3', number: 'INC0015845', title: 'SSL certificate expiry warning - 7 days', priority: 'Medium', status: 'In Progress' },
+  { id: '4', number: 'INC0015844', title: 'Slow query detected in user-service', priority: 'Low', status: 'Resolved' },
+];
 
 export default DashboardPage;

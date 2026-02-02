@@ -1,6 +1,23 @@
 import api from './api';
 import { Incident, IncidentActivity, IncidentFilters, PaginatedResponse, CreateIncidentData, UpdateIncidentData } from '@/types';
 
+// Backend environment response type
+interface BackendEnvironment {
+  id: string;
+  name: string;
+  description?: string;
+  environment_type?: string;
+}
+
+// Backend client response type
+interface BackendClient {
+  id: string;
+  name: string;
+  display_name?: string;
+  client_code: string;
+  environment?: string;
+}
+
 // Backend incident response type (snake_case)
 interface BackendIncident {
   id: string;
@@ -17,6 +34,9 @@ interface BackendIncident {
   assigned_group?: string;
   created_by_id: string;
   environment_id?: string;
+  environment?: BackendEnvironment;
+  client_id?: string;
+  client?: BackendClient;
   sla_target?: string;
   sla_breached: boolean;
   first_response_at?: string;
@@ -28,12 +48,32 @@ interface BackendIncident {
   workaround?: string;
   tags: string[];
   custom_fields: Record<string, unknown>;
+  source?: string;
+  alert_rule?: string;
+  external_id?: string;
   created_at: string;
   updated_at: string;
 }
 
 // Transform backend incident to frontend format
 function transformIncident(backendIncident: BackendIncident): Incident {
+  // Transform environment if present
+  const environment = backendIncident.environment ? {
+    id: backendIncident.environment.id,
+    name: backendIncident.environment.name,
+    description: backendIncident.environment.description,
+    environmentType: backendIncident.environment.environment_type,
+  } : undefined;
+
+  // Transform client if present - use any to match frontend Client interface
+  const client = backendIncident.client ? {
+    id: backendIncident.client.id,
+    name: backendIncident.client.name,
+    display_name: backendIncident.client.display_name || backendIncident.client.name,
+    client_code: backendIncident.client.client_code,
+    environment: backendIncident.client.environment,
+  } : undefined;
+
   return {
     id: backendIncident.id,
     incidentNumber: backendIncident.number,
@@ -45,6 +85,9 @@ function transformIncident(backendIncident: BackendIncident): Incident {
     impact: backendIncident.impact as Incident['impact'],
     urgency: backendIncident.urgency as Incident['urgency'],
     environmentId: backendIncident.environment_id,
+    environment: environment as any,
+    clientId: backendIncident.client_id,
+    client: client as any,
     assignedTo: backendIncident.assigned_to_id,
     assignedGroupId: backendIncident.assigned_group,
     resolutionNotes: backendIncident.resolution_notes,
@@ -57,6 +100,9 @@ function transformIncident(backendIncident: BackendIncident): Incident {
     reopenedCount: 0,
     tags: backendIncident.tags || [],
     customFields: backendIncident.custom_fields || {},
+    source: backendIncident.source,
+    alertRule: backendIncident.alert_rule,
+    externalId: backendIncident.external_id,
     createdAt: backendIncident.created_at,
     updatedAt: backendIncident.updated_at,
   };

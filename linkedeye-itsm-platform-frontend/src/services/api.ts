@@ -1,5 +1,18 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 
+// API Error Response type for proper type safety
+interface ApiErrorResponse {
+  detail?: string;
+  message?: string;
+  error?: string;
+}
+
+// Type guard for API error response
+const isApiErrorResponse = (data: unknown): data is ApiErrorResponse => {
+  return typeof data === 'object' && data !== null &&
+    ('detail' in data || 'message' in data || 'error' in data);
+};
+
 // Determine API URL - prefer relative path for production (works with nginx proxy)
 // Use absolute URL only if explicitly set and not empty
 const getApiBaseUrl = (): string => {
@@ -7,12 +20,12 @@ const getApiBaseUrl = (): string => {
 
   // If VITE_API_URL is set and is an absolute URL, use it
   if (envUrl && (envUrl.startsWith('http://') || envUrl.startsWith('https://'))) {
-    console.log('🌐 Using absolute API URL:', envUrl);
+    if (import.meta.env.DEV) console.log('🌐 Using absolute API URL:', envUrl);
     return envUrl;
   }
 
   // Otherwise, use relative path (works with nginx /api proxy)
-  console.log('🌐 Using relative API path: /api/v1');
+  if (import.meta.env.DEV) console.log('🌐 Using relative API path: /api/v1');
   return '/api/v1';
 };
 
@@ -64,7 +77,14 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Handle both 401 (Unauthorized) and 403 (Forbidden/Not authenticated) responses
+    const responseData = error.response?.data;
+    const isAuthError = error.response?.status === 401 ||
+      (error.response?.status === 403 &&
+       isApiErrorResponse(responseData) &&
+       responseData.detail?.toLowerCase()?.includes('not authenticated'));
+
+    if (isAuthError && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });

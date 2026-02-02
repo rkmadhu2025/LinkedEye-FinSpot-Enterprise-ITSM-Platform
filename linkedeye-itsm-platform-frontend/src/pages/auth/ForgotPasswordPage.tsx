@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
+import { useAppSelector } from '@/hooks/useRedux';
 import { authService } from '@/services/authService';
 
 const forgotPasswordSchema = z.object({
@@ -14,6 +15,8 @@ const forgotPasswordSchema = z.object({
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 const ForgotPasswordPage = () => {
+  const { theme } = useAppSelector((state) => state.ui);
+  const isDark = theme === 'dark';
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,8 +49,8 @@ const ForgotPasswordPage = () => {
         <div className="w-16 h-16 mx-auto bg-success-100 rounded-full flex items-center justify-center mb-6">
           <CheckCircle className="w-8 h-8 text-success-600" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h2>
-        <p className="text-gray-600 mb-8">
+        <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>Check your email</h2>
+        <p className={`mb-8 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
           We&apos;ve sent a password reset link to your email address. Please check your inbox and follow the instructions.
         </p>
         <Link to="/login">
@@ -63,15 +66,15 @@ const ForgotPasswordPage = () => {
     <div>
       <Link
         to="/login"
-        className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-8"
+        className={`inline-flex items-center gap-2 text-sm mb-8 ${isDark ? 'text-gray-400 hover:text-gray-100' : 'text-gray-600 hover:text-gray-900'}`}
       >
         <ArrowLeft size={16} />
         Back to sign in
       </Link>
 
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Forgot your password?</h2>
-        <p className="mt-2 text-gray-600">
+        <h2 className={`text-2xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>Forgot your password?</h2>
+        <p className={`mt-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
           No worries! Enter your email and we&apos;ll send you a reset link.
         </p>
       </div>

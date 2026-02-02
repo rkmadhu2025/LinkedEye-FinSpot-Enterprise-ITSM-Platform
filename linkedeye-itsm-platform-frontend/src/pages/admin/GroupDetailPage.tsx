@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit, Trash2, Users, Mail, UserPlus, X } from 'lucide-react';
 import { Card, CardHeader, CardBody, Button, Avatar, Badge, Modal, Input, Spinner } from '@/components/ui';
+import { useAppSelector } from '@/hooks/useRedux';
 import { userService } from '@/services/userService';
 import { Group, User } from '@/types';
 import toast from 'react-hot-toast';
@@ -9,6 +10,8 @@ import toast from 'react-hot-toast';
 const GroupDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { theme } = useAppSelector((state) => state.ui);
+  const isDark = theme === 'dark';
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -145,8 +148,8 @@ const GroupDetailPage = () => {
   if (!group) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-xl font-semibold text-gray-900">Group not found</h2>
-        <p className="text-gray-500 mt-2">The group you're looking for doesn't exist.</p>
+        <h2 className="text-xl font-semibold" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>Group not found</h2>
+        <p className="mt-2" style={{ color: isDark ? '#94a3b8' : '#6b7280' }}>The group you're looking for doesn't exist.</p>
         <Link to="/groups" className="mt-4 inline-block text-primary-600 hover:text-primary-700">
           Back to Groups
         </Link>
@@ -158,11 +161,11 @@ const GroupDetailPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link to="/groups" className="p-2 hover:bg-gray-100 rounded-lg">
+          <Link to="/groups" className="p-2 rounded-lg" style={{ color: isDark ? '#f8fafc' : undefined }}>
             <ArrowLeft size={20} />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{group.name}</h1>
+            <h1 className="text-2xl font-bold" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>{group.name}</h1>
             <p className="text-gray-500 font-mono text-sm">{group.code}</p>
           </div>
         </div>
@@ -184,7 +187,7 @@ const GroupDetailPage = () => {
                 <Users size={32} className="text-primary-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{group.name}</h2>
+                <h2 className="text-xl font-bold" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>{group.name}</h2>
                 <p className="text-gray-500 font-mono text-sm">{group.code}</p>
               </div>
             </div>
@@ -230,7 +233,8 @@ const GroupDetailPage = () => {
                 {members.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-3 rounded-lg"
+                    style={{ background: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb' }}
                   >
                     <Link to={`/users/${member.id}`} className="flex items-center gap-3">
                       <Avatar
@@ -238,7 +242,7 @@ const GroupDetailPage = () => {
                         size="md"
                       />
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>
                           {member.displayName || `${member.firstName} ${member.lastName}`}
                         </p>
                         <p className="text-sm text-gray-500">{member.email}</p>
@@ -320,7 +324,8 @@ const GroupDetailPage = () => {
               {searchResults.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer"
+                  className="flex items-center justify-between p-3 rounded-lg cursor-pointer"
+                  style={{ background: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb' }}
                   onClick={() => handleAddMember(user.id)}
                 >
                   <div className="flex items-center gap-3">
@@ -329,7 +334,7 @@ const GroupDetailPage = () => {
                       size="sm"
                     />
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>
                         {user.displayName || `${user.firstName} ${user.lastName}`}
                       </p>
                       <p className="text-xs text-gray-500">{user.email}</p>

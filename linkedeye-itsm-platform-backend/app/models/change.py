@@ -89,6 +89,7 @@ class Change(BaseModel):
     # Approval and Review
     approval_required = Column(Boolean, default=True, nullable=False)
     cab_required = Column(Boolean, default=False, nullable=False)  # Change Advisory Board
+    approval_chain = Column(JSONB, default=list, nullable=True)  # [{tier:1, role:"requester_manager", approver_id:null, status:"pending", approved_at:null}]
     
     # Results and Closure
     success_criteria = Column(Text, nullable=True)

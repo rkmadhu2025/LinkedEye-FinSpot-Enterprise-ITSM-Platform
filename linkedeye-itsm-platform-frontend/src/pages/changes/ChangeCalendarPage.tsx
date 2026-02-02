@@ -11,6 +11,8 @@ import { ChangeRequest } from '@/types';
 const ChangeCalendarPage = () => {
   const dispatch = useAppDispatch();
   const { calendarChanges, isLoading } = useAppSelector((state) => state.changes);
+  const { theme } = useAppSelector((state) => state.ui);
+  const isDark = theme === 'dark';
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -88,8 +90,8 @@ const ChangeCalendarPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Change Calendar</h1>
-          <p className="text-gray-500 mt-1">View scheduled changes</p>
+          <h1 className="text-2xl font-bold" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>Change Calendar</h1>
+          <p className="mt-1" style={{ color: isDark ? '#94a3b8' : '#6b7280' }}>View scheduled changes</p>
         </div>
         <div className="flex items-center gap-3">
           <Link to="/changes">
@@ -128,11 +130,12 @@ const ChangeCalendarPage = () => {
             </CardHeader>
             <CardBody className="p-0">
               {/* Week days header */}
-              <div className="grid grid-cols-7 border-b border-gray-200">
+              <div className="grid grid-cols-7 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb' }}>
                 {weekDays.map((day) => (
                   <div
                     key={day}
-                    className="py-3 text-center text-sm font-medium text-gray-600"
+                    className="py-3 text-center text-sm font-medium"
+                    style={{ color: isDark ? '#94a3b8' : '#4b5563' }}
                   >
                     {day}
                   </div>
@@ -143,7 +146,7 @@ const ChangeCalendarPage = () => {
               <div className="grid grid-cols-7">
                 {/* Empty cells for days before the month starts */}
                 {[...Array(startOfMonth(currentDate).getDay())].map((_, i) => (
-                  <div key={`empty-${i}`} className="min-h-[100px] p-2 bg-gray-50 border-b border-r border-gray-100" />
+                  <div key={`empty-${i}`} className="min-h-[100px] p-2 border-b border-r" style={{ background: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb', borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6' }} />
                 ))}
 
                 {days.map((day) => {

@@ -4,46 +4,54 @@ import { Problem, ProblemFilters, PaginatedResponse, CreateProblemData, UpdatePr
 // Backend problem response type (snake_case)
 interface BackendProblem {
   id: string;
-  number: string;
+  problem_number: string;  // Backend returns problem_number, not number
   title: string;
   description: string;
   category?: string;
   priority: string;
   status: string;
+  impact?: string;
+  assigned_to?: string;
   assigned_to_id?: string;
-  created_by_id: string;
+  assigned_group_id?: string;
+  reported_by?: string;
+  created_by_id?: string;
   environment_id?: string;
   root_cause?: string;
+  workaround?: string;
+  permanent_fix?: string;
   resolution_summary?: string;
   resolved_at?: string;
   closed_at?: string;
-  related_incidents: string[];
-  related_changes: string[];
-  affected_assets: string[];
-  tags: string[];
-  custom_fields: Record<string, unknown>;
+  related_incidents?: string[];
+  related_changes?: string[];
+  affected_assets?: string[];
+  tags?: string[];
+  custom_fields?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+  is_active?: boolean;
 }
 
 // Transform backend problem to frontend format
 function transformProblem(backendProblem: BackendProblem): Problem {
   return {
     id: backendProblem.id,
-    problemNumber: backendProblem.number,
+    problemNumber: backendProblem.problem_number || `PRB${String(Date.now()).slice(-7)}`,
     title: backendProblem.title,
     description: backendProblem.description,
-    status: backendProblem.status as Problem['status'],
-    priority: backendProblem.priority as Problem['priority'],
+    status: (backendProblem.status || 'open') as Problem['status'],
+    priority: (backendProblem.priority || 'medium') as Problem['priority'],
     category: (backendProblem.category || 'other') as Problem['category'],
-    impact: 'medium',
+    impact: (backendProblem.impact || 'medium') as Problem['impact'],
     environmentId: backendProblem.environment_id,
-    assignedTo: backendProblem.assigned_to_id,
-    reportedBy: backendProblem.created_by_id,
+    assignedTo: backendProblem.assigned_to || backendProblem.assigned_to_id,
+    assignedGroupId: backendProblem.assigned_group_id,
+    reportedBy: backendProblem.reported_by || backendProblem.created_by_id || '',
     rootCause: backendProblem.root_cause,
-    workaround: undefined,
-    permanentFix: backendProblem.resolution_summary,
-    workaroundAvailable: false,
+    workaround: backendProblem.workaround,
+    permanentFix: backendProblem.permanent_fix || backendProblem.resolution_summary,
+    workaroundAvailable: !!backendProblem.workaround,
     resolvedAt: backendProblem.resolved_at,
     closedAt: backendProblem.closed_at,
     tags: backendProblem.tags || [],
@@ -144,5 +152,28 @@ export const problemService = {
 
   async deleteProblem(id: string): Promise<void> {
     await api.delete(`/problems/${id}`);
+  },
+
+  async addComment(id: string, comment: string, isPublic: boolean = true): Promise<any> {
+    const response = await api.post(`/problems/${id}/activities`, {
+      activity_type: 'comment',
+      comment,
+      is_public: isPublic,
+    });
+    return response.data;
+  },
+
+  async getAttachments(id: string): Promise<any[]> {
+    const response = await api.get(`/problems/${id}/attachments`);
+    return response.data;
+  },
+
+  async addAttachment(id: string, data: { filename: string; content_type: string; data: string; description?: string }): Promise<any> {
+    const response = await api.post(`/problems/${id}/attachments`, data);
+    return response.data;
+  },
+
+  async deleteAttachment(id: string, attachmentId: string): Promise<void> {
+    await api.delete(`/problems/${id}/attachments/${attachmentId}`);
   },
 };

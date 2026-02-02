@@ -1,22 +1,23 @@
 import api from './api';
-import { User, Group, Role, PaginatedResponse } from '@/types';
+import { User, Group, Role, PaginatedResponse, CreateUserData } from '@/types';
 
-// Backend user response type (snake_case)
+// Backend user response type (camelCase)
 interface BackendUser {
   id: string;
   email: string;
   username?: string;
-  first_name: string;
-  last_name: string;
-  display_name?: string;
+  firstName: string;
+  lastName: string;
+  displayName?: string;
   role: string;
   department?: string;
-  job_title?: string;
+  jobTitle?: string;
   phone?: string;
   status: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  roles?: Array<{ id: string; name: string; code: string }>;
 }
 
 // Backend group response type (snake_case)
@@ -45,23 +46,40 @@ interface BackendRole {
 
 // Transform backend user to frontend format
 function transformUser(backendUser: BackendUser): User {
+  const firstName = backendUser.firstName || '';
+  const lastName = backendUser.lastName || '';
+  const displayName = backendUser.displayName ||
+    (firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || backendUser.email || 'Unknown User');
+
+  const roleCode = backendUser.role || 'user';
+  const roleName = roleCode.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
   return {
     id: backendUser.id,
     organizationId: '',
     email: backendUser.email,
-    firstName: backendUser.first_name,
-    lastName: backendUser.last_name,
-    displayName: backendUser.display_name || `${backendUser.first_name} ${backendUser.last_name}`,
+    firstName: firstName,
+    lastName: lastName,
+    displayName: displayName,
     phone: backendUser.phone,
-    jobTitle: backendUser.job_title,
+    jobTitle: backendUser.jobTitle,
     department: backendUser.department,
     timezone: 'UTC',
     authProvider: 'local',
     status: backendUser.status as User['status'],
     emailVerified: true,
-    createdAt: backendUser.created_at,
-    updatedAt: backendUser.updated_at,
-    roles: [],
+    createdAt: backendUser.createdAt,
+    updatedAt: backendUser.updatedAt,
+    roles: [
+      {
+        id: roleCode,
+        name: roleName,
+        code: roleCode,
+        permissions: [],
+        isSystem: true,
+        isActive: true,
+      },
+    ],
     groups: [],
   };
 }
@@ -135,16 +153,18 @@ export const userService = {
     return transformUser(response.data);
   },
 
-  async createUser(data: Partial<User> & { password: string }): Promise<User> {
+  async createUser(data: CreateUserData | (Partial<User> & { password: string })): Promise<User> {
     // Transform frontend camelCase to backend snake_case
+    // Support both CreateUserData (snake_case) and User-based (camelCase) formats
     const backendData = {
       email: data.email,
       username: data.email?.split('@')[0],
-      first_name: data.firstName,
-      last_name: data.lastName,
+      first_name: 'first_name' in data ? data.first_name : (data as Partial<User>).firstName,
+      last_name: 'last_name' in data ? data.last_name : (data as Partial<User>).lastName,
       password: data.password,
+      role: 'role' in data ? data.role : undefined,
       department: data.department,
-      job_title: data.jobTitle,
+      job_title: 'job_title' in data ? data.job_title : (data as Partial<User>).jobTitle,
       phone: data.phone,
     };
     const response = await api.post<BackendUser>('/users', backendData);
@@ -226,8 +246,16 @@ export const userService = {
   },
 
   async getRoles(): Promise<Role[]> {
-    const response = await api.get<BackendRole[]>('/roles');
-    return response.data.map(transformRole);
+    const response = await api.get<Array<{ value: string; label: string; description: string }>>('/users/roles');
+    return response.data.map((role) => ({
+      id: role.value,
+      name: role.label,
+      code: role.value,
+      description: role.description,
+      permissions: [],
+      isSystem: true,
+      isActive: true,
+    }));
   },
 
   async getRoleById(id: string): Promise<Role> {
@@ -266,17 +294,17 @@ export const userService = {
   },
 
   async assignRole(userId: string, roleId: string): Promise<void> {
-    await api.post(`/users/${userId}/roles`, { role_id: roleId });
+    await api.put(`/users/${userId}`, { role: roleId });
   },
 
   async removeRole(userId: string, roleId: string): Promise<void> {
-    await api.delete(`/users/${userId}/roles/${roleId}`);
+    await api.put(`/users/${userId}`, { role: 'user' });
   },
 
   async searchUsers(query: string, limit: number = 10): Promise<User[]> {
-    const response = await api.get<BackendUser[]>('/users/search', {
-      params: { q: query, limit },
+    const response = await api.get<BackendUser[]>('/users', {
+      params: { search: query, limit, skip: 0 },
     });
-    return response.data.map(transformUser);
+    return response.data.map(transformUser).slice(0, limit);
   },
 };

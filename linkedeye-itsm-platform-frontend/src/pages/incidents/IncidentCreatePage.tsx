@@ -21,7 +21,7 @@ import toast from 'react-hot-toast';
 
 const incidentSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
-  description: z.string().optional(),
+  description: z.string().min(1, 'Description is required'),
   priority: z.enum(['critical', 'high', 'medium', 'low']),
   category: z.enum(['hardware', 'software', 'network', 'security', 'access', 'database', 'other']),
   impact: z.enum(['critical', 'high', 'medium', 'low']).optional(),
@@ -39,6 +39,8 @@ const IncidentCreatePage = () => {
   const dispatch = useAppDispatch();
   const { isSubmitting } = useAppSelector((state) => state.incidents);
   const { users, groups } = useAppSelector((state) => state.users);
+  const { theme } = useAppSelector((state) => state.ui);
+  const isDark = theme === 'dark';
 
   const [environments] = useState([
     { id: '1', name: 'Production' },
@@ -139,12 +141,12 @@ const IncidentCreatePage = () => {
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Link to="/incidents" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-          <ArrowLeft size={20} />
+        <Link to="/incidents" className="p-2 rounded-lg transition-colors" style={{ background: 'transparent' }} onMouseEnter={(e) => e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.03)' : '#f3f4f6'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+          <ArrowLeft size={20} style={{ color: isDark ? '#cbd5e1' : undefined }} />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Create Incident</h1>
-          <p className="text-gray-500 mt-1">Report a new IT incident</p>
+          <h1 className="text-2xl font-bold" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>Create Incident</h1>
+          <p className="mt-1" style={{ color: isDark ? '#94a3b8' : '#6b7280' }}>Report a new IT incident</p>
         </div>
       </div>
 
@@ -167,6 +169,7 @@ const IncidentCreatePage = () => {
                 placeholder="Provide detailed information about the incident..."
                 rows={5}
                 error={errors.description?.message}
+                required
                 {...register('description')}
               />
 
@@ -198,10 +201,10 @@ const IncidentCreatePage = () => {
                   {...register('urgency')}
                 />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{ color: isDark ? '#cbd5e1' : '#374151' }}>
                     Calculated Priority
                   </label>
-                  <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium capitalize">
+                  <div className="px-3 py-2 border rounded-lg text-sm font-medium capitalize" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : '#f3f4f6', borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#d1d5db', color: isDark ? '#f8fafc' : undefined }}>
                     {calculatePriority(impact, urgency)}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">

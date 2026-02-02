@@ -490,6 +490,17 @@ async def submit_change_for_approval(
             )
 
         change.status = ChangeStatus.PENDING_APPROVAL
+
+        # Initialize 3-tier approval chain if not already set
+        if not change.approval_chain:
+            change.approval_chain = [
+                {"tier": 1, "role": "requester_manager", "approver_id": None, "status": "pending", "approved_at": None},
+                {"tier": 2, "role": "client_approver", "approver_id": None, "status": "pending", "approved_at": None},
+                {"tier": 3, "role": "cab_reviewer", "approver_id": None, "status": "pending", "approved_at": None},
+            ]
+            from sqlalchemy.orm.attributes import flag_modified
+            flag_modified(change, "approval_chain")
+
         db.commit()
         db.refresh(change)
 
@@ -515,7 +526,7 @@ async def approve_change(
     current_user: User = Depends(require_agent),
     db: Session = Depends(get_db)
 ):
-    """Approve a change request."""
+    """Approve a change request with 3-tier workflow. Approves the next pending tier."""
     try:
         change = db.query(Change).filter(
             Change.id == change_id,
@@ -544,11 +555,31 @@ async def approve_change(
         )
         db.add(approval)
 
-        change.status = ChangeStatus.SCHEDULED
+        # Update approval chain - approve next pending tier
+        chain = list(change.approval_chain or [])
+        all_approved = True
+        tier_approved = False
+        for step in chain:
+            if step.get("status") == "pending" and not tier_approved:
+                step["status"] = "approved"
+                step["approver_id"] = str(current_user.id)
+                step["approved_at"] = datetime.now(timezone.utc).isoformat()
+                tier_approved = True
+            if step.get("status") == "pending":
+                all_approved = False
+
+        change.approval_chain = chain
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(change, "approval_chain")
+
+        # Only move to SCHEDULED when all tiers are approved
+        if all_approved:
+            change.status = ChangeStatus.SCHEDULED
+
         db.commit()
         db.refresh(change)
 
-        logger.info(f"Change {change.number} approved by user {current_user.id}")
+        logger.info(f"Change {change.number} tier approved by user {current_user.id}, fully_approved={all_approved}")
 
         return change
 

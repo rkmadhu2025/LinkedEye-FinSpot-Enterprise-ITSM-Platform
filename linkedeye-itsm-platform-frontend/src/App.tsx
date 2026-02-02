@@ -86,6 +86,30 @@ const ProfilePage = lazy(() => import('./pages/profile/ProfilePage'));
 const OnCallSchedulesPage = lazy(() => import('./pages/on-call/OnCallSchedulesPage'));
 const EscalationPoliciesPage = lazy(() => import('./pages/on-call/EscalationPoliciesPage'));
 const EscalationDashboardPage = lazy(() => import('./pages/on-call/EscalationDashboardPage'));
+const OnCallRotationPage = lazy(() => import('./pages/on-call/OnCallRotationPage'));
+
+// Status Pages (lazy loaded)
+const StatusPagesListPage = lazy(() => import('./pages/status/StatusPagesListPage'));
+const StatusPageEditorPage = lazy(() => import('./pages/status/StatusPageEditorPage'));
+const PublicStatusPage = lazy(() => import('./pages/status/PublicStatusPage'));
+
+// Postmortems (lazy loaded)
+const PostmortemsListPage = lazy(() => import('./pages/postmortems/PostmortemsListPage'));
+const PostmortemEditorPage = lazy(() => import('./pages/postmortems/PostmortemEditorPage'));
+const PostmortemDetailPage = lazy(() => import('./pages/postmortems/PostmortemDetailPage'));
+
+// Runbooks (lazy loaded)
+const RunbooksListPage = lazy(() => import('./pages/runbooks/RunbooksListPage'));
+const RunbookEditorPage = lazy(() => import('./pages/runbooks/RunbookEditorPage'));
+const RunbookExecutionPage = lazy(() => import('./pages/runbooks/RunbookExecutionPage'));
+
+// Alert Intelligence (lazy loaded)
+const AlertIntelligenceDashboard = lazy(() => import('./pages/alert-intelligence/AlertIntelligenceDashboard'));
+const AlertGroupDetailPage = lazy(() => import('./pages/alert-intelligence/AlertGroupDetailPage'));
+
+// ChatOps (lazy loaded)
+const ChatOpsConfigPage = lazy(() => import('./pages/chatops/ChatOpsConfigPage'));
+const ChatOpsMessagesPage = lazy(() => import('./pages/chatops/ChatOpsMessagesPage'));
 
 // Infrastructure Pages (lazy loaded)
 const InfrastructureDashboardPage = lazy(() => import('./pages/infrastructure/InfrastructureDashboardPage'));
@@ -221,6 +245,32 @@ function App() {
           <Route path="/on-call/dashboard" element={<EscalationDashboardPage />} />
           <Route path="/on-call/schedules" element={<OnCallSchedulesPage />} />
           <Route path="/on-call/escalation-policies" element={<EscalationPoliciesPage />} />
+          <Route path="/on-call/rotations" element={<OnCallRotationPage />} />
+
+          {/* Status Pages */}
+          <Route path="/status-pages" element={<StatusPagesListPage />} />
+          <Route path="/status-pages/create" element={<StatusPageEditorPage />} />
+          <Route path="/status-pages/:id/edit" element={<StatusPageEditorPage />} />
+
+          {/* Postmortems */}
+          <Route path="/postmortems" element={<PostmortemsListPage />} />
+          <Route path="/postmortems/create" element={<PostmortemEditorPage />} />
+          <Route path="/postmortems/:id" element={<PostmortemDetailPage />} />
+          <Route path="/postmortems/:id/edit" element={<PostmortemEditorPage />} />
+
+          {/* Runbooks */}
+          <Route path="/runbooks" element={<RunbooksListPage />} />
+          <Route path="/runbooks/create" element={<RunbookEditorPage />} />
+          <Route path="/runbooks/:id/edit" element={<RunbookEditorPage />} />
+          <Route path="/runbooks/:id/execute" element={<RunbookExecutionPage />} />
+
+          {/* Alert Intelligence */}
+          <Route path="/alert-intelligence" element={<AlertIntelligenceDashboard />} />
+          <Route path="/alert-intelligence/groups/:id" element={<AlertGroupDetailPage />} />
+
+          {/* ChatOps */}
+          <Route path="/chatops" element={<ChatOpsMessagesPage />} />
+          <Route path="/chatops/config" element={<ChatOpsConfigPage />} />
 
           {/* User Profile & Settings */}
           <Route path="/profile" element={<ProfilePage />} />
@@ -230,6 +280,9 @@ function App() {
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
         </Route>
+
+        {/* Public Status Page (no auth) */}
+        <Route path="/status/:slug" element={<PublicStatusPage />} />
 
         {/* 404 */}
         <Route

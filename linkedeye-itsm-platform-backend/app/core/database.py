@@ -2,16 +2,47 @@
 Database configuration and session management.
 """
 from sqlalchemy import create_engine, MetaData, text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
 from sqlalchemy.pool import StaticPool
 from app.core.config import settings
 import logging
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 # Import all models to ensure they're registered with SQLAlchemy
 # Models are imported in init_db to avoid circular imports
 
 logger = logging.getLogger(__name__)
+
+
+def sanitize_database_url(url: str) -> tuple:
+    """
+    Remove unsupported parameters from database URL and extract schema.
+    Returns (sanitized_url, schema).
+    """
+    parsed = urlparse(url)
+    query_params = parse_qs(parsed.query)
+
+    # Extract schema if present
+    schema = query_params.pop('schema', ['public'])[0] if 'schema' in query_params else 'public'
+
+    # Rebuild query string without schema
+    new_query = urlencode(query_params, doseq=True)
+
+    # Rebuild URL
+    sanitized = urlunparse((
+        parsed.scheme,
+        parsed.netloc,
+        parsed.path,
+        parsed.params,
+        new_query,
+        parsed.fragment
+    ))
+
+    return sanitized, schema
+
+
+# Sanitize database URL to remove unsupported 'schema' parameter
+database_url, db_schema = sanitize_database_url(settings.database_url)
 
 # Database engine with connection pooling
 pool_size = getattr(settings, 'db_pool_size', 20)
@@ -19,24 +50,30 @@ max_overflow = getattr(settings, 'db_max_overflow', 10)
 pool_recycle = getattr(settings, 'db_pool_recycle', 3600)
 pool_pre_ping = getattr(settings, 'db_pool_pre_ping', True)
 
+# Set search_path via options if schema is specified
+connect_args = {
+    "connect_timeout": 10,
+    "application_name": "itsm_platform"
+}
+if db_schema and db_schema != 'public':
+    connect_args["options"] = f"-c search_path={db_schema}"
+
 engine = create_engine(
-    settings.database_url,
+    database_url,
     pool_size=pool_size,
     max_overflow=max_overflow,
     pool_pre_ping=pool_pre_ping,
     pool_recycle=pool_recycle,
     echo=settings.debug,
-    connect_args={
-        "connect_timeout": 10,
-        "application_name": "itsm_platform"
-    }
+    connect_args=connect_args
 )
 
 # Session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Base class for models
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 # Metadata for migrations
 metadata = MetaData()
@@ -60,7 +97,8 @@ def init_db():
             ChangeApproval, AssetRelationship, Problem, Alert, Integration,
             Group, NetworkDevice, NetworkTopology, Report, MLModel,
             Recommendation, Anomaly, Setting, AuditLog, Notification,
-            IncidentActivity
+            IncidentActivity, AlertSuppression, NotificationPreference,
+            NotificationLog, EmailTemplate
         )
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables created successfully")

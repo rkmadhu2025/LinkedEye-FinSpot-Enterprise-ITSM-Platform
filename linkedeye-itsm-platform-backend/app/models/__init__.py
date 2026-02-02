@@ -39,6 +39,9 @@ from app.models.alert import (
     AlertSeverity,
     AlertStatus
 )
+from app.models.monitoring_alert import (
+    MonitoringAlert
+)
 from app.models.integration import (
     Integration,
     IntegrationType,
@@ -80,6 +83,84 @@ from app.models.settings import (
 )
 from app.models.audit_log import AuditLog
 from app.models.notification import Notification, NotificationType
+from app.models.alert_suppression import AlertSuppression, SuppressionType
+from app.models.client import Client, ClientEnvironment, ClientStatus
+from app.models.notification_preference import (
+    NotificationPreference,
+    NotificationSeverity,
+    DigestFrequency
+)
+from app.models.notification_log import (
+    NotificationLog,
+    NotificationChannel,
+    DeliveryStatus
+)
+from app.models.email_template import EmailTemplate, TemplateCategory
+from app.models.on_call import (
+    EscalationPolicy,
+    EscalationLevel,
+    OnCallSchedule,
+    OnCallScheduleMember,
+    OnCallShift,
+    OnCallOverride,
+    OnCallIncident,
+    OnCallHandoffNote,
+    OnCallAnalytics,
+    RotationType,
+    ShiftType,
+    ShiftStatus,
+    OverrideType,
+    OverrideStatus,
+    Urgency,
+    EscalationTargetType,
+)
+from app.models.network_layer import (
+    InfrastructureHost,
+    HostPort,
+    NetworkConnection,
+    HostMicroservice,
+    DeviceTemplate,
+    InfrastructureTopology,
+    NetworkLayerType,
+    SwitchNetworkType,
+    DeviceVendor,
+    ServerType,
+    ConnectionRelationshipType,
+    PortStatus,
+    PortType,
+)
+from app.models.asset_workflow import (
+    ApprovalWorkflowTemplate,
+    ApprovalWorkflowStep,
+    AssetRequest,
+    AssetRequestApproval,
+    AssetRequestComment,
+    AssetRequestHistory,
+    UserAssetAssignment,
+    AssetLifecycleEvent,
+    AssetRequestType,
+    AssetRequestStatus,
+    ApprovalAction,
+    AssetLifecycleState,
+    ApprovalLevelType,
+)
+
+from app.models.status_page import (
+    StatusPage, StatusPageComponent, StatusPageIncident,
+    StatusPageIncidentUpdate, StatusPageSubscriber, StatusPageUptimeRecord,
+)
+from app.models.postmortem import (
+    Postmortem, PostmortemActionItem, PostmortemComment,
+)
+from app.models.runbook import (
+    Runbook, RunbookStep, RunbookExecution,
+)
+from app.models.alert_intelligence import (
+    AlertGroup, AlertCorrelation, AlertPattern, AlertNoiseStats,
+)
+from app.models.chatops import (
+    ChatOpsChannel, ChatOpsCommand, ChatOpsMessage,
+)
 
 __all__ = [
     "BaseModel",
@@ -113,6 +194,7 @@ __all__ = [
     "Alert",
     "AlertSeverity",
     "AlertStatus",
+    "MonitoringAlert",
     "Integration",
     "IntegrationType",
     "IntegrationStatus",
@@ -141,4 +223,86 @@ __all__ = [
     "AuditLog",
     "Notification",
     "NotificationType",
+    "AlertSuppression",
+    "SuppressionType",
+    "NotificationPreference",
+    "NotificationSeverity",
+    "DigestFrequency",
+    "NotificationLog",
+    "NotificationChannel",
+    "DeliveryStatus",
+    "EmailTemplate",
+    "TemplateCategory",
+    "Client",
+    "ClientEnvironment",
+    "ClientStatus",
+    # On-Call Management
+    "EscalationPolicy",
+    "EscalationLevel",
+    "OnCallSchedule",
+    "OnCallScheduleMember",
+    "OnCallShift",
+    "OnCallOverride",
+    "OnCallIncident",
+    "OnCallHandoffNote",
+    "OnCallAnalytics",
+    "RotationType",
+    "ShiftType",
+    "ShiftStatus",
+    "OverrideType",
+    "OverrideStatus",
+    "Urgency",
+    "EscalationTargetType",
+    # Network Flow Architecture
+    "InfrastructureHost",
+    "HostPort",
+    "NetworkConnection",
+    "HostMicroservice",
+    "DeviceTemplate",
+    "InfrastructureTopology",
+    "NetworkLayerType",
+    "SwitchNetworkType",
+    "DeviceVendor",
+    "ServerType",
+    "ConnectionRelationshipType",
+    "PortStatus",
+    "PortType",
+    # Asset Workflow
+    "ApprovalWorkflowTemplate",
+    "ApprovalWorkflowStep",
+    "AssetRequest",
+    "AssetRequestApproval",
+    "AssetRequestComment",
+    "AssetRequestHistory",
+    "UserAssetAssignment",
+    "AssetLifecycleEvent",
+    "AssetRequestType",
+    "AssetRequestStatus",
+    "ApprovalAction",
+    "AssetLifecycleState",
+    "ApprovalLevelType",
+    # Status Pages
+    "StatusPage",
+    "StatusPageComponent",
+    "StatusPageIncident",
+    "StatusPageIncidentUpdate",
+    "StatusPageSubscriber",
+    "StatusPageUptimeRecord",
+    # Postmortems
+    "Postmortem",
+    "PostmortemActionItem",
+    "PostmortemComment",
+    # Runbooks
+    "Runbook",
+    "RunbookStep",
+    "RunbookExecution",
+    # Alert Intelligence
+    "AlertGroup",
+    "AlertCorrelation",
+    "AlertPattern",
+    "AlertNoiseStats",
+    # ChatOps
+    "ChatOpsChannel",
+    "ChatOpsCommand",
+    "ChatOpsMessage",
 ]

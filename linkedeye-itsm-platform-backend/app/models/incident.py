@@ -71,6 +71,10 @@ class Incident(BaseModel):
     first_response_at = Column(DateTime(timezone=True), nullable=True)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     closed_at = Column(DateTime(timezone=True), nullable=True)
+
+    # TAT (Turnaround Time) Tracking
+    tat_target_minutes = Column(Integer, nullable=True)  # P1=15, P2=60, P3=240, P4=1440
+    tat_breach_at = Column(DateTime(timezone=True), nullable=True)
     
     # Environment and Assets
     environment_id = Column(UUID(as_uuid=True), ForeignKey("environments.id"), nullable=True)

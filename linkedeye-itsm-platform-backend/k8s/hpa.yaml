@@ -2,14 +2,14 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: itsm-backend-hpa
-  namespace: itsm-platform
+  namespace: incident-linkedeye-itsm
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: itsm-backend
-  minReplicas: 3
-  maxReplicas: 10
+    name: linkedeye-backend
+  minReplicas: 2
+  maxReplicas: 2
   metrics:
   - type: Resource
     resource:
@@ -28,12 +28,12 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: itsm-frontend-hpa
-  namespace: itsm-platform
+  namespace: incident-linkedeye-itsm
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: itsm-frontend
+    name: linkedeye-frontend
   minReplicas: 2
   maxReplicas: 5
   metrics:

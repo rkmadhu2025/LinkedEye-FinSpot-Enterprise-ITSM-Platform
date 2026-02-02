@@ -64,12 +64,14 @@ export interface Role {
   isActive: boolean;
 }
 
+export type GroupType = 'team' | 'support' | 'management' | 'cab' | 'security' | 'operations' | 'custom';
+
 export interface Group {
   id: string;
   name: string;
   code: string;
   description?: string;
-  groupType: string;
+  groupType: GroupType;
   managerId?: string;
   manager?: User;
   email?: string;
@@ -97,7 +99,8 @@ export interface AuthState {
 }
 
 export interface LoginCredentials {
-  email: string;
+  email?: string;
+  username?: string;
   password: string;
   rememberMe?: boolean;
 }
@@ -113,6 +116,17 @@ export interface RegisterData {
   organizationName?: string;
 }
 
+export interface CreateUserData {
+  email: string;
+  first_name: string;
+  last_name: string;
+  password: string;
+  role?: string;
+  department?: string;
+  job_title?: string;
+  phone?: string;
+}
+
 // =====================================
 // Incident Types
 // =====================================
@@ -124,6 +138,7 @@ export type IncidentCategory = 'hardware' | 'software' | 'network' | 'security' 
 export interface Incident {
   id: string;
   incidentNumber: string;
+  number?: string; // Backend uses 'number'
   title: string;
   description?: string;
   status: IncidentStatus;
@@ -133,6 +148,8 @@ export interface Incident {
   urgency: Priority;
   environmentId?: string;
   environment?: Environment;
+  clientId?: string;
+  client?: Client;
   affectedAssetId?: string;
   affectedAsset?: Asset;
   slaId?: string;
@@ -154,6 +171,9 @@ export interface Incident {
   reopenedCount: number;
   tags: string[];
   customFields: Record<string, unknown>;
+  source?: string;
+  alertRule?: string;
+  externalId?: string;
   createdAt: string;
   updatedAt: string;
   activities?: IncidentActivity[];
@@ -561,49 +581,37 @@ export interface Environment {
 // =====================================
 
 export type IntegrationType =
-  | 'prometheus'
-  | 'alertmanager'
-  | 'grafana'
-  | 'kubernetes'
-  | 'jenkins'
-  | 'gitlab'
-  | 'github'
-  | 'jira'
-  | 'slack'
-  | 'teams'
-  | 'pagerduty'
-  | 'datadog'
-  | 'newrelic'
-  | 'splunk'
-  | 'elasticsearch'
-  | 'custom';
+  | 'monitoring'
+  | 'ticketing'
+  | 'notification'
+  | 'cloud'
+  | 'api'
+  | 'webhook';
 
-export type IntegrationStatus = 'active' | 'inactive' | 'error' | 'pending';
+export type IntegrationStatus = 'active' | 'inactive' | 'error' | 'testing';
 
 export interface Integration {
   id: string;
   name: string;
-  type: IntegrationType;
+  integration_type: IntegrationType;
   status: IntegrationStatus;
-  description?: string;
-  config: Record<string, unknown>;
-  credentials?: Record<string, unknown>;
-  webhookUrl?: string;
-  apiEndpoint?: string;
-  lastSyncAt?: string;
-  syncFrequencyMinutes?: number;
-  errorMessage?: string;
-  isActive: boolean;
-  createdBy?: string;
-  createdAt: string;
-  updatedAt: string;
+  provider?: string;
+  configuration: Record<string, unknown>;
+  webhook_url?: string;
+  last_sync_at?: string;
+  sync_status?: string;
+  sync_error?: string;
+  enabled_features: string[];
+  meta_data: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface MonitoringAlert {
   id: string;
   integrationId: string;
   integration?: Integration;
-  alertName: string;
+  name: string;
   severity: Priority;
   status: 'firing' | 'resolved' | 'acknowledged';
   source: string;
@@ -622,13 +630,14 @@ export interface MonitoringAlert {
 
 export interface CreateIntegrationData {
   name: string;
-  type: IntegrationType;
-  description?: string;
-  config: Record<string, unknown>;
+  integration_type: IntegrationType;
+  provider?: string;
+  configuration?: Record<string, unknown>;
   credentials?: Record<string, unknown>;
-  webhookUrl?: string;
-  apiEndpoint?: string;
-  syncFrequencyMinutes?: number;
+  webhook_url?: string;
+  api_key?: string;
+  enabled_features?: string[];
+  meta_data?: Record<string, unknown>;
 }
 
 // =====================================
@@ -742,6 +751,12 @@ export interface DashboardStats {
     maintenance: number;
     critical: number;
   };
+  problems: {
+    total: number;
+    open: number;
+    critical: number;
+    high: number;
+  };
   environments: Environment[];
 }
 
@@ -821,3 +836,1292 @@ export interface SystemSettings {
     allowedDomains: string[];
   };
 }
+
+// =====================================
+// Notification Preference Types
+// =====================================
+
+export type NotificationSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
+export type DigestFrequency = 'hourly' | 'daily' | 'weekly';
+
+export interface NotificationPreference {
+  id: string;
+  user_id: string;
+
+  // Channel Preferences
+  email_enabled: boolean;
+  in_app_enabled: boolean;
+  slack_enabled: boolean;
+  webhook_enabled: boolean;
+
+  // Event Type Preferences
+  incident_notifications: boolean;
+  change_notifications: boolean;
+  problem_notifications: boolean;
+  alert_notifications: boolean;
+  asset_notifications: boolean;
+  sla_notifications: boolean;
+
+  // Severity Filters
+  min_severity_email: NotificationSeverity;
+  min_severity_in_app: NotificationSeverity;
+
+  // Quiet Hours
+  quiet_hours_enabled: boolean;
+  quiet_hours_start: string | null;
+  quiet_hours_end: string | null;
+  quiet_hours_timezone: string;
+  quiet_hours_bypass_critical: boolean;
+
+  // Digest Preferences
+  digest_enabled: boolean;
+  digest_frequency: DigestFrequency;
+  digest_time: string | null;
+  digest_day_of_week: number;
+
+  // External Channels
+  slack_webhook_url: string | null;
+  slack_channel: string | null;
+  custom_webhook_url: string | null;
+
+  // Advanced Settings
+  group_similar_alerts: boolean;
+  max_alerts_per_hour: number;
+  escalation_enabled: boolean;
+}
+
+export interface NotificationPreferenceUpdate {
+  // Channel Preferences
+  email_enabled?: boolean;
+  in_app_enabled?: boolean;
+  slack_enabled?: boolean;
+  webhook_enabled?: boolean;
+
+  // Event Type Preferences
+  incident_notifications?: boolean;
+  change_notifications?: boolean;
+  problem_notifications?: boolean;
+  alert_notifications?: boolean;
+  asset_notifications?: boolean;
+  sla_notifications?: boolean;
+
+  // Severity Filters
+  min_severity_email?: NotificationSeverity;
+  min_severity_in_app?: NotificationSeverity;
+
+  // Quiet Hours
+  quiet_hours_enabled?: boolean;
+  quiet_hours_start?: string | null;
+  quiet_hours_end?: string | null;
+  quiet_hours_timezone?: string;
+  quiet_hours_bypass_critical?: boolean;
+
+  // Digest Preferences
+  digest_enabled?: boolean;
+  digest_frequency?: DigestFrequency;
+  digest_time?: string | null;
+  digest_day_of_week?: number;
+
+  // External Channels
+  slack_webhook_url?: string | null;
+  slack_channel?: string | null;
+  custom_webhook_url?: string | null;
+
+  // Advanced Settings
+  group_similar_alerts?: boolean;
+  max_alerts_per_hour?: number;
+  escalation_enabled?: boolean;
+}
+
+// =====================================
+// Alert Suppression Types
+// =====================================
+
+export type SuppressionType = 'manual' | 'scheduled' | 'maintenance';
+
+export interface AlertSuppression {
+  id: string;
+  asset_id: string | null;
+  network_device_id: string | null;
+  environment_id: string | null;
+
+  suppression_type: SuppressionType;
+  reason: string | null;
+  start_time: string;
+  end_time: string | null;
+
+  severity_filter: string[];
+  alert_type_filter: string[];
+
+  created_by_id: string;
+  is_active: boolean;
+
+  notify_on_start: boolean;
+  notify_on_end: boolean;
+  notify_suppressed_count: boolean;
+  suppressed_count: number;
+
+  created_at: string;
+  updated_at: string;
+
+  // Computed fields from API
+  target_name?: string;
+  target_type?: 'asset' | 'network_device' | 'environment';
+}
+
+export interface AlertSuppressionCreate {
+  asset_id?: string;
+  network_device_id?: string;
+  environment_id?: string;
+
+  suppression_type?: SuppressionType;
+  reason?: string;
+  start_time?: string;
+  end_time?: string | null;
+
+  severity_filter?: string[];
+  alert_type_filter?: string[];
+
+  notify_on_start?: boolean;
+  notify_on_end?: boolean;
+  notify_suppressed_count?: boolean;
+}
+
+export interface AlertSuppressionUpdate {
+  reason?: string;
+  end_time?: string | null;
+  severity_filter?: string[];
+  alert_type_filter?: string[];
+  notify_on_start?: boolean;
+  notify_on_end?: boolean;
+  notify_suppressed_count?: boolean;
+  is_active?: boolean;
+}
+
+export interface AssetSuppressionStatus {
+  is_suppressed: boolean;
+  suppression: AlertSuppression | null;
+}
+
+// =====================================
+// Notification Log Types
+// =====================================
+
+export type DeliveryStatus = 'pending' | 'queued' | 'sent' | 'delivered' | 'failed' | 'bounced' | 'opened' | 'clicked';
+
+export interface NotificationLog {
+  id: string;
+  notification_id: string | null;
+  user_id: string;
+  channel: 'email' | 'in_app' | 'slack' | 'webhook' | 'sms';
+  status: DeliveryStatus;
+  email_to: string | null;
+  email_subject: string | null;
+  email_message_id: string | null;
+  queued_at: string | null;
+  sent_at: string | null;
+  delivered_at: string | null;
+  opened_at: string | null;
+  clicked_at: string | null;
+  failed_at: string | null;
+  failure_reason: string | null;
+  retry_count: number;
+  event_type: string | null;
+  entity_type: string | null;
+  entity_id: string | null;
+  created_at: string;
+}
+
+// =====================================
+// Client / Multi-Tenant Types
+// =====================================
+
+export type ClientEnvironment = 'production' | 'dr' | 'uat' | 'development' | 'staging';
+export type ClientStatus = 'active' | 'inactive' | 'suspended' | 'onboarding';
+export type SLATier = 'standard' | 'premium' | 'enterprise';
+
+export interface Client {
+  id: string;
+  client_code: string;
+  name: string;
+  display_name: string | null;
+  short_name: string | null;
+  environment: ClientEnvironment;
+  location: string | null;
+  region: string | null;
+  datacenter: string | null;
+  status: ClientStatus;
+  primary_contact_name: string | null;
+  primary_contact_email: string | null;
+  primary_contact_phone: string | null;
+  technical_contact_email: string | null;
+  escalation_email: string | null;
+  industry: string | null;
+  description: string | null;
+  sla_tier: SLATier;
+  support_hours: string;
+  max_users: number;
+  max_assets: number;
+  is_active: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface ClientCreate {
+  client_code: string;
+  name: string;
+  display_name?: string;
+  short_name?: string;
+  environment?: ClientEnvironment;
+  location?: string;
+  region?: string;
+  datacenter?: string;
+  primary_contact_name?: string;
+  primary_contact_email?: string;
+  primary_contact_phone?: string;
+  technical_contact_email?: string;
+  escalation_email?: string;
+  industry?: string;
+  description?: string;
+  sla_tier?: SLATier;
+  support_hours?: string;
+  max_users?: number;
+  max_assets?: number;
+}
+
+export interface ClientUpdate {
+  name?: string;
+  display_name?: string;
+  short_name?: string;
+  environment?: ClientEnvironment;
+  location?: string;
+  region?: string;
+  status?: ClientStatus;
+  primary_contact_name?: string;
+  primary_contact_email?: string;
+  primary_contact_phone?: string;
+  technical_contact_email?: string;
+  escalation_email?: string;
+  industry?: string;
+  description?: string;
+  sla_tier?: SLATier;
+  support_hours?: string;
+  max_users?: number;
+  max_assets?: number;
+}
+
+export interface ClientStatistics {
+  client_id: string;
+  user_count: number;
+  incident_count: number;
+  open_incidents: number;
+  problem_count: number;
+  change_count: number;
+  asset_count: number;
+  active_alerts: number;
+}
+
+export interface ClientWithStats extends Client {
+  statistics?: ClientStatistics;
+}
+
+// =====================================
+// On-Call Management Types
+// =====================================
+
+// Enums
+export type RotationType = 'daily' | 'weekly' | 'custom' | 'follow_the_sun';
+export type ShiftType = 'primary' | 'secondary' | 'backup' | 'override';
+export type ShiftStatus = 'scheduled' | 'active' | 'completed' | 'cancelled' | 'swapped';
+export type OverrideType = 'swap' | 'coverage' | 'time_off' | 'temporary';
+export type OverrideStatus = 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'cancelled';
+export type OnCallUrgency = 'low' | 'high' | 'critical';
+export type EscalationTargetType = 'user' | 'group' | 'schedule';
+export type OnCallNotificationChannel = 'email' | 'sms' | 'voice' | 'push' | 'slack' | 'teams' | 'webhook';
+
+// Escalation Level
+export interface EscalationLevel {
+  id: string;
+  policy_id: string;
+  level_number: number;
+  delay_minutes: number;
+  target_type: EscalationTargetType;
+  target_user_id: string | null;
+  target_group_id: string | null;
+  target_schedule_id: string | null;
+  notification_channels: OnCallNotificationChannel[];
+  repeat_count: number;
+  repeat_interval_minutes: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+
+  // Populated fields
+  target_user?: User;
+  target_group?: Group;
+  target_schedule?: OnCallSchedule;
+}
+
+export interface EscalationLevelCreate {
+  level_number: number;
+  delay_minutes?: number;
+  target_type: EscalationTargetType;
+  target_user_id?: string;
+  target_group_id?: string;
+  target_schedule_id?: string;
+  notification_channels?: OnCallNotificationChannel[];
+  repeat_count?: number;
+  repeat_interval_minutes?: number;
+}
+
+// Escalation Policy
+export interface EscalationPolicy {
+  id: string;
+  client_id: string | null;
+  name: string;
+  description: string | null;
+  repeat_count: number;
+  repeat_interval_minutes: number;
+  default_urgency: OnCallUrgency;
+  is_active: boolean;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+
+  // Related entities
+  levels: EscalationLevel[];
+}
+
+export interface EscalationPolicyCreate {
+  name: string;
+  description?: string;
+  repeat_count?: number;
+  repeat_interval_minutes?: number;
+  default_urgency?: OnCallUrgency;
+  is_default?: boolean;
+  levels?: EscalationLevelCreate[];
+}
+
+export interface EscalationPolicyUpdate {
+  name?: string;
+  description?: string;
+  repeat_count?: number;
+  repeat_interval_minutes?: number;
+  default_urgency?: OnCallUrgency;
+  is_active?: boolean;
+  is_default?: boolean;
+}
+
+// On-Call Schedule Member
+export interface OnCallScheduleMember {
+  id: string;
+  schedule_id: string;
+  user_id: string;
+  rotation_order: number;
+  is_active: boolean;
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string;
+  updated_at: string;
+
+  // Populated fields
+  user?: User;
+}
+
+export interface OnCallScheduleMemberCreate {
+  user_id: string;
+  rotation_order?: number;
+  start_date?: string;
+  end_date?: string;
+}
+
+// On-Call Schedule
+export interface OnCallSchedule {
+  id: string;
+  client_id: string | null;
+  name: string;
+  description: string | null;
+  timezone: string;
+  rotation_type: RotationType;
+  rotation_length_days: number;
+  handoff_time: string;
+  handoff_day: number;
+  coverage_start: string | null;
+  coverage_end: string | null;
+  restrict_to_business_hours: boolean;
+  escalation_policy_id: string | null;
+  is_active: boolean;
+  current_position: number;
+  last_rotation_at: string | null;
+  created_at: string;
+  updated_at: string;
+
+  // Related entities
+  members: OnCallScheduleMember[];
+  escalation_policy?: EscalationPolicy;
+  shifts?: OnCallShift[];
+}
+
+export interface OnCallScheduleCreate {
+  name: string;
+  description?: string;
+  timezone?: string;
+  rotation_type?: RotationType;
+  rotation_length_days?: number;
+  handoff_time?: string;
+  handoff_day?: number;
+  coverage_start?: string;
+  coverage_end?: string;
+  restrict_to_business_hours?: boolean;
+  escalation_policy_id?: string;
+  members?: OnCallScheduleMemberCreate[];
+}
+
+export interface OnCallScheduleUpdate {
+  name?: string;
+  description?: string;
+  timezone?: string;
+  rotation_type?: RotationType;
+  rotation_length_days?: number;
+  handoff_time?: string;
+  handoff_day?: number;
+  coverage_start?: string;
+  coverage_end?: string;
+  restrict_to_business_hours?: boolean;
+  escalation_policy_id?: string;
+  is_active?: boolean;
+}
+
+// On-Call Shift
+export interface OnCallShift {
+  id: string;
+  schedule_id: string;
+  user_id: string;
+  shift_type: ShiftType;
+  start_time: string;
+  end_time: string;
+  status: ShiftStatus;
+  notes: string | null;
+  override_id: string | null;
+  created_at: string;
+  updated_at: string;
+
+  // Populated fields
+  user?: User;
+  schedule?: OnCallSchedule;
+}
+
+export interface OnCallShiftCreate {
+  schedule_id: string;
+  user_id: string;
+  shift_type?: ShiftType;
+  start_time: string;
+  end_time: string;
+  notes?: string;
+}
+
+// On-Call Override
+export interface OnCallOverride {
+  id: string;
+  schedule_id: string;
+  original_user_id: string;
+  replacement_user_id: string;
+  override_type: OverrideType;
+  start_time: string;
+  end_time: string;
+  reason: string | null;
+  status: OverrideStatus;
+  approved_by_id: string | null;
+  approved_at: string | null;
+  created_by_id: string;
+  created_at: string;
+  updated_at: string;
+
+  // Populated fields
+  original_user?: User;
+  replacement_user?: User;
+  approved_by?: User;
+  created_by?: User;
+  schedule?: OnCallSchedule;
+}
+
+export interface OnCallOverrideCreate {
+  schedule_id: string;
+  original_user_id: string;
+  replacement_user_id: string;
+  override_type?: OverrideType;
+  start_time: string;
+  end_time: string;
+  reason?: string;
+}
+
+export interface OnCallOverrideUpdate {
+  replacement_user_id?: string;
+  start_time?: string;
+  end_time?: string;
+  reason?: string;
+  status?: OverrideStatus;
+}
+
+// On-Call Incident
+export interface OnCallIncident {
+  id: string;
+  incident_id: string;
+  escalation_policy_id: string;
+  current_level: number;
+  urgency: OnCallUrgency;
+  status: 'triggered' | 'acknowledged' | 'resolved' | 'escalated' | 'timed_out';
+  triggered_at: string;
+  acknowledged_at: string | null;
+  acknowledged_by_id: string | null;
+  resolved_at: string | null;
+  resolved_by_id: string | null;
+  escalation_count: number;
+  last_escalation_at: string | null;
+  next_escalation_at: string | null;
+  notification_log: unknown[];
+  created_at: string;
+  updated_at: string;
+
+  // Populated fields
+  incident?: Incident;
+  escalation_policy?: EscalationPolicy;
+  acknowledged_by?: User;
+  resolved_by?: User;
+}
+
+export interface OnCallIncidentCreate {
+  incident_id: string;
+  escalation_policy_id: string;
+  urgency?: OnCallUrgency;
+}
+
+// On-Call Handoff Note
+export interface OnCallHandoffNote {
+  id: string;
+  schedule_id: string;
+  from_user_id: string;
+  to_user_id: string;
+  shift_start: string;
+  shift_end: string;
+  summary: string;
+  open_incidents: unknown[];
+  pending_tasks: unknown[];
+  important_notes: string | null;
+  acknowledged: boolean;
+  acknowledged_at: string | null;
+  created_at: string;
+  updated_at: string;
+
+  // Populated fields
+  from_user?: User;
+  to_user?: User;
+  schedule?: OnCallSchedule;
+}
+
+export interface OnCallHandoffNoteCreate {
+  schedule_id: string;
+  to_user_id: string;
+  shift_start: string;
+  shift_end: string;
+  summary: string;
+  open_incidents?: unknown[];
+  pending_tasks?: unknown[];
+  important_notes?: string;
+}
+
+// On-Call Analytics
+export interface OnCallAnalytics {
+  id: string;
+  schedule_id: string | null;
+  user_id: string | null;
+  period_start: string;
+  period_end: string;
+  total_incidents: number;
+  acknowledged_incidents: number;
+  escalated_incidents: number;
+  mean_time_to_acknowledge: number | null;
+  mean_time_to_resolve: number | null;
+  total_on_call_hours: number;
+  total_shifts: number;
+  incidents_per_shift: number | null;
+  busiest_hour: number | null;
+  busiest_day: number | null;
+  created_at: string;
+
+  // Populated fields
+  user?: User;
+  schedule?: OnCallSchedule;
+}
+
+// API Response Types for On-Call
+export interface CurrentOnCallUser {
+  user_id: string;
+  user: User;
+  schedule_id: string;
+  schedule_name: string;
+  shift_type: ShiftType;
+  shift_start: string;
+  shift_end: string;
+  is_override: boolean;
+}
+
+export interface OnCallCalendarEvent {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  user_id: string;
+  user_name: string;
+  shift_type: ShiftType;
+  status: ShiftStatus;
+  is_override: boolean;
+  color?: string;
+}
+
+export interface ScheduleGenerationResult {
+  schedule_id: string;
+  shifts_created: number;
+  start_date: string;
+  end_date: string;
+  shifts: OnCallShift[];
+}
+
+export interface EscalationResult {
+  incident_id: string;
+  on_call_incident_id: string;
+  escalated_to_level: number;
+  notified_users: string[];
+  next_escalation_at: string | null;
+}
+
+export interface OnCallDashboardStats {
+  current_on_call: CurrentOnCallUser[];
+  active_incidents: number;
+  pending_overrides: number;
+  upcoming_handoffs: number;
+  recent_escalations: OnCallIncident[];
+  schedule_coverage: {
+    schedule_id: string;
+    schedule_name: string;
+    coverage_percentage: number;
+    gaps: { start: string; end: string }[];
+  }[];
+}
+
+// On-Call Filters
+export interface OnCallScheduleFilters {
+  is_active?: boolean;
+  rotation_type?: RotationType;
+  search?: string;
+}
+
+export interface OnCallShiftFilters {
+  schedule_id?: string;
+  user_id?: string;
+  status?: ShiftStatus | ShiftStatus[];
+  shift_type?: ShiftType;
+  date_from?: string;
+  date_to?: string;
+}
+
+export interface OnCallOverrideFilters {
+  schedule_id?: string;
+  user_id?: string;
+  status?: OverrideStatus | OverrideStatus[];
+  override_type?: OverrideType;
+  date_from?: string;
+  date_to?: string;
+}
+
+// =====================================
+// Infrastructure / Network Flow Types
+// =====================================
+
+// Network Layer Classification - Enum for type-safe access
+export enum NetworkLayerType {
+  F_SWI = 'f_swi',
+  R_SWI = 'r_swi',
+  E_SWI = 'e_swi',
+  S_HW = 's_hw'
+}
+
+export type SwitchNetworkType = 'gateway' | 'public' | 'exchange';
+export type ServerType = 'physical' | 'virtual';
+export type DeviceVendor = 'fortigate' | 'cisco' | 'huawei' | 'arista' | 'aruba' | 'dell' | 'juniper' | 'other';
+export type ConnectionRelationshipType = 'CONNECTS_TO' | 'HAS_MICROSERVICE' | 'RUNS_ON' | 'LINKS_TO' | 'MANAGES' | 'DEPENDS_ON' | 'BACKUP_OF';
+export type PortStatus = 'up' | 'down' | 'admin_down' | 'error' | 'not_connected';
+export type PortType = 'ethernet' | 'gigabit' | 'ten_gigabit' | 'forty_gigabit' | 'hundred_gigabit' | 'sfp' | 'sfp_plus' | 'qsfp' | 'fiber' | 'serial' | 'virtual';
+
+// Network Layer Display Info
+export const NetworkLayerInfo: Record<NetworkLayerType, { name: string; label: string; description: string; icon: string; color: string }> = {
+  [NetworkLayerType.F_SWI]: { name: 'Firewall Layer', label: 'Firewall', description: 'Perimeter Security', icon: '🛡️', color: '#ef4444' },
+  [NetworkLayerType.R_SWI]: { name: 'Router Layer', label: 'Router', description: 'Network Routing', icon: '🌐', color: '#f97316' },
+  [NetworkLayerType.E_SWI]: { name: 'Exchange Switch Layer', label: 'Switch', description: 'Core/Distribution', icon: '🔀', color: '#3b82f6' },
+  [NetworkLayerType.S_HW]: { name: 'Server Hardware Layer', label: 'Server', description: 'Compute Layer', icon: '🖥️', color: '#22c55e' }
+};
+
+// Device Vendor Info for visualization
+export const DeviceVendorInfo: Record<DeviceVendor, { name: string; logo: string; color: string }> = {
+  fortigate: { name: 'FortiGate', logo: '/assets/vendors/fortigate.svg', color: '#DA291C' },
+  cisco: { name: 'Cisco', logo: '/assets/vendors/cisco.svg', color: '#049FD9' },
+  huawei: { name: 'Huawei', logo: '/assets/vendors/huawei.svg', color: '#CF0A2C' },
+  arista: { name: 'Arista', logo: '/assets/vendors/arista.svg', color: '#3D5A80' },
+  aruba: { name: 'Aruba', logo: '/assets/vendors/aruba.svg', color: '#FF8300' },
+  dell: { name: 'Dell', logo: '/assets/vendors/dell.svg', color: '#007DB8' },
+  juniper: { name: 'Juniper', logo: '/assets/vendors/juniper.svg', color: '#84BD00' },
+  other: { name: 'Other', logo: '/assets/vendors/generic.svg', color: '#6b7280' }
+};
+
+// Infrastructure Host
+export interface InfrastructureHost {
+  id: string;
+  client_id: string | null;
+  hostname: string;
+  display_name: string | null;
+  description: string | null;
+  neo4j_type: string;
+  network_layer: NetworkLayerType;
+  neo4j_parent: string;
+  service_type: string | null;
+  device_category: string;
+  device_vendor: DeviceVendor | null;
+  device_model: string | null;
+  device_series: string | null;
+  switch_network_type: SwitchNetworkType | null;
+  is_stacked: boolean;
+  stack_position: number | null;
+  stack_master_id: string | null;
+  server_type: ServerType | null;
+  operating_system: string | null;
+  os_version: string | null;
+  hypervisor_id: string | null;
+  physical_host_ip: string | null;
+  management_ip: string | null;
+  management_mac: string | null;
+  management_vlan: number | null;
+  serial_number: string | null;
+  asset_tag: string | null;
+  firmware_version: string | null;
+  hardware_specs: Record<string, unknown>;
+  total_ports: number | null;
+  port_configuration: Record<string, unknown>;
+  data_center: string | null;
+  location: string | null;
+  rack_id: string | null;
+  rack_unit: string | null;
+  operational_status: string;
+  health_status: string;
+  last_seen_at: string | null;
+  uptime_seconds: number | null;
+  cpu_usage: number | null;
+  memory_usage: number | null;
+  disk_usage: number | null;
+  temperature: number | null;
+  owner_id: string | null;
+  assigned_group_id: string | null;
+  tags: string[];
+  custom_fields: Record<string, unknown>;
+  notes: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InfrastructureHostCreate {
+  hostname: string;
+  display_name?: string;
+  description?: string;
+  network_layer: NetworkLayerType;
+  device_category: string;
+  device_vendor?: DeviceVendor;
+  device_model?: string;
+  device_series?: string;
+  switch_network_type?: SwitchNetworkType;
+  is_stacked?: boolean;
+  stack_position?: number;
+  stack_master_id?: string;
+  server_type?: ServerType;
+  operating_system?: string;
+  os_version?: string;
+  hypervisor_id?: string;
+  physical_host_ip?: string;
+  management_ip?: string;
+  management_mac?: string;
+  management_vlan?: number;
+  serial_number?: string;
+  asset_tag?: string;
+  firmware_version?: string;
+  hardware_specs?: Record<string, unknown>;
+  total_ports?: number;
+  data_center?: string;
+  location?: string;
+  rack_id?: string;
+  rack_unit?: string;
+  service_type?: string;
+  tags?: string[];
+  custom_fields?: Record<string, unknown>;
+  notes?: string;
+}
+
+export interface InfrastructureHostUpdate extends Partial<InfrastructureHostCreate> {
+  operational_status?: string;
+  health_status?: string;
+}
+
+export interface InfrastructureHostFilters {
+  network_layer?: NetworkLayerType;
+  device_category?: string;
+  device_vendor?: DeviceVendor;
+  switch_network_type?: SwitchNetworkType;
+  server_type?: ServerType;
+  operational_status?: string;
+  health_status?: string;
+  data_center?: string;
+  search?: string;
+}
+
+// Host Port
+export interface HostPort {
+  id: string;
+  host_id: string;
+  client_id: string | null;
+  port_name: string;
+  port_display_name: string | null;
+  port_description: string | null;
+  neo4j_type: string;
+  neo4j_parent: string;
+  relationship_required: boolean;
+  port_type: PortType;
+  port_number: number | null;
+  slot_number: number | null;
+  module_number: number | null;
+  ip_address: string | null;
+  mac_address: string | null;
+  subnet_mask: string | null;
+  vlan_id: number | null;
+  vlan_mode: string | null;
+  native_vlan: number | null;
+  allowed_vlans: number[];
+  speed_mbps: number | null;
+  negotiated_speed_mbps: number | null;
+  duplex: string | null;
+  admin_status: string;
+  operational_status: PortStatus;
+  last_status_change: string | null;
+  rx_bytes: number;
+  tx_bytes: number;
+  rx_packets: number;
+  tx_packets: number;
+  rx_errors: number;
+  tx_errors: number;
+  rx_drops: number;
+  tx_drops: number;
+  physical_nic_link: string | null;
+  tags: string[];
+  custom_fields: Record<string, unknown>;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface HostPortCreate {
+  port_name: string;
+  port_display_name?: string;
+  port_description?: string;
+  port_type?: PortType;
+  port_number?: number;
+  slot_number?: number;
+  ip_address?: string;
+  mac_address?: string;
+  vlan_id?: number;
+  vlan_mode?: string;
+  speed_mbps?: number;
+  admin_status?: string;
+  tags?: string[];
+}
+
+export interface HostPortUpdate extends Partial<HostPortCreate> {
+  operational_status?: PortStatus;
+}
+
+// Network Connection
+export interface NetworkConnection {
+  id: string;
+  client_id: string | null;
+  relationship_type: ConnectionRelationshipType;
+  source_host_id: string | null;
+  source_port_id: string | null;
+  source_entity_type: string;
+  target_host_id: string | null;
+  target_port_id: string | null;
+  target_entity_type: string;
+  connection_name: string | null;
+  description: string | null;
+  cable_type: string | null;
+  cable_length: string | null;
+  cable_label: string | null;
+  bandwidth_mbps: number | null;
+  latency_ms: number | null;
+  connection_status: string;
+  last_verified_at: string | null;
+  properties: Record<string, unknown>;
+  tags: string[];
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface NetworkConnectionCreate {
+  relationship_type: ConnectionRelationshipType;
+  source_host_id?: string;
+  source_port_id?: string;
+  source_entity_type: string;
+  target_host_id?: string;
+  target_port_id?: string;
+  target_entity_type: string;
+  connection_name?: string;
+  description?: string;
+  cable_type?: string;
+  bandwidth_mbps?: number;
+  properties?: Record<string, unknown>;
+  tags?: string[];
+}
+
+export interface NetworkConnectionUpdate extends Partial<NetworkConnectionCreate> {
+  connection_status?: string;
+}
+
+// Device Template
+export interface DeviceTemplate {
+  id: string;
+  template_name: string;
+  display_name: string | null;
+  description: string | null;
+  network_layer: NetworkLayerType;
+  device_category: string;
+  device_vendor: DeviceVendor | null;
+  device_model: string | null;
+  device_series: string | null;
+  switch_network_type: SwitchNetworkType | null;
+  is_stack_template: boolean;
+  default_ports: number | null;
+  port_template: Record<string, unknown>[];
+  service_type_template: string | null;
+  default_config: Record<string, unknown>;
+  default_specs: Record<string, unknown>;
+  template_file_name: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface DeviceTemplateCreate {
+  template_name: string;
+  display_name?: string;
+  description?: string;
+  network_layer: NetworkLayerType;
+  device_category: string;
+  device_vendor?: DeviceVendor;
+  device_model?: string;
+  device_series?: string;
+  switch_network_type?: SwitchNetworkType;
+  is_stack_template?: boolean;
+  default_ports?: number;
+  port_template?: Record<string, unknown>[];
+  service_type_template?: string;
+  default_config?: Record<string, unknown>;
+  default_specs?: Record<string, unknown>;
+  template_file_name?: string;
+}
+
+export interface DeviceTemplateUpdate extends Partial<DeviceTemplateCreate> {
+  is_active?: boolean;
+}
+
+// Infrastructure Topology
+export interface InfrastructureTopology {
+  id: string;
+  client_id: string;
+  name: string;
+  description: string | null;
+  topology_type: string;
+  scope: string | null;
+  data_center: string | null;
+  layout_type: string;
+  layout_config: Record<string, unknown>;
+  node_positions: Record<string, { x: number; y: number }>;
+  layer_groups: Record<string, unknown>;
+  custom_groups: unknown[];
+  included_layers: string[];
+  included_hosts: string[];
+  excluded_hosts: string[];
+  show_connections: boolean;
+  show_ports: boolean;
+  show_metrics: boolean;
+  show_status_colors: boolean;
+  status: string;
+  is_default: boolean;
+  created_by_id: string;
+  last_modified_by_id: string | null;
+  tags: string[];
+  custom_fields: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InfrastructureTopologyCreate {
+  name: string;
+  description?: string;
+  topology_type?: string;
+  scope?: string;
+  data_center?: string;
+  layout_type?: string;
+  layout_config?: Record<string, unknown>;
+  included_layers?: string[];
+  show_connections?: boolean;
+  show_ports?: boolean;
+  show_metrics?: boolean;
+  show_status_colors?: boolean;
+  is_default?: boolean;
+  tags?: string[];
+}
+
+export interface InfrastructureTopologyUpdate extends Partial<InfrastructureTopologyCreate> {
+  node_positions?: Record<string, { x: number; y: number }>;
+  included_hosts?: string[];
+  excluded_hosts?: string[];
+  status?: string;
+}
+
+// Topology Visualization Types
+export interface TopologyNode {
+  id: string;
+  hostname: string;
+  display_name: string | null;
+  layer: NetworkLayerType;
+  device_category: string;
+  device_vendor: DeviceVendor | null;
+  device_model: string | null;
+  operational_status: string;
+  health_status: string;
+  position: { x: number; y: number } | null;
+  metrics: {
+    cpu_usage: number | null;
+    memory_usage: number | null;
+    uptime_seconds: number | null;
+  } | null;
+  port_count: number | null;
+}
+
+export interface TopologyEdge {
+  id: string;
+  source: string;
+  target: string;
+  source_port: string | null;
+  target_port: string | null;
+  relationship_type: ConnectionRelationshipType;
+  status: string;
+  bandwidth_mbps: number | null;
+}
+
+export interface TopologyData {
+  nodes: TopologyNode[];
+  edges: TopologyEdge[];
+  layer_groups: Record<string, {
+    display_name: string;
+    count: number;
+    hosts: string[];
+  }>;
+  statistics: {
+    total_nodes: number;
+    total_edges: number;
+    healthy_nodes: number;
+    warning_nodes: number;
+    critical_nodes: number;
+    by_layer: Record<string, number>;
+  };
+  // For full topology endpoint
+  hosts?: FullTopologyHost[];
+  connections?: FullTopologyConnection[];
+  layer_counts?: Record<string, number>;
+  health_summary?: {
+    healthy: number;
+    warning: number;
+    critical: number;
+    unknown: number;
+  };
+}
+
+// Full Topology types (from /topology/full endpoint)
+export interface FullTopologyHost {
+  id: string;
+  hostname: string;
+  display_name: string | null;
+  network_layer: string;
+  device_category: string;
+  device_vendor: string | null;
+  device_model: string | null;
+  switch_network_type: string | null;
+  server_type: string | null;
+  management_ip: string | null;
+  status: string;
+  health_status: string;
+  cpu_usage: number | null;
+  memory_usage: number | null;
+  data_center: string | null;
+  location: string | null;
+}
+
+export interface FullTopologyConnection {
+  id: string;
+  source_host_id: string;
+  target_host_id: string;
+  relationship_type: string;
+  connection_status: string;
+  bandwidth: string | null;
+}
+
+// Infrastructure Statistics
+export interface LayerStats {
+  layer: NetworkLayerType;
+  layer_display_name: string;
+  total_devices: number;
+  healthy_devices: number;
+  warning_devices: number;
+  critical_devices: number;
+  devices_by_vendor: Record<string, number>;
+  devices_by_type: Record<string, number>;
+}
+
+export interface InfrastructureStats {
+  total_hosts: number;
+  total_ports: number;
+  total_connections: number;
+  layers: LayerStats[];
+  network_zones: Record<string, number>;
+  vm_physical_ratio: {
+    physical: number;
+    virtual: number;
+    ratio: string;
+  };
+  health_summary: {
+    healthy: number;
+    warning: number;
+    critical: number;
+    unknown: number;
+  };
+}
+
+// VM-Physical Mapping
+export interface VMPhysicalMapping {
+  vm: {
+    id: string;
+    hostname: string;
+    ip: string | null;
+    os: string | null;
+    status: string;
+  };
+  physical_host: {
+    id: string | null;
+    hostname: string | null;
+    ip: string | null;
+    model: string | null;
+  } | null;
+  connection: {
+    physical_ip_link: string | null;
+  };
+}
+
+// Microservice
+export interface HostMicroservice {
+  id: string;
+  host_id: string;
+  client_id: string | null;
+  service_name: string;
+  display_name: string | null;
+  description: string | null;
+  neo4j_type: string;
+  neo4j_parent: string;
+  relationship_required: boolean;
+  service_type: string | null;
+  port_number: number | null;
+  protocol: string | null;
+  service_status: string;
+  health_check_url: string | null;
+  last_health_check: string | null;
+  version: string | null;
+  configuration: Record<string, unknown>;
+  tags: string[];
+  is_active: boolean;
+  created_at: string;
+}
+
+// Device Catalog by Layer (for visualization)
+export const DeviceCatalog = {
+  f_swi: {
+    fortigate: [
+      { model: '50E', ports: 9, series: 'FortiGate' },
+      { model: '60E', ports: 13, series: 'FortiGate' },
+      { model: '60F', ports: 14, series: 'FortiGate' },
+      { model: '70F', ports: 14, series: 'FortiGate' },
+      { model: '80F', ports: 16, series: 'FortiGate' },
+      { model: '100E', ports: 28, series: 'FortiGate' },
+      { model: '100F', ports: 32, series: 'FortiGate' },
+      { model: '120G', ports: 32, series: 'FortiGate' },
+      { model: '200F', ports: 32, series: 'FortiGate' }
+    ],
+    cisco: [
+      { model: 'FTD 2130', ports: 24, series: 'Firepower' }
+    ]
+  },
+  r_swi: {
+    cisco: [
+      { model: '2911', ports: 4, series: 'ISR' },
+      { model: '2921', ports: 4, series: 'ISR' },
+      { model: '3945', ports: 4, series: 'ISR' },
+      { model: 'ISR 1000', ports: 4, series: 'ISR' },
+      { model: '4321', ports: 6, series: 'ISR' }
+    ]
+  },
+  e_swi: {
+    cisco: [
+      { model: '2960 G', ports: 24, series: 'Catalyst' },
+      { model: 'Catalyst 2960 S', ports: 24, series: 'Catalyst' },
+      { model: 'C2960 48TT-L', ports: 48, series: 'Catalyst' },
+      { model: 'C9200L 24T', ports: 24, series: 'Catalyst 9000' },
+      { model: 'C9200L 48T', ports: 48, series: 'Catalyst 9000' },
+      { model: 'C9300X 24HX', ports: 24, series: 'Catalyst 9000' },
+      { model: 'C9300X 48TX', ports: 48, series: 'Catalyst 9000' },
+      { model: 'Catalyst 1300', ports: 24, series: 'Catalyst' },
+      { model: 'Nexus 9000', ports: 48, series: 'Nexus' },
+      { model: 'SG350X-24', ports: 24, series: 'Small Business' }
+    ],
+    huawei: [
+      { model: 'S5720 32X EI AC', ports: 32, series: 'S5700' },
+      { model: 'S5720 52X LI AC', ports: 52, series: 'S5700' },
+      { model: 'S5735 L24T4X A1', ports: 24, series: 'S5700' },
+      { model: 'S6720S 26Q EI', ports: 26, series: 'S6700' }
+    ],
+    arista: [
+      { model: '7124sx 960px', ports: 24, series: '7000' }
+    ],
+    aruba: [
+      { model: '2930F 24G 4SFP', ports: 24, series: '2930F' }
+    ]
+  },
+  s_hw: {
+    templates: [
+      { os: 'CentOS 7', type: 'physical', name: 'CentOS7_Phy' },
+      { os: 'CentOS 7', type: 'virtual', name: 'CentOS7_VM' },
+      { os: 'CentOS 8', type: 'physical', name: 'CentOS8_Phy' },
+      { os: 'CentOS 8', type: 'virtual', name: 'CentOS8_VM' },
+      { os: 'RHEL 7', type: 'physical', name: 'RHEL7_Phy' },
+      { os: 'RHEL 7', type: 'virtual', name: 'RHEL7_VM' },
+      { os: 'Ubuntu 22', type: 'physical', name: 'ubuntu22_Phy' },
+      { os: 'Ubuntu 22', type: 'virtual', name: 'ubuntu22_VM' },
+      { os: 'Windows', type: 'physical', name: 'Windows_Phy' },
+      { os: 'Windows', type: 'virtual', name: 'Windows_VM' }
+    ]
+  }
+};
+
+// Switch Template Variants
+export type SwitchTemplateVariant = 'Gateway' | 'Gateway stack' | 'Public' | 'Public stack' | 'Exchange' | 'Exchange stack';

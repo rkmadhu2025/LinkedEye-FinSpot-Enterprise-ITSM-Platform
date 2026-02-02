@@ -8,6 +8,14 @@ from app.models.base import BaseModel
 import enum
 
 
+class OwnershipType(str, enum.Enum):
+    """Asset ownership type."""
+    FINSPOT_OWNED = "finspot_owned"
+    CLIENT_HOSTED = "client_hosted"
+    LEASED = "leased"
+    SHARED = "shared"
+
+
 class AssetType(str, enum.Enum):
     """Asset type categories."""
     SERVER = "server"
@@ -43,7 +51,14 @@ class HealthStatus(str, enum.Enum):
 class Asset(BaseModel):
     """Asset model for CMDB functionality."""
     __tablename__ = "assets"
-    
+
+    # Client/Tenant Isolation
+    client_id = Column(UUID(as_uuid=True), ForeignKey("clients.id"), nullable=True, index=True)
+
+    # Network Layer Classification (for integration with network flow)
+    network_layer = Column(String(20), nullable=True)  # f_swi, r_swi, e_swi, s_hw
+    infrastructure_host_id = Column(UUID(as_uuid=True), ForeignKey("infrastructure_hosts.id"), nullable=True)
+
     # Basic Information
     hostname = Column(String(255), nullable=False, index=True)
     ip_address = Column(INET, nullable=True, index=True)
@@ -75,7 +90,10 @@ class Asset(BaseModel):
     manufacturer = Column(String(100), nullable=True)
     model = Column(String(100), nullable=True)
     serial_number = Column(String(100), nullable=True)
-    
+
+    # Ownership Classification
+    ownership_type = Column(String(20), default="client_hosted", nullable=False)
+
     # Business Information
     business_service = Column(String(255), nullable=True)
     criticality = Column(String(20), default="medium", nullable=False)
@@ -90,7 +108,10 @@ class Asset(BaseModel):
     custom_fields = Column(JSONB, default=dict, nullable=False)
     notes = Column(Text, nullable=True)
     
-    # Add relationships that will be defined when all models are imported
+    notes = Column(Text, nullable=True)
+    
+    # Relationships
+    owner = relationship("User", foreign_keys=[owner_id])
     
     @property
     def is_critical(self) -> bool:

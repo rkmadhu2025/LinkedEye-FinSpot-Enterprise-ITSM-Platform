@@ -1,7 +1,7 @@
 """
 User model for authentication and authorization.
 """
-from sqlalchemy import Column, String, Boolean, DateTime, Text, Integer, Enum as SQLEnum
+from sqlalchemy import Column, String, Boolean, DateTime, Text, Integer, Enum as SQLEnum, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from app.models.base import BaseModel
@@ -56,6 +56,9 @@ class User(BaseModel):
     phone = Column(String(20), nullable=True)
     timezone = Column(String(50), default="UTC", nullable=False)
     language = Column(String(10), default="en", nullable=False)
+
+    # Multi-tenancy - Client association
+    client_id = Column(UUID(as_uuid=True), ForeignKey("clients.id"), nullable=True, index=True)
     
     # Status and Activity
     # Note: Database column is VARCHAR/enum, use String with enum validation in Python
@@ -107,8 +110,14 @@ class User(BaseModel):
         """Check if account is locked."""
         if self.locked_until is None:
             return False
-        from datetime import datetime
-        return datetime.utcnow() < self.locked_until
+        from datetime import datetime, timezone
+        # Use timezone-aware datetime for comparison with timezone-aware database column
+        now = datetime.now(timezone.utc)
+        # Handle both timezone-aware and naive datetimes from database
+        locked_time = self.locked_until
+        if locked_time.tzinfo is None:
+            locked_time = locked_time.replace(tzinfo=timezone.utc)
+        return now < locked_time
     
     # Relationships will be added when Group model is imported
     groups = relationship(
@@ -117,3 +126,6 @@ class User(BaseModel):
         back_populates="members",
         lazy="dynamic"
     )
+
+    # Client relationship for multi-tenancy
+    client = relationship("Client", back_populates="users", foreign_keys=[client_id])

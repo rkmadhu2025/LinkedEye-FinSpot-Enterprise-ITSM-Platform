@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { useEffect } from 'react';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
+import ChatBox from '@/components/chatbox/ChatBox';
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
 import { getCurrentUser } from '@/store/slices/authSlice';
 import clsx from 'clsx';
@@ -27,7 +28,15 @@ const MainLayout = () => {
   }, [theme]);
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
+    <div
+      className={clsx(
+        'min-h-screen transition-colors duration-300',
+        theme === 'dark' ? 'dark' : ''
+      )}
+      style={{
+        background: theme === 'dark' ? '#0f1c3f' : '#f4f6f9',
+      }}
+    >
       {/* Skip to main content link for accessibility */}
       <a
         href="#main-content"
@@ -35,20 +44,32 @@ const MainLayout = () => {
       >
         Skip to main content
       </a>
+
+      {/* Sidebar */}
       <Sidebar />
-      <div
+
+      {/* Header */}
+      <Header />
+
+      {/* Main Content Area */}
+      <main
+        id="main-content"
         className={clsx(
-          'transition-all duration-300',
-          sidebarCollapsed ? 'ml-[70px]' : 'ml-[260px]'
+          'pt-14 min-h-screen transition-all duration-300',
+          sidebarCollapsed ? 'ml-[72px]' : 'ml-[260px]'
         )}
+        role="main"
       >
-        <Header />
-        <main id="main-content" className="pt-14 min-h-screen" role="main">
-          <div className="p-4 md:p-6">
-            <Outlet />
-          </div>
-        </main>
-      </div>
+        <div className="p-6">
+          <Outlet />
+        </div>
+      </main>
+
+      {/* Floating ChatBox */}
+      <ChatBox
+        enableAI={true}
+        greeting="Hello! I'm your IT Service Management assistant. How can I help you today?"
+      />
     </div>
   );
 };

@@ -32,7 +32,15 @@ class DeviceStatus(str, enum.Enum):
 class NetworkDevice(BaseModel):
     """Network Device model for network infrastructure."""
     __tablename__ = "network_devices"
-    
+
+    # Client/Tenant Isolation
+    client_id = Column(UUID(as_uuid=True), ForeignKey("clients.id"), nullable=True, index=True)
+
+    # Network Layer Classification (for network flow architecture)
+    network_layer = Column(String(20), nullable=True)  # f_swi, r_swi, e_swi, s_hw
+    switch_network_type = Column(String(20), nullable=True)  # gateway, public, exchange
+    infrastructure_host_id = Column(UUID(as_uuid=True), ForeignKey("infrastructure_hosts.id"), nullable=True)
+
     # Basic Information
     hostname = Column(String(255), nullable=False, index=True)
     device_type = Column(SQLEnum(DeviceType), nullable=False)

@@ -288,8 +288,7 @@ class TestRoleBasedAccessControl:
             role=UserRole.USER,
             status=UserStatus.ACTIVE,
             failed_login_attempts=str(failed_attempts),
-            locked_until=datetime.utcnow() + timedelta(minutes=locked_duration_minutes),
-            failed_login_attempts=0
+            locked_until=datetime.utcnow() + timedelta(minutes=locked_duration_minutes)
         )
         db_session.add(user)
         db_session.commit()

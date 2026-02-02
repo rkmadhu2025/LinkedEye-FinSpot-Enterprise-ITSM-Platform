@@ -9,22 +9,28 @@ import App from './App';
 import { store } from './store';
 import { initializeAuth } from './store/slices/authSlice';
 import './styles/index.css';
+import './styles/infrastructure.css';
+import './styles/architect.css';
 
-// Log environment info for debugging
-console.log('🚀 App Initializing...');
-console.log('📍 API URL:', import.meta.env.VITE_API_URL || '/api');
-console.log('🌍 Environment:', import.meta.env.MODE);
-console.log('🔗 Current URL:', window.location.href);
+// Log environment info for debugging (development only)
+if (import.meta.env.DEV) {
+  console.log('🚀 App Initializing...');
+  console.log('📍 API URL:', import.meta.env.VITE_API_URL || '/api');
+  console.log('🌍 Environment:', import.meta.env.MODE);
+  console.log('🔗 Current URL:', window.location.href);
+}
 
 // Global error handler for unhandled errors
 window.addEventListener('error', (event) => {
-  console.error('❌ Global Error:', event.error);
-  console.error('📍 Error Source:', event.filename, 'Line:', event.lineno);
+  console.error('Global Error:', event.error);
+  if (import.meta.env.DEV) {
+    console.error('Error Source:', event.filename, 'Line:', event.lineno);
+  }
 });
 
 // Global unhandled promise rejection handler
 window.addEventListener('unhandledrejection', (event) => {
-  console.error('❌ Unhandled Promise Rejection:', event.reason);
+  console.error('Unhandled Promise Rejection:', event.reason);
 });
 
 // Initialize auth state on app startup
@@ -56,7 +62,7 @@ if (!rootElement) {
   `;
 } else {
   try {
-    console.log('✅ Root element found, rendering app...');
+    if (import.meta.env.DEV) console.log('✅ Root element found, rendering app...');
     ReactDOM.createRoot(rootElement).render(
       <React.StrictMode>
         <Provider store={store}>
@@ -93,7 +99,7 @@ if (!rootElement) {
         </Provider>
       </React.StrictMode>
     );
-    console.log('✅ App rendered successfully');
+    if (import.meta.env.DEV) console.log('✅ App rendered successfully');
   } catch (error) {
     console.error('❌ Failed to render app:', error);
     rootElement.innerHTML = `

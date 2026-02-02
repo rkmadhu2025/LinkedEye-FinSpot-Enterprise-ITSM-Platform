@@ -15,9 +15,14 @@ from app.models.on_call import (
     OnCallSchedule,
     OnCallScheduleMember,
     OnCallShift,
+    OnCallOverride,
+    OnCallHandoffNote,
     EscalationPolicy,
     EscalationLevel,
+    ShiftStatus,
+    OverrideStatus,
 )
+from app.services.rotation_service import RotationService
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -437,3 +442,404 @@ async def delete_escalation_policy(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
+
+
+# ============== Schedule Member Schemas ==============
+
+class ScheduleMemberCreate(BaseModel):
+    user_id: UUID
+    rotation_order: int = 1
+    member_type: str = "primary"
+    is_available: bool = True
+    override_phone: Optional[str] = None
+    override_email: Optional[str] = None
+
+
+class ScheduleMemberResponse(BaseModel):
+    id: UUID
+    schedule_id: UUID
+    user_id: UUID
+    rotation_order: int
+    member_type: str
+    is_available: bool
+    override_phone: Optional[str] = None
+    override_email: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ============== Schedule Members Endpoints ==============
+
+@router.get("/schedules/{schedule_id}/members", response_model=List[ScheduleMemberResponse])
+async def list_schedule_members(
+    schedule_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """List members of an on-call schedule."""
+    schedule = db.query(OnCallSchedule).filter(OnCallSchedule.id == schedule_id).first()
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    members = db.query(OnCallScheduleMember).filter(
+        OnCallScheduleMember.schedule_id == schedule_id
+    ).order_by(OnCallScheduleMember.rotation_order).all()
+    return members
+
+
+@router.post("/schedules/{schedule_id}/members", response_model=ScheduleMemberResponse, status_code=201)
+async def add_schedule_member(
+    schedule_id: UUID,
+    data: ScheduleMemberCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Add a member to an on-call schedule."""
+    schedule = db.query(OnCallSchedule).filter(OnCallSchedule.id == schedule_id).first()
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+
+    existing = db.query(OnCallScheduleMember).filter(
+        OnCallScheduleMember.schedule_id == schedule_id,
+        OnCallScheduleMember.user_id == data.user_id
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="User already a member of this schedule")
+
+    member = OnCallScheduleMember(
+        schedule_id=schedule_id,
+        user_id=data.user_id,
+        rotation_order=data.rotation_order,
+        member_type=data.member_type,
+        is_available=data.is_available,
+        override_phone=data.override_phone,
+        override_email=data.override_email,
+    )
+    db.add(member)
+    db.commit()
+    db.refresh(member)
+    return member
+
+
+@router.delete("/schedules/{schedule_id}/members/{member_id}", status_code=204)
+async def remove_schedule_member(
+    schedule_id: UUID,
+    member_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Remove a member from an on-call schedule."""
+    member = db.query(OnCallScheduleMember).filter(
+        OnCallScheduleMember.id == member_id,
+        OnCallScheduleMember.schedule_id == schedule_id
+    ).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+    db.delete(member)
+    db.commit()
+    return None
+
+
+# ============== Shift Schemas ==============
+
+class ShiftResponse(BaseModel):
+    id: UUID
+    schedule_id: UUID
+    user_id: UUID
+    start_time: str
+    end_time: str
+    shift_type: str
+    layer: int = 1
+    status: str
+    original_user_id: Optional[UUID] = None
+    override_id: Optional[UUID] = None
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class GenerateShiftsRequest(BaseModel):
+    start_date: datetime
+    end_date: datetime
+    rotation_days: int = 7
+
+
+# ============== Shift Endpoints ==============
+
+@router.get("/schedules/{schedule_id}/shifts", response_model=List[ShiftResponse])
+async def list_shifts(
+    schedule_id: UUID,
+    status_filter: Optional[str] = Query(None, alias="status"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """List shifts for a schedule."""
+    query = db.query(OnCallShift).filter(OnCallShift.schedule_id == schedule_id)
+    if status_filter:
+        query = query.filter(OnCallShift.status == status_filter)
+    shifts = query.order_by(OnCallShift.start_time).all()
+    return shifts
+
+
+@router.post("/schedules/{schedule_id}/shifts/generate", response_model=List[ShiftResponse])
+async def generate_shifts(
+    schedule_id: UUID,
+    data: GenerateShiftsRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Generate rotation shifts for a schedule."""
+    schedule = db.query(OnCallSchedule).filter(OnCallSchedule.id == schedule_id).first()
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+
+    shifts = RotationService.generate_shifts(
+        db=db,
+        schedule_id=str(schedule_id),
+        start_date=data.start_date,
+        end_date=data.end_date,
+        rotation_days=data.rotation_days
+    )
+    db.commit()
+    return shifts
+
+
+@router.get("/schedules/{schedule_id}/coverage-gaps")
+async def get_coverage_gaps(
+    schedule_id: UUID,
+    start_date: datetime = Query(...),
+    end_date: datetime = Query(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Detect coverage gaps in a schedule."""
+    gaps = RotationService.detect_coverage_gaps(
+        db=db,
+        schedule_id=str(schedule_id),
+        start_date=start_date,
+        end_date=end_date
+    )
+    return {"gaps": gaps, "total_gaps": len(gaps)}
+
+
+# ============== Override Schemas ==============
+
+class OverrideCreate(BaseModel):
+    original_user_id: UUID
+    replacement_user_id: Optional[UUID] = None
+    start_time: datetime
+    end_time: datetime
+    override_type: str = "replacement"
+    reason: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class OverrideResponse(BaseModel):
+    id: UUID
+    schedule_id: UUID
+    override_type: str
+    original_user_id: UUID
+    replacement_user_id: Optional[UUID] = None
+    start_time: str
+    end_time: str
+    reason: Optional[str] = None
+    notes: Optional[str] = None
+    status: str
+    approved_by_id: Optional[UUID] = None
+    approved_at: Optional[str] = None
+    created_by_id: Optional[UUID] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ============== Override Endpoints ==============
+
+@router.get("/schedules/{schedule_id}/overrides", response_model=List[OverrideResponse])
+async def list_overrides(
+    schedule_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """List overrides for a schedule."""
+    overrides = db.query(OnCallOverride).filter(
+        OnCallOverride.schedule_id == schedule_id
+    ).order_by(OnCallOverride.start_time.desc()).all()
+    return overrides
+
+
+@router.post("/schedules/{schedule_id}/overrides", response_model=OverrideResponse, status_code=201)
+async def create_override(
+    schedule_id: UUID,
+    data: OverrideCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a schedule override."""
+    schedule = db.query(OnCallSchedule).filter(OnCallSchedule.id == schedule_id).first()
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+
+    override = OnCallOverride(
+        schedule_id=schedule_id,
+        original_user_id=data.original_user_id,
+        replacement_user_id=data.replacement_user_id,
+        start_time=data.start_time.isoformat(),
+        end_time=data.end_time.isoformat(),
+        override_type=data.override_type,
+        reason=data.reason,
+        notes=data.notes,
+        status=OverrideStatus.APPROVED.value,
+        created_by_id=current_user.id,
+    )
+    db.add(override)
+    db.commit()
+    db.refresh(override)
+    return override
+
+
+@router.delete("/schedules/{schedule_id}/overrides/{override_id}", status_code=204)
+async def delete_override(
+    schedule_id: UUID,
+    override_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Cancel an override."""
+    override = db.query(OnCallOverride).filter(
+        OnCallOverride.id == override_id,
+        OnCallOverride.schedule_id == schedule_id
+    ).first()
+    if not override:
+        raise HTTPException(status_code=404, detail="Override not found")
+    override.status = OverrideStatus.CANCELLED.value
+    db.commit()
+    return None
+
+
+# ============== Handoff Note Schemas ==============
+
+class HandoffNoteCreate(BaseModel):
+    from_user_id: UUID
+    to_user_id: UUID
+    summary: Optional[str] = None
+    open_incidents: Optional[List[dict]] = None
+    ongoing_issues: Optional[List[dict]] = None
+    action_items: Optional[List[dict]] = None
+    notes: Optional[str] = None
+
+
+class HandoffNoteResponse(BaseModel):
+    id: UUID
+    schedule_id: UUID
+    from_user_id: UUID
+    to_user_id: UUID
+    handoff_time: str
+    summary: Optional[str] = None
+    open_incidents: Optional[List[dict]] = None
+    ongoing_issues: Optional[List[dict]] = None
+    action_items: Optional[List[dict]] = None
+    notes: Optional[str] = None
+    acknowledged_by_to_user: bool = False
+    acknowledged_at: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ============== Handoff Notes Endpoints ==============
+
+@router.get("/schedules/{schedule_id}/handoff-notes", response_model=List[HandoffNoteResponse])
+async def list_handoff_notes(
+    schedule_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """List handoff notes for a schedule."""
+    notes = db.query(OnCallHandoffNote).filter(
+        OnCallHandoffNote.schedule_id == schedule_id
+    ).order_by(OnCallHandoffNote.handoff_time.desc()).all()
+    return notes
+
+
+@router.post("/schedules/{schedule_id}/handoff-notes", response_model=HandoffNoteResponse, status_code=201)
+async def create_handoff_note(
+    schedule_id: UUID,
+    data: HandoffNoteCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a handoff note."""
+    schedule = db.query(OnCallSchedule).filter(OnCallSchedule.id == schedule_id).first()
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+
+    note = RotationService.perform_handoff(
+        db=db,
+        schedule_id=str(schedule_id),
+        from_user_id=str(data.from_user_id),
+        to_user_id=str(data.to_user_id),
+        summary=data.summary or "",
+        open_incidents=data.open_incidents,
+        action_items=data.action_items,
+    )
+    db.commit()
+    db.refresh(note)
+    return note
+
+
+@router.put("/schedules/{schedule_id}/handoff-notes/{note_id}/acknowledge")
+async def acknowledge_handoff(
+    schedule_id: UUID,
+    note_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Acknowledge a handoff note."""
+    note = db.query(OnCallHandoffNote).filter(
+        OnCallHandoffNote.id == note_id,
+        OnCallHandoffNote.schedule_id == schedule_id
+    ).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Handoff note not found")
+    if note.to_user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the receiving user can acknowledge")
+    note.acknowledged_by_to_user = True
+    note.acknowledged_at = datetime.now(timezone.utc).isoformat()
+    db.commit()
+    return {"acknowledged": True}
+
+
+# ============== Who Is On-Call (by rotation) ==============
+
+@router.get("/schedules/{schedule_id}/who-is-on-call")
+async def who_is_on_call(
+    schedule_id: UUID,
+    at_time: Optional[datetime] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get the currently on-call member for a schedule using rotation logic."""
+    member = RotationService.get_current_on_call(db=db, schedule_id=str(schedule_id), at_time=at_time)
+    if not member:
+        return {"on_call": None}
+    user = db.query(User).filter(User.id == member.user_id).first()
+    return {
+        "on_call": {
+            "member_id": str(member.id),
+            "user_id": str(member.user_id),
+            "user_name": f"{user.first_name} {user.last_name}" if user else "Unknown",
+            "user_email": user.email if user else None,
+            "rotation_order": member.rotation_order,
+            "member_type": member.member_type,
+        }
+    }

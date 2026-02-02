@@ -49,6 +49,11 @@ from app.api.webhooks import router as webhooks_router
 from app.api.device_templates import router as device_templates_router
 from app.api.debug import router as debug_router
 from app.api.metrics import router as metrics_router
+from app.api.status_pages import router as status_pages_router, public_router as public_status_router
+from app.api.postmortems import router as postmortems_router
+from app.api.runbooks import router as runbooks_router
+from app.api.alert_intelligence import router as alert_intelligence_router
+from app.api.chatops import router as chatops_router
 
 
 # Configure logging
@@ -254,6 +259,12 @@ app.include_router(device_templates_router, prefix="/api/v1/device-templates")
 if settings.debug:
     app.include_router(debug_router, prefix="/api/v1")
 app.include_router(metrics_router, prefix="/api/v1")
+app.include_router(status_pages_router, prefix="/api/v1")
+app.include_router(public_status_router, prefix="/api/v1")
+app.include_router(postmortems_router, prefix="/api/v1")
+app.include_router(runbooks_router, prefix="/api/v1")
+app.include_router(alert_intelligence_router, prefix="/api/v1")
+app.include_router(chatops_router, prefix="/api/v1")
 
 
 # Root endpoint

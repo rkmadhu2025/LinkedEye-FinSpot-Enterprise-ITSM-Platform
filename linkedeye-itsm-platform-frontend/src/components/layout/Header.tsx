@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { logout } from '@/store/slices/authSlice';
-import { toggleTheme, toggleCommandPalette } from '@/store/slices/uiSlice';
+import { toggleTheme } from '@/store/slices/uiSlice';
+import ClientSelector from './ClientSelector';
 import {
   Search,
   Bell,
@@ -13,7 +14,10 @@ import {
   LogOut,
   User,
   ChevronDown,
-  Command,
+  RefreshCw,
+  Activity,
+  Shield,
+  Clock,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -40,23 +44,24 @@ const Header = () => {
     const path = location.pathname;
     const titles: Record<string, string> = {
       '/dashboard': 'Dashboard',
-      '/incidents': 'Incidents',
+      '/incidents': 'Incident Management',
       '/incidents/create': 'Create Incident',
       '/changes': 'Change Management',
       '/changes/create': 'Create Change Request',
       '/changes/calendar': 'Change Calendar',
-      '/assets': 'Assets',
+      '/assets': 'Asset Management',
       '/assets/create': 'Create Asset',
       '/network/devices': 'Network Devices',
       '/network/topology': 'Network Topology',
       '/monitoring': 'Monitoring',
       '/integrations': 'Integrations',
-      '/users': 'Users',
+      '/users': 'User Management',
       '/groups': 'Groups',
       '/roles': 'Roles',
       '/settings': 'Settings',
       '/reports': 'Reports',
       '/analytics': 'Analytics',
+      '/problems': 'Problem Management',
     };
     return titles[path] || 'LinkedEye-FinSpot';
   };
@@ -69,6 +74,7 @@ const Header = () => {
       message: 'INC0015847 has been assigned to you',
       time: '5 min ago',
       unread: true,
+      icon: <Activity size={16} className="text-red-400" />,
     },
     {
       id: '2',
@@ -77,6 +83,7 @@ const Header = () => {
       message: 'CHG0012456 has been approved',
       time: '1 hour ago',
       unread: true,
+      icon: <Shield size={16} className="text-emerald-400" />,
     },
     {
       id: '3',
@@ -85,84 +92,92 @@ const Header = () => {
       message: 'INC0015842 is approaching SLA breach',
       time: '2 hours ago',
       unread: false,
+      icon: <Clock size={16} className="text-amber-400" />,
     },
   ];
 
   const unreadCount = mockNotifications.filter((n) => n.unread).length;
 
+  // Get user initials
+  const userInitials = user?.firstName && user?.lastName
+    ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
+    : 'RM';
+
   return (
     <header
       className={clsx(
-        'fixed top-0 right-0 h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 md:px-6 z-30 transition-all duration-300',
-        sidebarCollapsed ? 'left-[70px]' : 'left-[260px]'
+        'fixed top-0 right-0 h-14 flex items-center justify-between px-6 z-[100] transition-all duration-300',
+        'bg-[var(--bg-card)] border-b border-[var(--border-color)]',
+        sidebarCollapsed ? 'left-[72px]' : 'left-[260px]'
       )}
       role="banner"
     >
-      {/* Left - Page Title */}
-      <div className="flex items-center gap-4 flex-shrink-0">
-        <h1 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white truncate max-w-[150px] md:max-w-none">
-          {getPageTitle()}
-        </h1>
-      </div>
+      {/* Left - Page Title, System Status, Client Selector, and Search */}
+      <div className="flex items-center gap-5">
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-[var(--text-primary)]">
+            {getPageTitle()}
+          </h1>
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" style={{ boxShadow: '0 0 6px #10b981' }} />
+            <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">Operational</span>
+          </div>
+        </div>
 
-      {/* Center - Search - Hidden on small screens, shown with icon button */}
-      <div className="flex-1 max-w-md mx-4 md:mx-8 hidden sm:block">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
+        {/* Client Selector - for admin users */}
+        <ClientSelector
+          isAdmin={user?.role === 'admin' || user?.role === 'super_admin'}
+          userClientId={user?.client_id}
+        />
+
+        {/* Search */}
+        <div className="relative hidden md:block">
+          <Search
+            size={16}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+          />
           <input
-            type="search"
-            placeholder="Search incidents, changes, assets..."
+            type="text"
+            placeholder="Search incidents by ID, title, assignee..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Search"
-            className="w-full pl-10 pr-12 py-2 bg-gray-100 dark:bg-gray-800 border border-transparent rounded-lg text-sm
-                       focus:bg-white dark:focus:bg-gray-700 focus:border-gray-300 dark:focus:border-gray-600 focus:ring-2 focus:ring-primary-500/20
-                       placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all"
+            className="w-80 pl-10 pr-4 py-2.5 rounded-lg text-[13px] transition-all duration-200 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
           />
-          <button
-            onClick={() => dispatch(toggleCommandPalette())}
-            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5
-                       bg-gray-200 dark:bg-gray-700 rounded text-[10px] text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-            aria-label="Open command palette (Ctrl+K)"
-          >
-            <Command size={10} aria-hidden="true" />
-            <span>K</span>
-          </button>
         </div>
       </div>
 
-      {/* Mobile search button */}
-      <button
-        onClick={() => dispatch(toggleCommandPalette())}
-        className="sm:hidden p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-        aria-label="Search"
-      >
-        <Search size={20} />
-      </button>
-
       {/* Right - Actions */}
-      <div className="flex items-center gap-1 md:gap-3">
+      <div className="flex items-center gap-2">
+        {/* Refresh Button */}
+        <button
+          className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--bg-card)]"
+          title="Refresh"
+          aria-label="Refresh page"
+        >
+          <RefreshCw size={20} />
+        </button>
+
         {/* Theme Toggle */}
         <button
           onClick={() => dispatch(toggleTheme())}
-          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+          className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--bg-card)]"
           aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
         >
-          {theme === 'light' ? <Moon size={20} aria-hidden="true" /> : <Sun size={20} aria-hidden="true" />}
+          {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
         </button>
 
         {/* Notifications */}
         <div ref={notificationsRef} className="relative">
           <button
             onClick={() => setNotificationsOpen(!notificationsOpen)}
-            className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+            className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors relative text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--bg-card)]"
+            aria-label="Notifications"
             aria-expanded={notificationsOpen}
             aria-haspopup="true"
           >
-            <Bell size={20} aria-hidden="true" />
+            <Bell size={20} />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-danger-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center" aria-hidden="true">
+              <span className="absolute top-1.5 right-1.5 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-semibold text-white bg-[var(--color-danger)]">
                 {unreadCount}
               </span>
             )}
@@ -170,48 +185,55 @@ const Header = () => {
 
           {notificationsOpen && (
             <div
-              className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-dropdown border border-gray-200 dark:border-gray-700 overflow-hidden animate-fade-in"
+              className="absolute right-0 top-full mt-2 w-96 rounded-xl overflow-hidden bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xl"
               role="menu"
-              aria-label="Notifications"
+              aria-orientation="vertical"
             >
-              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
-                <button className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+              <div className="px-5 py-4 flex items-center justify-between border-b border-[var(--border-color)]">
+                <h3 className="font-semibold text-[var(--text-primary)]">
+                  Notifications
+                </h3>
+                <button className="text-xs font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] focus:outline-none focus:underline">
                   Mark all as read
                 </button>
               </div>
-              <div className="max-h-80 overflow-y-auto">
+              <div className="max-h-96 overflow-y-auto">
                 {mockNotifications.map((notification) => (
                   <div
                     key={notification.id}
                     className={clsx(
-                      'px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors',
-                      notification.unread && 'bg-primary-50/50 dark:bg-primary-900/20'
+                      'px-5 py-4 cursor-pointer transition-colors hover:bg-[var(--bg-secondary)]',
+                      notification.unread && 'bg-[var(--color-primary-subtle)]'
                     )}
                     role="menuitem"
-                    tabIndex={0}
                   >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={clsx(
-                          'w-2 h-2 rounded-full mt-2 flex-shrink-0',
-                          notification.unread ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
-                        )}
-                        aria-hidden="true"
-                      />
+                    <div className="flex items-start gap-4">
+                      <div className="p-2 rounded-xl bg-[var(--bg-secondary)]">
+                        {notification.icon}
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {notification.title}
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold truncate text-[var(--text-primary)]">
+                            {notification.title}
+                          </p>
+                          {notification.unread && (
+                            <span className="w-2 h-2 rounded-full bg-[var(--color-primary)]" />
+                          )}
+                        </div>
+                        <p className="text-sm truncate mt-0.5 text-[var(--text-secondary)]">
+                          {notification.message}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{notification.message}</p>
-                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{notification.time}</p>
+                        <p className="text-xs mt-1.5 flex items-center gap-1 text-[var(--text-muted)]">
+                          <Clock size={10} />
+                          {notification.time}
+                        </p>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
-                <button className="w-full text-center text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+              <div className="px-5 py-3 bg-[var(--bg-secondary)]">
+                <button className="w-full text-center text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] focus:outline-none focus:underline">
                   View all notifications
                 </button>
               </div>
@@ -222,84 +244,92 @@ const Header = () => {
         {/* Settings - hidden on mobile */}
         <button
           onClick={() => navigate('/settings')}
-          className="hidden md:block p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+          className="hidden md:flex w-10 h-10 rounded-lg items-center justify-center transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--bg-card)]"
           aria-label="Settings"
         >
-          <Settings size={20} aria-hidden="true" />
+          <Settings size={20} />
         </button>
 
         {/* User Menu */}
         <div ref={userMenuRef} className="relative">
           <button
             onClick={() => setUserMenuOpen(!userMenuOpen)}
-            className="flex items-center gap-2 p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            aria-label="User menu"
+            className="flex items-center gap-3 p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--bg-card)]"
             aria-expanded={userMenuOpen}
             aria-haspopup="true"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
-              {user?.firstName?.charAt(0) || 'U'}
-              {user?.lastName?.charAt(0) || ''}
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)]">
+              {userInitials}
             </div>
-            <div className="hidden lg:block text-left min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[120px]">
-                {user?.displayName || `${user?.firstName} ${user?.lastName}`}
+            <div className="hidden lg:block text-left">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">
+                {user?.displayName || `${user?.firstName} ${user?.lastName}` || 'Rajkumar Madhu'}
               </p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate max-w-[120px]">{user?.jobTitle}</p>
+              <p className="text-[11px] text-[var(--text-secondary)]">
+                {user?.jobTitle || 'Sr. DevOps Engineer'}
+              </p>
             </div>
             <ChevronDown
               size={16}
               className={clsx(
-                'text-gray-400 transition-transform hidden lg:block',
+                'hidden lg:block transition-transform duration-200 text-[var(--text-muted)]',
                 userMenuOpen && 'rotate-180'
               )}
-              aria-hidden="true"
             />
           </button>
 
           {userMenuOpen && (
             <div
-              className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-dropdown border border-gray-200 dark:border-gray-700 overflow-hidden animate-fade-in"
+              className="absolute right-0 top-full mt-2 w-64 rounded-xl overflow-hidden bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xl"
               role="menu"
-              aria-label="User menu"
+              aria-orientation="vertical"
             >
-              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                <p className="font-medium text-gray-900 dark:text-white truncate">
-                  {user?.displayName || `${user?.firstName} ${user?.lastName}`}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
+              <div className="px-5 py-4 border-b border-[var(--border-color)]">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)]">
+                    {userInitials}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold truncate text-[var(--text-primary)]">
+                      {user?.displayName || `${user?.firstName} ${user?.lastName}` || 'Rajkumar Madhu'}
+                    </p>
+                    <p className="text-sm truncate text-[var(--text-secondary)]">
+                      {user?.email || 'rajkumar.m@finspot.io'}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="py-1">
+              <div className="py-2">
                 <button
                   onClick={() => {
                     navigate('/profile');
                     setUserMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="w-full flex items-center gap-3 px-5 py-2.5 text-sm transition-colors text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] focus:outline-none focus:bg-[var(--bg-secondary)]"
                   role="menuitem"
                 >
-                  <User size={16} aria-hidden="true" />
-                  <span>Profile</span>
+                  <User size={16} />
+                  <span>My Profile</span>
                 </button>
                 <button
                   onClick={() => {
                     navigate('/settings');
                     setUserMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="w-full flex items-center gap-3 px-5 py-2.5 text-sm transition-colors text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] focus:outline-none focus:bg-[var(--bg-secondary)]"
                   role="menuitem"
                 >
-                  <Settings size={16} aria-hidden="true" />
+                  <Settings size={16} />
                   <span>Settings</span>
                 </button>
               </div>
-              <div className="py-1 border-t border-gray-200 dark:border-gray-700">
+              <div className="py-2 border-t border-[var(--border-color)]">
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-danger-600 dark:text-danger-400 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors"
+                  className="w-full flex items-center gap-3 px-5 py-2.5 text-sm text-[var(--color-danger)] transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 focus:outline-none focus:bg-red-50 dark:focus:bg-red-500/10"
                   role="menuitem"
                 >
-                  <LogOut size={16} aria-hidden="true" />
+                  <LogOut size={16} />
                   <span>Sign out</span>
                 </button>
               </div>

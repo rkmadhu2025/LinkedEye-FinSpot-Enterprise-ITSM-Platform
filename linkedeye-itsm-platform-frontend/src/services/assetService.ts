@@ -36,6 +36,29 @@ interface BackendAsset {
   updated_at: string;
 }
 
+interface BackendAssetRelationship {
+  id: string;
+  source_asset_id: string;
+  target_asset_id: string;
+  relationship_type: string;
+  description?: string;
+  created_at: string;
+}
+
+interface BackendIncidentSummary {
+  id: string;
+  incident_number: string;
+  title: string;
+  status: string;
+}
+
+interface BackendChangeSummary {
+  id: string;
+  change_number: string;
+  title: string;
+  status: string;
+}
+
 // Transform backend asset to frontend format
 function transformAsset(backendAsset: BackendAsset): Asset {
   return {
@@ -157,9 +180,15 @@ export const assetService = {
   },
 
   async getRelationships(id: string): Promise<AssetRelationship[]> {
-    // TODO: Backend endpoint not yet implemented
-    console.warn('getRelationships: Backend endpoint not implemented');
-    return [];
+    const response = await api.get<BackendAssetRelationship[]>(`/assets/${id}/relationships`);
+    return response.data.map((relationship) => ({
+      id: relationship.id,
+      sourceAssetId: relationship.source_asset_id,
+      targetAssetId: relationship.target_asset_id,
+      relationshipType: relationship.relationship_type,
+      description: relationship.description,
+      createdAt: relationship.created_at,
+    }));
   },
 
   async addRelationship(
@@ -168,27 +197,44 @@ export const assetService = {
     relationshipType: string,
     description?: string
   ): Promise<AssetRelationship> {
-    // TODO: Backend endpoint not yet implemented
-    console.warn('addRelationship: Backend endpoint not implemented');
-    throw new Error('Asset relationship feature is not yet available');
+    const response = await api.post<BackendAssetRelationship>(`/assets/${sourceId}/relationships`, {
+      target_asset_id: targetId,
+      relationship_type: relationshipType,
+      description,
+    });
+    const relationship = response.data;
+    return {
+      id: relationship.id,
+      sourceAssetId: relationship.source_asset_id,
+      targetAssetId: relationship.target_asset_id,
+      relationshipType: relationship.relationship_type,
+      description: relationship.description,
+      createdAt: relationship.created_at,
+    };
   },
 
   async removeRelationship(assetId: string, relationshipId: string): Promise<void> {
-    // TODO: Backend endpoint not yet implemented
-    console.warn('removeRelationship: Backend endpoint not implemented');
-    throw new Error('Asset relationship feature is not yet available');
+    await api.delete(`/assets/${assetId}/relationships/${relationshipId}`);
   },
 
   async getIncidents(assetId: string): Promise<Array<{ id: string; incidentNumber: string; title: string; status: string }>> {
-    // TODO: Backend endpoint not yet implemented
-    console.warn('getIncidents for asset: Backend endpoint not implemented');
-    return [];
+    const response = await api.get<BackendIncidentSummary[]>(`/assets/${assetId}/incidents`);
+    return response.data.map((incident) => ({
+      id: incident.id,
+      incidentNumber: incident.incident_number,
+      title: incident.title,
+      status: incident.status,
+    }));
   },
 
   async getChanges(assetId: string): Promise<Array<{ id: string; changeNumber: string; title: string; status: string }>> {
-    // TODO: Backend endpoint not yet implemented
-    console.warn('getChanges for asset: Backend endpoint not implemented');
-    return [];
+    const response = await api.get<BackendChangeSummary[]>(`/assets/${assetId}/changes`);
+    return response.data.map((change) => ({
+      id: change.id,
+      changeNumber: change.change_number,
+      title: change.title,
+      status: change.status,
+    }));
   },
 
   async getStats(): Promise<{
