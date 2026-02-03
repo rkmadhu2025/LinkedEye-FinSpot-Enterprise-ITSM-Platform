@@ -167,12 +167,13 @@ const Sidebar = () => {
   return (
     <aside
       className={clsx(
-        'fixed left-0 top-0 h-full z-[200] flex flex-col text-white transition-all duration-300 ease-out',
+        'fixed left-0 top-0 h-full z-[200] flex flex-col text-white',
+        'transition-all duration-300 ease-out-expo',
         sidebarCollapsed ? 'w-[72px]' : 'w-[260px]'
       )}
       style={{
         background: 'linear-gradient(180deg, #0f1c3f 0%, #1e3a5f 100%)',
-        boxShadow: '4px 0 24px rgba(0, 0, 0, 0.15)'
+        boxShadow: '4px 0 32px rgba(0, 0, 0, 0.2), inset -1px 0 0 rgba(255, 255, 255, 0.05)'
       }}
       role="navigation"
       aria-label="Main navigation"
@@ -180,32 +181,33 @@ const Sidebar = () => {
       {/* Header */}
       <div
         className="px-5 py-4 flex items-center justify-between gap-3"
-        style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}
+        style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}
       >
         <div className="flex items-center gap-3 min-w-0">
-          {/* Logo */}
+          {/* Logo with enhanced glow */}
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-200 hover:scale-105"
             style={{
               background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
-              boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)'
+              boxShadow: '0 4px 16px rgba(59, 130, 246, 0.45), 0 0 0 1px rgba(255,255,255,0.1)'
             }}
           >
             <Eye size={20} className="text-white" />
           </div>
           {!sidebarCollapsed && (
-            <div className="overflow-hidden min-w-0">
+            <div className="overflow-hidden min-w-0 animate-fade-in">
               <h1 className="text-base font-bold text-white truncate tracking-tight">LinkedEye</h1>
-              <p className="text-[10px] text-white/50 truncate font-medium">FinSpot Enterprise</p>
+              <p className="text-[10px] text-white/50 truncate font-medium tracking-wide">FinSpot Enterprise</p>
             </div>
           )}
         </div>
         <button
           onClick={() => dispatch(toggleSidebar())}
-          className="p-2 rounded-lg transition-all duration-200 flex-shrink-0 hover:scale-105"
-          style={{ background: 'transparent' }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          className={clsx(
+            'p-2 rounded-lg transition-all duration-200 flex-shrink-0',
+            'hover:bg-white/10 hover:scale-105 active:scale-95',
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30'
+          )}
           aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {sidebarCollapsed ? (
@@ -237,15 +239,17 @@ const Sidebar = () => {
                 style={{ background: 'rgba(255, 255, 255, 0.1)' }}
               />
             )}
-            <ul className="space-y-0.5">
+            <ul className="space-y-1">
               {section.items.map((item) => (
                 <li key={item.path}>
                   <NavLink
                     to={item.path}
                     className={({ isActive }) =>
                       clsx(
-                        'relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group',
-                        sidebarCollapsed && 'justify-center px-2'
+                        'relative flex items-center gap-3 px-3 py-2.5 rounded-xl',
+                        'transition-all duration-200 group',
+                        sidebarCollapsed && 'justify-center px-2',
+                        !isActive && 'hover:bg-white/8'
                       )
                     }
                     style={({ isActive }) => ({
@@ -259,16 +263,22 @@ const Sidebar = () => {
                   >
                     {({ isActive }) => (
                       <>
-                        <span className="w-5 h-5 flex-shrink-0">{item.icon}</span>
+                        <span className="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110">{item.icon}</span>
                         {!sidebarCollapsed && (
                           <>
                             <span className="flex-1 truncate text-sm">{item.label}</span>
                             {item.badge && (
                               <span
-                                className="px-2 py-0.5 text-[10px] font-semibold rounded-[10px] text-white"
+                                className="px-2 py-0.5 text-[10px] font-bold rounded-full text-white"
                                 style={{
                                   background:
-                                    item.badgeType === 'warning' ? '#f59e0b' : '#ef4444',
+                                    item.badgeType === 'warning'
+                                      ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                                      : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                  boxShadow:
+                                    item.badgeType === 'warning'
+                                      ? '0 2px 8px rgba(245, 158, 11, 0.4)'
+                                      : '0 2px 8px rgba(239, 68, 68, 0.4)',
                                 }}
                               >
                                 {item.badge}
