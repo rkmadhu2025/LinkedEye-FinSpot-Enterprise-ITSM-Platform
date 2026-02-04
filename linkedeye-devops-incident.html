@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps Integration - Create Incident | LinkedEye-FinSpot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #0066cc;
+            --primary-dark: #004c99;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --text-primary: #1a1a1a;
+            --text-secondary: #6c757d;
+            --text-muted: #adb5bd;
+            --border-color: #dee2e6;
+            --bg-light: #f8f9fa;
+            --bg-white: #ffffff;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .top-header {
+            background: linear-gradient(135deg, #0066cc 0%, #004c99 100%);
+            color: white;
+            padding: 12px 0;
+            box-shadow: var(--shadow-md);
+        }
+
+        .top-header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .breadcrumb a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Grid Layout */
+        .form-layout {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 25px;
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .card-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-light);
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        /* Form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .required {
+            color: var(--danger-color);
+        }
+
+        .form-control, .form-select {
+            padding: 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: var(--bg-white);
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-control:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0,102,204,0.1);
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-help {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* DevOps Integration Badges */
+        .integration-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: #e3f2fd;
+            border: 2px solid #90caf9;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #1565c0;
+            margin-bottom: 20px;
+        }
+
+        .integration-icon {
+            width: 24px;
+            height: 24px;
+            background: #1565c0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+        }
+
+        /* Auto-detected Info */
+        .auto-detected {
+            background: #e8f5e9;
+            border: 2px solid #a5d6a7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .auto-detected-title {
+            font-weight: 600;
+            color: var(--success-color);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .auto-detected-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 0.9rem;
+        }
+
+        .auto-detected-label {
+            color: var(--text-secondary);
+        }
+
+        .auto-detected-value {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .code-title {
+            color: #858585;
+            font-size: 0.8rem;
+        }
+
+        .copy-btn {
+            padding: 4px 10px;
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #d4d4d4;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .copy-btn:hover {
+            background: #3d3d3d;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--bg-white);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-light);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: #fff3e0;
+            border-left: 4px solid var(--warning-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-box-title {
+            font-weight: 600;
+            color: #e65100;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-box-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Sidebar */
+        .sidebar-section {
+            margin-bottom: 20px;
+        }
+
+        .sidebar-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--text-secondary);
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Integration List */
+        .integration-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .integration-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-light);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .integration-item:hover {
+            border-color: var(--primary-color);
+            background: white;
+        }
+
+        .integration-item.active {
+            border-color: var(--primary-color);
+            background: #e3f2fd;
+        }
+
+        .integration-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .integration-info {
+            flex: 1;
+        }
+
+        .integration-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .integration-status {
+            font-size: 0.8rem;
+            color: var(--success-color);
+        }
+
+        @media (max-width: 1024px) {
+            .form-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Header -->
+    <div class="top-header">
+        <div class="top-header-container">
+            <div class="logo-section">
+                <div class="logo-icon">LE</div>
+                <a href="#" class="logo">LinkedEye-FinSpot</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <a href="#">Home</a>
+            <span>›</span>
+            <a href="#">Incidents</a>
+            <span>›</span>
+            <span>DevOps Integration</span>
+        </div>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Create Incident via DevOps Integration</h1>
+            <p class="page-subtitle">Automatically create incidents from your CI/CD pipeline, monitoring tools, or deployment systems</p>
+        </div>
+
+        <div class="integration-badge">
+            <div class="integration-icon">🔗</div>
+            <span>Jenkins Pipeline Integration Active</span>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="form-layout">
+            <!-- Main Form -->
+            <div>
+                <!-- Auto-Detected Information -->
+                <div class="auto-detected">
+                    <div class="auto-detected-title">
+                        <span>✓</span> Auto-Detected Information
+                    </div>
+                    <div class="auto-detected-item">
+                        <span class="auto-detected-label">Pipeline Name:</span>
+                        <span class="auto-detected-value">production-deployment-pipeline</span>
+                    </div>
+                    <div class="auto-detected-item">
+                        <span class="auto-detected-label">Build Number:</span>
+                        <span class="auto-detected-value">#245</span>
+                    </div>
+                    <div class="auto-detected-item">
+                        <span class="auto-detected-label">Environment:</span>
+                        <span class="auto-detected-value">Production</span>
+                    </div>
+                    <div class="auto-detected-item">
+                        <span class="auto-detected-label">Triggered By:</span>
+                        <span class="auto-detected-value">jenkins-bot</span>
+                    </div>
+                    <div class="auto-detected-item">
+                        <span class="auto-detected-label">Timestamp:</span>
+                        <span class="auto-detected-value">2025-12-10 14:30:25 UTC</span>
+                    </div>
+                </div>
+
+                <!-- Incident Details -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>📋</span>
+                        Incident Details
+                    </div>
+                    <div class="card-body">
+                        <form id="devopsIncidentForm">
+                            <div class="form-grid">
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Short Description <span class="required">*</span>
+                                    </label>
+                                    <input type="text" class="form-control"
+                                           value="Production Deployment Failed - Build #245"
+                                           required>
+                                    <span class="form-help">Brief summary of the incident</span>
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Description <span class="required">*</span>
+                                    </label>
+                                    <textarea class="form-control" required>Pipeline: production-deployment-pipeline
+Build: #245
+Status: FAILED
+Environment: Production
+
+Error Details:
+- Deployment to kubernetes cluster failed
+- Pod readiness probe timeout after 300 seconds
+- Service 'api-gateway' failed to start
+- Last successful deployment: Build #244 (2 hours ago)
+
+Impact: Production API gateway is unavailable
+Affected Services: User Authentication, Payment Processing
+
+Logs: See attached build logs
+Commit: a7f9e3c - "Update authentication middleware"</textarea>
+                                    <span class="form-help">Detailed description including error messages and logs</span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Priority <span class="required">*</span>
+                                    </label>
+                                    <select class="form-select" required>
+                                        <option>Low</option>
+                                        <option>Medium</option>
+                                        <option>High</option>
+                                        <option selected>Critical</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Category <span class="required">*</span>
+                                    </label>
+                                    <select class="form-select" required>
+                                        <option>Hardware</option>
+                                        <option selected>Software</option>
+                                        <option>Network</option>
+                                        <option>Security</option>
+                                        <option>DevOps/Deployment</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Sub-Category</label>
+                                    <select class="form-select">
+                                        <option>CI/CD Pipeline</option>
+                                        <option selected>Deployment Failure</option>
+                                        <option>Build Error</option>
+                                        <option>Test Failure</option>
+                                        <option>Infrastructure</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Impact</label>
+                                    <select class="form-select">
+                                        <option>Low</option>
+                                        <option>Medium</option>
+                                        <option>High</option>
+                                        <option selected>Critical</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Urgency</label>
+                                    <select class="form-select">
+                                        <option>Low</option>
+                                        <option>Medium</option>
+                                        <option>High</option>
+                                        <option selected>Critical</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Assignment Group</label>
+                                    <select class="form-select">
+                                        <option>Level 1 Support</option>
+                                        <option>Application Team</option>
+                                        <option selected>DevOps Team</option>
+                                        <option>Infrastructure Team</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Assigned To</label>
+                                    <select class="form-select">
+                                        <option selected>Auto-assign</option>
+                                        <option>Sarah Johnson</option>
+                                        <option>Mike Chen</option>
+                                        <option>David Martinez</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Application/Service</label>
+                                    <input type="text" class="form-control" value="API Gateway">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Configuration Item (CI)</label>
+                                    <input type="text" class="form-control" value="prod-api-gateway-k8s">
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label class="form-label">Related Links</label>
+                                    <input type="text" class="form-control"
+                                           value="https://jenkins.company.com/job/production-deployment/245/"
+                                           placeholder="Jenkins build URL, Jira ticket, etc.">
+                                </div>
+                            </div>
+
+                            <div class="info-box">
+                                <div class="info-box-title">
+                                    <span>💡</span> DevOps Integration Benefits
+                                </div>
+                                <div class="info-box-text">
+                                    This incident will be automatically linked to your Jenkins pipeline, monitoring alerts, and git commits.
+                                    Team members will receive notifications via Slack, Email, and PagerDuty.
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <span>✓</span> Create Incident
+                                </button>
+                                <button type="button" class="btn btn-secondary">
+                                    <span>⚙️</span> Save as Template
+                                </button>
+                                <button type="button" class="btn btn-secondary">
+                                    <span>✕</span> Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- API Integration Code -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>💻</span>
+                        API Integration Code
+                    </div>
+                    <div class="card-body">
+                        <div class="code-header">
+                            <span class="code-title">Jenkins Pipeline Script (Groovy)</span>
+                            <button class="copy-btn" onclick="copyCode('jenkinsCode')">Copy</button>
+                        </div>
+                        <div class="code-block" id="jenkinsCode">post {
+    failure {
+        script {
+            def incident = [
+                short_description: "Deployment Failed - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                description: "Pipeline: ${env.JOB_NAME}\nBuild: #${env.BUILD_NUMBER}\nStatus: FAILED\n\nError: ${currentBuild.result}",
+                priority: "Critical",
+                category: "DevOps/Deployment",
+                assigned_group: "DevOps Team"
+            ]
+
+            httpRequest(
+                url: "https://linkedeye-finspot.com/api/incidents",
+                httpMode: 'POST',
+                contentType: 'APPLICATION_JSON',
+                authentication: 'jenkins-api-token',
+                requestBody: groovy.json.JsonOutput.toJson(incident)
+            )
+        }
+    }
+}</div>
+
+                        <div class="code-header" style="margin-top: 20px;">
+                            <span class="code-title">GitHub Actions Workflow (YAML)</span>
+                            <button class="copy-btn" onclick="copyCode('githubCode')">Copy</button>
+                        </div>
+                        <div class="code-block" id="githubCode">- name: Create Incident on Failure
+  if: failure()
+  uses: linkedeye-finspot/create-incident@v1
+  with:
+    api-key: ${{ secrets.LINKEDEYE_API_KEY }}
+    short-description: 'Deployment Failed - ${{ github.workflow }}'
+    priority: 'Critical'
+    category: 'DevOps/Deployment'
+    description: |
+      Workflow: ${{ github.workflow }}
+      Run: ${{ github.run_number }}
+      Commit: ${{ github.sha }}
+      Error: Deployment to production failed</div>
+
+                        <div class="code-header" style="margin-top: 20px;">
+                            <span class="code-title">cURL Command</span>
+                            <button class="copy-btn" onclick="copyCode('curlCode')">Copy</button>
+                        </div>
+                        <div class="code-block" id="curlCode">curl -X POST https://linkedeye-finspot.com/api/incidents \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "short_description": "Production Deployment Failed",
+    "description": "Detailed error information...",
+    "priority": "Critical",
+    "category": "DevOps/Deployment",
+    "assignment_group": "DevOps Team"
+  }'</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div>
+                <!-- Integration Status -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>🔗</span>
+                        Active Integrations
+                    </div>
+                    <div class="card-body">
+                        <div class="integration-list">
+                            <div class="integration-item active">
+                                <div class="integration-logo">🔵</div>
+                                <div class="integration-info">
+                                    <div class="integration-name">Jenkins</div>
+                                    <div class="integration-status">✓ Connected</div>
+                                </div>
+                            </div>
+
+                            <div class="integration-item">
+                                <div class="integration-logo">⚫</div>
+                                <div class="integration-info">
+                                    <div class="integration-name">GitHub Actions</div>
+                                    <div class="integration-status">✓ Connected</div>
+                                </div>
+                            </div>
+
+                            <div class="integration-item">
+                                <div class="integration-logo">🟠</div>
+                                <div class="integration-info">
+                                    <div class="integration-name">GitLab CI</div>
+                                    <div class="integration-status">✓ Connected</div>
+                                </div>
+                            </div>
+
+                            <div class="integration-item">
+                                <div class="integration-logo">🔴</div>
+                                <div class="integration-info">
+                                    <div class="integration-name">PagerDuty</div>
+                                    <div class="integration-status">✓ Connected</div>
+                                </div>
+                            </div>
+
+                            <div class="integration-item">
+                                <div class="integration-logo">🟣</div>
+                                <div class="integration-info">
+                                    <div class="integration-name">Datadog</div>
+                                    <div class="integration-status">✓ Connected</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-secondary" style="width: 100%; margin-top: 15px;">
+                            <span>+</span> Add Integration
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Deployment Info -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>📊</span>
+                        Deployment Details
+                    </div>
+                    <div class="card-body">
+                        <div class="sidebar-section">
+                            <div class="info-item">
+                                <span class="info-label">Environment</span>
+                                <span class="info-value">Production</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Cluster</span>
+                                <span class="info-value">prod-us-east-1</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Namespace</span>
+                                <span class="info-value">production</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Service</span>
+                                <span class="info-value">api-gateway</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Version</span>
+                                <span class="info-value">v2.5.1</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent DevOps Incidents -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>📋</span>
+                        Recent DevOps Incidents
+                    </div>
+                    <div class="card-body">
+                        <div class="sidebar-section">
+                            <div class="info-item">
+                                <span class="info-label">Today</span>
+                                <span class="info-value" style="color: var(--danger-color);">3</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">This Week</span>
+                                <span class="info-value">12</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">This Month</span>
+                                <span class="info-value">47</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Avg Resolution</span>
+                                <span class="info-value">2.3 hrs</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>⚡</span>
+                        Quick Actions
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;">
+                            <span>🔄</span> Rollback Deployment
+                        </button>
+                        <button class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;">
+                            <span>📊</span> View Logs
+                        </button>
+                        <button class="btn btn-secondary" style="width: 100%;">
+                            <span>🔍</span> Check Health Status
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyCode(elementId) {
+            const code = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Code copied to clipboard!');
+            });
+        }
+
+        document.getElementById('devopsIncidentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const btn = this.querySelector('.btn-primary');
+            btn.innerHTML = '<span>⏳</span> Creating Incident...';
+            btn.disabled = true;
+
+            // Simulate API call
+            setTimeout(() => {
+                alert('Incident created successfully!\n\nIncident Number: INC0012457\nStatus: New\nAssigned to: DevOps Team\n\nNotifications sent via Slack and Email.');
+                window.location.href = 'linkedeye-incident-detail.html';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

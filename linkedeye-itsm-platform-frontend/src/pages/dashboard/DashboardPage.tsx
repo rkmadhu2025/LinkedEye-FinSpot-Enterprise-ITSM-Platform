@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   RefreshCw,
@@ -15,12 +15,20 @@ import {
   Users,
   Timer,
   Layers,
+  BarChart3,
+  TrendingUp,
+  Bell,
+  Settings,
+  Target,
+  Briefcase,
+  Calendar,
+  Gauge,
 } from 'lucide-react';
 import { useAppSelector } from '@/hooks/useRedux';
 import { dashboardService } from '@/services/dashboardService';
 import { onCallService, CurrentOnCallEntry } from '@/services/onCallService';
 import { DashboardStats } from '@/types';
-import { getUserRole } from '@/utils/roles';
+import { getUserRole, UserRole, getRoleDisplayName } from '@/utils/roles';
 import { KPICard, SLACountdown, ActionPanel, AlertFunnel, RoleGuard, DashboardGrid } from '@/components/dashboard';
 import { isFeatureEnabled } from '@/utils/featureFlags';
 import clsx from 'clsx';
@@ -40,7 +48,7 @@ import {
   ArcElement,
   BarElement,
 } from 'chart.js';
-import { Line, Doughnut } from 'react-chartjs-2';
+import { Line, Doughnut, Bar } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
@@ -55,20 +63,112 @@ ChartJS.register(
   BarElement
 );
 
+/**
+ * LinkedEye Enterprise Dashboard v6.0
+ *
+ * Role-based personalization:
+ * - Agents: Operational tasks, SLA timers, assigned incidents, on-call status
+ * - Managers: Team trends, workload distribution, escalation metrics
+ * - Admins: System health, integrations, infrastructure status
+ * - Executives: High-level KPIs, business metrics, trend summaries
+ *
+ * Features:
+ * - Modular widget-based layout
+ * - Real-time SLA countdown timers
+ * - Action-oriented panels
+ * - Professional Blue enterprise theme
+ */
+
+// Role-based dashboard configurations
+const ROLE_CONFIG: Record<UserRole, {
+  title: string;
+  subtitle: string;
+  kpiCount: number;
+  showAlertFunnel: boolean;
+  showOnCall: boolean;
+  showTeamWorkload: boolean;
+  showInfrastructure: boolean;
+  showIntegrations: boolean;
+  showEscalations: boolean;
+}> = {
+  executive: {
+    title: 'Executive Overview',
+    subtitle: 'Business metrics and high-level KPIs',
+    kpiCount: 4,
+    showAlertFunnel: false,
+    showOnCall: false,
+    showTeamWorkload: true,
+    showInfrastructure: false,
+    showIntegrations: false,
+    showEscalations: false,
+  },
+  manager: {
+    title: 'Team Performance',
+    subtitle: 'Trends, workload and escalation metrics',
+    kpiCount: 5,
+    showAlertFunnel: true,
+    showOnCall: true,
+    showTeamWorkload: true,
+    showInfrastructure: true,
+    showIntegrations: false,
+    showEscalations: true,
+  },
+  agent: {
+    title: 'Operations Dashboard',
+    subtitle: 'Active incidents and SLA timers',
+    kpiCount: 5,
+    showAlertFunnel: true,
+    showOnCall: true,
+    showTeamWorkload: false,
+    showInfrastructure: false,
+    showIntegrations: false,
+    showEscalations: false,
+  },
+  admin: {
+    title: 'System Administration',
+    subtitle: 'System health and integrations',
+    kpiCount: 5,
+    showAlertFunnel: true,
+    showOnCall: true,
+    showTeamWorkload: true,
+    showInfrastructure: true,
+    showIntegrations: true,
+    showEscalations: true,
+  },
+};
+
 const DashboardPage = () => {
   const { theme } = useAppSelector((state) => state.ui);
   const { user } = useAppSelector((state) => state.auth);
-  const role = getUserRole(user);
+  const role = getUserRole(user) as UserRole;
+  const roleConfig = ROLE_CONFIG[role] || ROLE_CONFIG.agent;
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [currentOnCall, setCurrentOnCall] = useState<CurrentOnCallEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [dashboardIncidents, setDashboardIncidents] = useState<Array<{id: string; number: string; title: string; priority: string; status: string}>>([]);
-  const [alertFunnelData, setAlertFunnelData] = useState<{ stages: Array<{ label: string; count: number; color: string }> } | null>(null);
-  const [teamWorkloadData, setTeamWorkloadData] = useState<{ teams: Array<{ name: string; active: number; capacity: number }> } | null>(null);
-  const [slaData, setSlaData] = useState<{ at_risk: Array<{ id: string; title: string; priority: string; sla_due: string }>; breached: Array<{ id: string; title: string; priority: string; sla_due: string }>; at_risk_count: number; breached_count: number } | null>(null);
+  const [dashboardIncidents, setDashboardIncidents] = useState<Array<{
+    id: string;
+    number: string;
+    title: string;
+    priority: string;
+    status: string;
+    sla_due?: string;
+  }>>([]);
+  const [alertFunnelData, setAlertFunnelData] = useState<{
+    stages: Array<{ label: string; count: number; color: string }>;
+  } | null>(null);
+  const [teamWorkloadData, setTeamWorkloadData] = useState<{
+    teams: Array<{ name: string; active: number; capacity: number }>;
+  } | null>(null);
+  const [slaData, setSlaData] = useState<{
+    at_risk: Array<{ id: string; title: string; priority: string; sla_due: string }>;
+    breached: Array<{ id: string; title: string; priority: string; sla_due: string }>;
+    at_risk_count: number;
+    breached_count: number;
+  } | null>(null);
 
-  // Client filtering - read selected client from localStorage (set by ClientSelector)
+  // Client filtering
   const selectedClientId = localStorage.getItem('selectedClientId') || undefined;
   const selectedClientName = localStorage.getItem('selectedClientName') || 'All Clients';
 
@@ -95,6 +195,7 @@ const DashboardPage = () => {
           title: i.title,
           priority: i.priority,
           status: i.status,
+          sla_due: i.sla_resolution_due || i.slaResolutionDue,
         })));
       }
     } catch (err) {
@@ -108,6 +209,9 @@ const DashboardPage = () => {
 
   useEffect(() => {
     fetchStats();
+    // Auto-refresh every 30 seconds for real-time updates
+    const refreshInterval = setInterval(() => fetchStats(true), 30000);
+    return () => clearInterval(refreshInterval);
   }, [fetchStats]);
 
   const handleRefresh = () => {
@@ -120,6 +224,27 @@ const DashboardPage = () => {
   const borderColor = isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb';
   const textPrimary = isDark ? '#f8fafc' : '#0f172a';
   const textSecondary = isDark ? '#94a3b8' : '#64748b';
+
+  // Prepare action panel items with priority
+  const incidentsNeedingAttention = useMemo(() => {
+    return (dashboardIncidents.length > 0 ? dashboardIncidents : recentIncidents)
+      .filter((i) => ['critical', 'high'].includes(i.priority.toLowerCase()) || i.status.toLowerCase() === 'new')
+      .slice(0, 5)
+      .map((i) => ({
+        id: i.id,
+        title: `${i.number} — ${i.title}`,
+        subtitle: `${i.priority} · ${i.status}`,
+        badge: <PriorityBadge priority={i.priority} />,
+        href: `/incidents/${i.id}`,
+        priority: i.priority.toLowerCase() as 'critical' | 'high' | 'medium' | 'low',
+      }));
+  }, [dashboardIncidents]);
+
+  const upcomingChanges = [
+    { id: 'c1', title: 'Database migration v3.2', subtitle: 'Scheduled Feb 5 · Normal', href: '/changes', priority: 'medium' as const },
+    { id: 'c2', title: 'SSL cert rotation', subtitle: 'Scheduled Feb 6 · Standard', href: '/changes', priority: 'low' as const },
+    { id: 'c3', title: 'API Gateway upgrade', subtitle: 'Scheduled Feb 8 · Emergency', href: '/changes', priority: 'high' as const },
+  ];
 
   if (isLoading && !stats) {
     return (
@@ -134,35 +259,25 @@ const DashboardPage = () => {
     );
   }
 
-  // Prepare action panel items
-  const incidentsNeedingAttention = (dashboardIncidents.length > 0 ? dashboardIncidents : recentIncidents)
-    .filter((i) => ['critical', 'high'].includes(i.priority.toLowerCase()) || i.status.toLowerCase() === 'new')
-    .slice(0, 5)
-    .map((i) => ({
-      id: i.id,
-      title: `${i.number} — ${i.title}`,
-      subtitle: `${i.priority} · ${i.status}`,
-      badge: <PriorityBadge priority={i.priority} />,
-      href: `/incidents/${i.id}`,
-    }));
-
-  const upcomingChanges = [
-    { id: 'c1', title: 'Database migration v3.2', subtitle: 'Scheduled Feb 5 · Normal', href: '/changes' },
-    { id: 'c2', title: 'SSL cert rotation', subtitle: 'Scheduled Feb 6 · Standard', href: '/changes' },
-    { id: 'c3', title: 'API Gateway upgrade', subtitle: 'Scheduled Feb 8 · Emergency', href: '/changes' },
-  ];
-
   return (
     <div className="space-y-6">
       {/* Status Bar + Greeting */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold" style={{ color: textPrimary }}>
-            {getGreeting()}, {user?.firstName || 'Operator'}
-          </h2>
-          <p className="text-sm mt-0.5" style={{ color: textSecondary }}>
-            {role === 'executive' ? 'Executive Overview' : role === 'manager' ? 'Team Performance' : 'Operations Dashboard'}
-            {selectedClientId && <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{selectedClientName}</span>}
+          <div className="flex items-center gap-3 mb-1">
+            <h2 className="text-xl font-bold" style={{ color: textPrimary }}>
+              {getGreeting()}, {user?.firstName || 'Operator'}
+            </h2>
+            {/* Role Badge - Shows the detected dashboard role */}
+            <RoleBadge role={role} isDark={isDark} />
+          </div>
+          <p className="text-sm" style={{ color: textSecondary }}>
+            {roleConfig.title} — {roleConfig.subtitle}
+            {selectedClientId && (
+              <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                {selectedClientName}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -173,7 +288,7 @@ const DashboardPage = () => {
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:bg-primary-50 dark:hover:bg-primary-900/20"
             style={{
               background: isDark ? 'rgba(255,255,255,0.06)' : '#f4f6f9',
               color: textSecondary,
@@ -186,31 +301,28 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* === KPI Row === */}
-      {/* Executives: only high-level KPIs */}
-      {/* Agents: operational metrics */}
-      {/* Managers: team metrics */}
-      {/* Admins: everything */}
+      {/* === KPI Row - Role-based === */}
       <div className={clsx(
         'grid gap-4',
-        role === 'executive' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-5'
+        roleConfig.kpiCount === 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-5'
       )}>
         <KPICard
           title="Active Incidents"
           value={stats?.incidents.critical || 0}
           subtitle="Critical priority"
           icon={<AlertTriangle size={18} />}
-          trend={{ value: 2, direction: 'up', label: 'vs yesterday' }}
-          accentColor="#ef4444"
+          trend={{ value: 2, direction: 'up', label: 'vs yesterday', isPositive: false }}
+          status="critical"
           isDark={isDark}
+          href="/incidents?priority=critical"
         />
         <KPICard
           title="MTTR"
           value={stats?.incidents.avgResolutionTime ? `${Math.round(stats.incidents.avgResolutionTime)}m` : '42m'}
           subtitle="Mean time to resolve"
           icon={<Timer size={18} />}
-          trend={{ value: 12, direction: 'down', label: 'faster' }}
-          accentColor="#10b981"
+          trend={{ value: 12, direction: 'down', label: 'faster', isPositive: true }}
+          status="healthy"
           isDark={isDark}
         />
         <KPICard
@@ -218,29 +330,32 @@ const DashboardPage = () => {
           value={slaData?.at_risk_count ?? stats?.incidents.slaBreached ?? 3}
           subtitle={`${slaData?.breached_count ?? 0} breached`}
           icon={<Clock size={18} />}
-          trend={{ value: slaData?.breached_count ?? 1, direction: 'up', label: 'breached' }}
-          accentColor="#f59e0b"
+          trend={{ value: slaData?.breached_count ?? 1, direction: 'up', label: 'breached', isPositive: false }}
+          status={slaData?.breached_count ? 'critical' : 'medium'}
           isDark={isDark}
+          href="/incidents?sla=at_risk"
         />
         <KPICard
           title="Change Success"
           value={stats?.changes ? `${Math.round(((stats.changes.completed || 0) / Math.max(stats.changes.total, 1)) * 100)}%` : '94%'}
           subtitle={`${stats?.changes?.completed || 0} completed`}
           icon={<CheckCircle size={18} />}
-          trend={{ value: 3, direction: 'down', label: 'improvement' }}
-          accentColor="#06b6d4"
+          trend={{ value: 3, direction: 'up', label: 'improvement', isPositive: true }}
+          status="info"
           isDark={isDark}
+          href="/changes"
         />
         {/* 5th card only for non-executive roles */}
-        {role !== 'executive' && (
+        {roleConfig.kpiCount > 4 && (
           <KPICard
-            title="Open Problems"
-            value={stats?.problems?.open || 7}
-            subtitle="Root cause analysis"
-            icon={<Layers size={18} />}
-            trend={{ value: 2, direction: 'neutral', label: 'investigating' }}
-            accentColor="#7c3aed"
+            title={role === 'admin' ? 'System Health' : 'Open Problems'}
+            value={role === 'admin' ? '98%' : (stats?.problems?.open || 7)}
+            subtitle={role === 'admin' ? 'All services up' : 'Root cause analysis'}
+            icon={role === 'admin' ? <Server size={18} /> : <Layers size={18} />}
+            trend={{ value: 2, direction: 'neutral', label: role === 'admin' ? 'stable' : 'investigating' }}
+            status={role === 'admin' ? 'healthy' : 'medium'}
             isDark={isDark}
+            href={role === 'admin' ? '/infrastructure' : '/problems'}
           />
         )}
       </div>
@@ -257,7 +372,9 @@ const DashboardPage = () => {
             style={{ borderBottom: `1px solid ${borderColor}` }}
           >
             <div className="flex items-center gap-2.5">
-              <Activity size={17} style={{ color: 'var(--color-primary)' }} />
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)' }}>
+                <Activity size={17} className="text-primary-500" />
+              </div>
               <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>
                 Incident Trends
               </h3>
@@ -287,70 +404,73 @@ const DashboardPage = () => {
         {/* Alert-to-Incident Funnel + Priority Distribution */}
         <div className="space-y-6">
           {/* Alert Funnel — Agents & Managers */}
-          {isFeatureEnabled('alertFunnel') && (
-            <RoleGuard allowed={['agent', 'manager', 'admin']}>
-              <div
-                className="rounded-xl"
-                style={{ background: cardBg, border: `1px solid ${borderColor}` }}
-              >
-                <div className="px-5 py-4" style={{ borderBottom: `1px solid ${borderColor}` }}>
-                  <div className="flex items-center gap-2.5">
-                    <Zap size={17} style={{ color: '#f59e0b' }} />
-                    <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>
-                      Alert Funnel
-                    </h3>
+          {roleConfig.showAlertFunnel && isFeatureEnabled('alertFunnel') && (
+            <div
+              className="rounded-xl"
+              style={{ background: cardBg, border: `1px solid ${borderColor}` }}
+            >
+              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${borderColor}` }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: isDark ? 'rgba(249, 115, 22, 0.15)' : 'rgba(249, 115, 22, 0.1)' }}>
+                    <Zap size={17} className="text-high-500" />
                   </div>
-                </div>
-                <div className="p-5">
-                  <AlertFunnel
-                    isDark={isDark}
-                    stages={alertFunnelData?.stages || [
-                      { label: 'Total Alerts', count: 247, color: '#6366f1' },
-                      { label: 'Deduplicated', count: 89, color: '#f59e0b' },
-                      { label: 'Incidents Created', count: 34, color: '#ef4444' },
-                      { label: 'Resolved', count: 28, color: '#10b981' },
-                    ]}
-                  />
+                  <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>
+                    Alert Funnel
+                  </h3>
                 </div>
               </div>
-            </RoleGuard>
+              <div className="p-5">
+                <AlertFunnel
+                  isDark={isDark}
+                  stages={alertFunnelData?.stages || [
+                    { label: 'Total Alerts', count: 247, color: '#3b82f6' },
+                    { label: 'Deduplicated', count: 89, color: '#f59e0b' },
+                    { label: 'Incidents Created', count: 34, color: '#ef4444' },
+                    { label: 'Resolved', count: 28, color: '#10b981' },
+                  ]}
+                />
+              </div>
+            </div>
           )}
 
           {/* Priority Distribution — All roles */}
-          {isFeatureEnabled('priorityDistribution') && <div
-            className="rounded-xl"
-            style={{ background: cardBg, border: `1px solid ${borderColor}` }}
-          >
-            <div className="px-5 py-4" style={{ borderBottom: `1px solid ${borderColor}` }}>
-              <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>
-                Priority Distribution
-              </h3>
-            </div>
-            <div className="p-5">
-              <div className="h-48">
-                <Doughnut data={getPriorityData(isDark)} options={getDoughnutOptions(isDark)} />
+          {isFeatureEnabled('priorityDistribution') && (
+            <div
+              className="rounded-xl"
+              style={{ background: cardBg, border: `1px solid ${borderColor}` }}
+            >
+              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${borderColor}` }}>
+                <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>
+                  Priority Distribution
+                </h3>
+              </div>
+              <div className="p-5">
+                <div className="h-48">
+                  <Doughnut data={getPriorityData(isDark)} options={getDoughnutOptions(isDark)} />
+                </div>
               </div>
             </div>
-          </div>}
+          )}
         </div>
       </div>
 
       {/* === Action Panels Row === */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Incidents Needing Attention — Agents & Managers */}
-        <RoleGuard allowed={['agent', 'manager', 'admin']}>
-          <ActionPanel
-            title="Incidents Needing Attention"
-            icon={<AlertTriangle size={17} />}
-            items={incidentsNeedingAttention}
-            emptyText="No critical incidents right now"
-            viewAllHref="/incidents"
-            isDark={isDark}
-          />
-        </RoleGuard>
+        <ActionPanel
+          title="Incidents Needing Attention"
+          icon={<AlertTriangle size={17} />}
+          items={incidentsNeedingAttention}
+          emptyText="No critical incidents right now"
+          emptyAction={{ label: 'View All Incidents', href: '/incidents' }}
+          viewAllHref="/incidents"
+          isDark={isDark}
+          accentColor="#ef4444"
+          variant="default"
+        />
 
         {/* My On-Call Alerts — Agents */}
-        {isFeatureEnabled('onCallPanel') && <RoleGuard allowed={['agent', 'admin']}>
+        {roleConfig.showOnCall && isFeatureEnabled('onCallPanel') && (
           <div
             className="rounded-xl"
             style={{ background: cardBg, border: `1px solid ${borderColor}` }}
@@ -360,15 +480,22 @@ const DashboardPage = () => {
               style={{ borderBottom: `1px solid ${borderColor}` }}
             >
               <div className="flex items-center gap-2.5">
-                <Phone size={17} className="text-emerald-500" />
-                <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>
-                  Current On-Call
-                </h3>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)' }}>
+                  <Phone size={17} className="text-emerald-500" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>
+                    Current On-Call
+                  </h3>
+                  <p className="text-xs" style={{ color: textSecondary }}>
+                    {currentOnCall.length} active
+                  </p>
+                </div>
               </div>
               <Link
                 to="/on-call/schedules"
                 className="text-xs font-medium flex items-center gap-1"
-                style={{ color: 'var(--color-primary)' }}
+                style={{ color: '#3b82f6' }}
               >
                 Manage <ArrowRight size={13} />
               </Link>
@@ -378,7 +505,7 @@ const DashboardPage = () => {
                 <div className="text-center py-8" style={{ color: textSecondary }}>
                   <Phone size={28} className="mx-auto mb-2 opacity-40" />
                   <p className="text-sm">No active on-call shifts</p>
-                  <Link to="/on-call/schedules" className="text-xs mt-2 inline-block" style={{ color: 'var(--color-primary)' }}>
+                  <Link to="/on-call/schedules" className="text-xs mt-2 inline-block" style={{ color: '#3b82f6' }}>
                     Set up schedules
                   </Link>
                 </div>
@@ -397,7 +524,7 @@ const DashboardPage = () => {
                       >
                         <div
                           className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold"
-                          style={{ background: isCurrent ? 'linear-gradient(135deg,#10b981,#059669)' : 'linear-gradient(135deg,#6366f1,#4f46e5)' }}
+                          style={{ background: isCurrent ? 'linear-gradient(135deg,#10b981,#059669)' : 'linear-gradient(135deg,#3b82f6,#2563eb)' }}
                         >
                           {initials}
                         </div>
@@ -405,7 +532,7 @@ const DashboardPage = () => {
                           <div className="flex items-center gap-2">
                             <p className="text-sm font-semibold truncate" style={{ color: textPrimary }}>{name}</p>
                             {isCurrent && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                                 On-Call
                               </span>
                             )}
@@ -421,7 +548,7 @@ const DashboardPage = () => {
               )}
             </div>
           </div>
-        </RoleGuard>}
+        )}
 
         {/* Upcoming Changes */}
         {isFeatureEnabled('upcomingChanges') && (
@@ -432,27 +559,43 @@ const DashboardPage = () => {
             emptyText="No upcoming changes"
             viewAllHref="/changes"
             isDark={isDark}
+            accentColor="#3b82f6"
           />
         )}
       </div>
 
-      {/* === SLA Countdown Row === */}
+      {/* === SLA Countdown Row - Agents focus === */}
       {isFeatureEnabled('slaCountdown') && slaData && (slaData.at_risk.length > 0 || slaData.breached.length > 0) && (
         <div
           className="rounded-xl"
           style={{ background: cardBg, border: `1px solid ${borderColor}` }}
         >
-          <div className="px-5 py-4 flex items-center gap-2.5" style={{ borderBottom: `1px solid ${borderColor}` }}>
-            <Clock size={17} style={{ color: '#f59e0b' }} />
-            <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>
-              SLA Countdown — At Risk ({slaData.at_risk_count + slaData.breached_count})
-            </h3>
+          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${borderColor}` }}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)' }}>
+                <Clock size={17} className="text-medium-500" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>
+                  SLA Countdown — At Risk
+                </h3>
+                <p className="text-xs" style={{ color: textSecondary }}>
+                  {slaData.at_risk_count + slaData.breached_count} incidents need attention
+                </p>
+              </div>
+            </div>
+            <Link to="/incidents?sla=at_risk" className="text-xs font-medium flex items-center gap-1" style={{ color: '#3b82f6' }}>
+              View All <ArrowRight size={13} />
+            </Link>
           </div>
           <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...slaData.breached, ...slaData.at_risk].slice(0, 6).map((inc) => (
-              <Link key={inc.id} to={`/incidents/${inc.id}`} className="block">
-                <div className="space-y-2">
-                  <p className="text-xs font-medium truncate" style={{ color: textPrimary }}>{inc.title}</p>
+              <Link key={inc.id} to={`/incidents/${inc.id}`} className="block group">
+                <div
+                  className="p-4 rounded-lg transition-all group-hover:shadow-md"
+                  style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#f9fafb' }}
+                >
+                  <p className="text-xs font-medium truncate mb-2" style={{ color: textPrimary }}>{inc.title}</p>
                   <SLACountdown dueDateISO={inc.sla_due} isDark={isDark} compact />
                 </div>
               </Link>
@@ -462,72 +605,81 @@ const DashboardPage = () => {
       )}
 
       {/* === Manager/Executive Row — Team & Trend Metrics === */}
-      <RoleGuard allowed={['manager', 'admin', 'executive']}>
+      {(roleConfig.showTeamWorkload || roleConfig.showInfrastructure) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Workload Distribution */}
-          {isFeatureEnabled('teamWorkload') && (
-          <div className="rounded-xl" style={{ background: cardBg, border: `1px solid ${borderColor}` }}>
-            <div className="px-5 py-4 flex items-center gap-2.5" style={{ borderBottom: `1px solid ${borderColor}` }}>
-              <Users size={17} style={{ color: 'var(--color-primary)' }} />
-              <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>Team Workload</h3>
-            </div>
-            <div className="p-5 space-y-4">
-              {(teamWorkloadData?.teams || [
-                { name: 'Platform Ops', active: 12, capacity: 20 },
-                { name: 'Network Ops', active: 8, capacity: 15 },
-                { name: 'Security Team', active: 5, capacity: 10 },
-                { name: 'Database Ops', active: 3, capacity: 8 },
-              ]).map((team) => (
-                <div key={team.name} className="space-y-1.5">
-                  <div className="flex justify-between text-xs">
-                    <span style={{ color: textSecondary }}>{team.name}</span>
-                    <span className="font-semibold" style={{ color: textPrimary }}>
-                      {team.active}/{team.capacity}
-                    </span>
-                  </div>
-                  <div className="h-2 rounded-full overflow-hidden" style={{ background: isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb' }}>
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        width: `${(team.active / team.capacity) * 100}%`,
-                        background: (team.active / team.capacity) > 0.8 ? '#ef4444' : (team.active / team.capacity) > 0.6 ? '#f59e0b' : '#10b981',
-                      }}
-                    />
-                  </div>
+          {roleConfig.showTeamWorkload && isFeatureEnabled('teamWorkload') && (
+            <div className="rounded-xl" style={{ background: cardBg, border: `1px solid ${borderColor}` }}>
+              <div className="px-5 py-4 flex items-center gap-2.5" style={{ borderBottom: `1px solid ${borderColor}` }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)' }}>
+                  <Users size={17} className="text-primary-500" />
                 </div>
-              ))}
+                <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>Team Workload</h3>
+              </div>
+              <div className="p-5 space-y-4">
+                {(teamWorkloadData?.teams || [
+                  { name: 'Platform Ops', active: 12, capacity: 20 },
+                  { name: 'Network Ops', active: 8, capacity: 15 },
+                  { name: 'Security Team', active: 5, capacity: 10 },
+                  { name: 'Database Ops', active: 3, capacity: 8 },
+                ]).map((team) => {
+                  const utilization = team.active / team.capacity;
+                  const color = utilization > 0.8 ? '#ef4444' : utilization > 0.6 ? '#f59e0b' : '#10b981';
+                  return (
+                    <div key={team.name} className="space-y-1.5">
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: textSecondary }}>{team.name}</span>
+                        <span className="font-semibold" style={{ color: textPrimary }}>
+                          {team.active}/{team.capacity}
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full overflow-hidden" style={{ background: isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb' }}>
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${utilization * 100}%`, background: color }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
           )}
 
           {/* Infrastructure Health */}
-          {isFeatureEnabled('infrastructureHealth') && (
-          <div className="rounded-xl" style={{ background: cardBg, border: `1px solid ${borderColor}` }}>
-            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${borderColor}` }}>
-              <div className="flex items-center gap-2.5">
-                <Server size={17} style={{ color: 'var(--color-primary)' }} />
-                <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>Infrastructure Health</h3>
+          {roleConfig.showInfrastructure && isFeatureEnabled('infrastructureHealth') && (
+            <div className="rounded-xl" style={{ background: cardBg, border: `1px solid ${borderColor}` }}>
+              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${borderColor}` }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)' }}>
+                    <Server size={17} className="text-success-500" />
+                  </div>
+                  <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>Infrastructure Health</h3>
+                </div>
+                <Link to="/infrastructure" className="text-xs font-medium flex items-center gap-1" style={{ color: '#3b82f6' }}>
+                  Details <ArrowRight size={13} />
+                </Link>
+              </div>
+              <div className="p-5 space-y-4">
+                <HealthBar label="API Gateway" value={98} isDark={isDark} />
+                <HealthBar label="Database Cluster" value={95} isDark={isDark} />
+                <HealthBar label="Cache Layer" value={100} isDark={isDark} />
+                <HealthBar label="Message Queue" value={87} isDark={isDark} />
+                <HealthBar label="CDN" value={100} isDark={isDark} />
               </div>
             </div>
-            <div className="p-5 space-y-4">
-              <HealthBar label="API Gateway" value={98} isDark={isDark} />
-              <HealthBar label="Database Cluster" value={95} isDark={isDark} />
-              <HealthBar label="Cache Layer" value={100} isDark={isDark} />
-              <HealthBar label="Message Queue" value={87} isDark={isDark} />
-              <HealthBar label="CDN" value={100} isDark={isDark} />
-            </div>
-          </div>
           )}
         </div>
-      </RoleGuard>
+      )}
 
       {/* === Admin-Only: System Health & Integrations === */}
-      {isFeatureEnabled('systemIntegrations') && (
-      <RoleGuard allowed={['admin']}>
+      {roleConfig.showIntegrations && isFeatureEnabled('systemIntegrations') && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="rounded-xl" style={{ background: cardBg, border: `1px solid ${borderColor}` }}>
             <div className="px-5 py-4 flex items-center gap-2.5" style={{ borderBottom: `1px solid ${borderColor}` }}>
-              <Shield size={17} className="text-indigo-500" />
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)' }}>
+                <Shield size={17} className="text-purple-500" />
+              </div>
               <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>System Integrations</h3>
             </div>
             <div className="p-5 space-y-3">
@@ -549,35 +701,38 @@ const DashboardPage = () => {
           </div>
 
           {/* Escalation Status */}
-          <div className="rounded-xl" style={{ background: cardBg, border: `1px solid ${borderColor}` }}>
-            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${borderColor}` }}>
-              <div className="flex items-center gap-2.5">
-                <Shield size={17} className="text-indigo-500" />
-                <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>Escalation Status</h3>
-              </div>
-              <Link to="/on-call/dashboard" className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--color-primary)' }}>
-                Dashboard <ArrowRight size={13} />
-              </Link>
-            </div>
-            <div className="p-5 space-y-3">
-              {[
-                { label: 'Active Policies', value: '5', color: '#10b981' },
-                { label: 'Pending Escalations', value: '2', color: '#f59e0b' },
-                { label: 'Escalation Levels', value: '12', color: '#3b82f6' },
-                { label: 'Avg Response Time', value: '4.2 min', color: '#7c3aed' },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between p-3 rounded-lg" style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#f9fafb' }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
-                    <span className="text-sm" style={{ color: textSecondary }}>{item.label}</span>
+          {roleConfig.showEscalations && (
+            <div className="rounded-xl" style={{ background: cardBg, border: `1px solid ${borderColor}` }}>
+              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${borderColor}` }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: isDark ? 'rgba(249, 115, 22, 0.15)' : 'rgba(249, 115, 22, 0.1)' }}>
+                    <Bell size={17} className="text-high-500" />
                   </div>
-                  <span className="text-sm font-semibold" style={{ color: textPrimary }}>{item.value}</span>
+                  <h3 className="text-sm font-semibold" style={{ color: textPrimary }}>Escalation Status</h3>
                 </div>
-              ))}
+                <Link to="/on-call/dashboard" className="text-xs font-medium flex items-center gap-1" style={{ color: '#3b82f6' }}>
+                  Dashboard <ArrowRight size={13} />
+                </Link>
+              </div>
+              <div className="p-5 space-y-3">
+                {[
+                  { label: 'Active Policies', value: '5', color: '#10b981' },
+                  { label: 'Pending Escalations', value: '2', color: '#f59e0b' },
+                  { label: 'Escalation Levels', value: '12', color: '#3b82f6' },
+                  { label: 'Avg Response Time', value: '4.2 min', color: '#8b5cf6' },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center justify-between p-3 rounded-lg" style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#f9fafb' }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
+                      <span className="text-sm" style={{ color: textSecondary }}>{item.label}</span>
+                    </div>
+                    <span className="text-sm font-semibold" style={{ color: textPrimary }}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
-      </RoleGuard>
       )}
     </div>
   );
@@ -603,7 +758,10 @@ const StatusItem = ({ label, status }: StatusItemProps) => {
   const colors = { healthy: '#10b981', warning: '#f59e0b', critical: '#ef4444' };
   return (
     <div className="flex items-center gap-2 text-xs" style={{ color: '#64748b' }}>
-      <div className="w-2 h-2 rounded-full" style={{ background: colors[status], boxShadow: `0 0 6px ${colors[status]}` }} />
+      <div
+        className="w-2 h-2 rounded-full"
+        style={{ background: colors[status], boxShadow: `0 0 6px ${colors[status]}` }}
+      />
       <span>{label}</span>
     </div>
   );
@@ -613,13 +771,42 @@ const PriorityBadge = ({ priority }: { priority: string }) => {
   const styles: Record<string, { bg: string; color: string }> = {
     critical: { bg: '#ef4444', color: '#fff' },
     high: { bg: '#f97316', color: '#fff' },
-    medium: { bg: '#fbbf24', color: '#78350f' },
+    medium: { bg: '#f59e0b', color: '#78350f' },
     low: { bg: '#3b82f6', color: '#fff' },
   };
   const style = styles[priority.toLowerCase()] || styles.medium;
   return (
     <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: style.bg, color: style.color }}>
       {priority}
+    </span>
+  );
+};
+
+// Role Badge - Shows the user's detected dashboard role
+const RoleBadge = ({ role, isDark }: { role: UserRole; isDark: boolean }) => {
+  const roleStyles: Record<UserRole, { bg: string; bgDark: string; color: string; icon: string }> = {
+    executive: { bg: '#8b5cf6', bgDark: 'rgba(139, 92, 246, 0.2)', color: '#fff', icon: 'E' },
+    manager: { bg: '#3b82f6', bgDark: 'rgba(59, 130, 246, 0.2)', color: '#fff', icon: 'M' },
+    admin: { bg: '#ef4444', bgDark: 'rgba(239, 68, 68, 0.2)', color: '#fff', icon: 'A' },
+    agent: { bg: '#10b981', bgDark: 'rgba(16, 185, 129, 0.2)', color: '#fff', icon: 'O' },
+  };
+  const style = roleStyles[role];
+  const displayName = getRoleDisplayName(role);
+
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+      style={{
+        background: isDark ? style.bgDark : style.bg,
+        color: isDark ? style.bg : style.color,
+        border: isDark ? `1px solid ${style.bg}` : 'none',
+      }}
+      title={`You are viewing the ${displayName} dashboard. Your dashboard is personalized based on your role.`}
+    >
+      <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: style.bg, color: '#fff' }}>
+        {style.icon}
+      </span>
+      {displayName} View
     </span>
   );
 };
@@ -653,12 +840,12 @@ const getIncidentTrendsData = (isDark: boolean) => ({
     {
       label: 'New Incidents',
       data: [12, 19, 15, 25, 22, 10, 8],
-      borderColor: '#4f46e5',
-      backgroundColor: isDark ? 'rgba(79, 70, 229, 0.1)' : 'rgba(79, 70, 229, 0.05)',
+      borderColor: '#3b82f6',
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
       fill: true,
       tension: 0.4,
       pointRadius: 4,
-      pointBackgroundColor: '#4f46e5',
+      pointBackgroundColor: '#3b82f6',
       pointBorderColor: isDark ? 'rgba(17,28,50,0.95)' : '#ffffff',
       pointBorderWidth: 2,
     },
@@ -684,7 +871,7 @@ const getChartOptions = (isDark: boolean) => ({
       align: 'end' as const,
       labels: {
         color: isDark ? '#94a3b8' : '#64748b',
-        font: { size: 11, weight: '500' },
+        font: { size: 11, weight: '500' as const },
         usePointStyle: true,
         padding: 20,
       },

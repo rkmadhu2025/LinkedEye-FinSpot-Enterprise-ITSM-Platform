@@ -1,0 +1,251 @@
+
+/* Shared Infrastructure Styles */
+
+/* 3D Datacenter Visualization */
+.floor-grid-pattern {
+  background-image: 
+    linear-gradient(rgba(59, 130, 246, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.3) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.perspective-1200 {
+  perspective: 1200px;
+  perspective-origin: 50% 20%;
+}
+
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.floor-transform {
+  transform: rotateX(55deg) rotateZ(-5deg);
+}
+
+.rack-transform-wrapper {
+  transform: translateZ(0);
+  transform-style: preserve-3d;
+}
+
+.rack-label-transform {
+  transform: translateX(-50%) rotateX(-55deg) rotateZ(5deg);
+}
+
+.rack-shadow-critical {
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.6), inset 0 0 20px rgba(0,0,0,0.5);
+}
+
+.rack-shadow-warning {
+  box-shadow: 0 0 30px rgba(234, 179, 8, 0.6), inset 0 0 20px rgba(0,0,0,0.5);
+}
+
+.rack-shadow-normal {
+  box-shadow: 0 15px 40px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,0,0,0.3);
+}
+
+.rack-unit-device {
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.status-led-shadow-online {
+  box-shadow: 0 0 4px rgba(74, 222, 128, 0.8);
+}
+
+.status-led-shadow-warning {
+  box-shadow: 0 0 4px rgba(250, 204, 21, 0.8);
+}
+
+.status-led-shadow-critical {
+  box-shadow: 0 0 4px rgba(248, 113, 113, 0.8);
+}
+
+.vm-icon-transform {
+    transform: translateY(-2px);
+}
+
+.layer-icon-wrapper {
+  background-color: var(--dynamic-color-alpha);
+  box-shadow: 0 4px 14px var(--dynamic-color-alpha);
+}
+
+.animate-move-down {
+    animation: moveDown 2s infinite;
+}
+
+@keyframes moveDown {
+    0% { transform: translateY(-30%); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateY(30%); opacity: 0; }
+}
+
+.bg-dynamic-alpha-radial {
+  background: radial-gradient(
+    circle at top right,
+    var(--dynamic-color-alpha),
+    transparent 70%
+  );
+}
+
+.bg-dynamic-alpha-radial-center {
+  background: radial-gradient(
+    circle at center,
+    var(--dynamic-color-alpha),
+    transparent 70%
+  );
+}
+
+.bg-dynamic-alpha {
+  background-color: var(--dynamic-color-alpha);
+}
+
+.box-shadow-dynamic {
+  box-shadow: 0 4px 14px var(--dynamic-color-alpha);
+}
+
+.text-dynamic {
+  color: var(--dynamic-color);
+}
+
+.border-dynamic {
+  border-color: var(--dynamic-color);
+}
+
+.bg-dynamic {
+  background-color: var(--dynamic-color);
+}
+
+/* Progress Bar Segments */
+.w-dynamic {
+  width: var(--dynamic-width);
+}
+
+/* Specific Component Helpers */
+
+/* Topology Active Filters */
+.layer-filter-btn.active {
+    background-color: var(--dynamic-color-alpha) !important;
+    border-color: var(--dynamic-color) !important;
+}
+
+
+.layer-count-badge.active {
+    background-color: var(--dynamic-color) !important;
+    color: #fff !important;
+}
+
+/* Network Devices Page Styles */
+
+/* Stat Cards */
+.network-stat-card {
+  background: white;
+  border: 1px solid #e5e8eb;
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+  transition: all 0.2s;
+}
+.dark .network-stat-card {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+.network-stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.network-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  font-size: 20px;
+}
+
+/* Device Icons */
+.device-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+/* Metrics */
+.device-metric {
+  text-align: center;
+}
+.device-metric .value {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.device-metric .label {
+  font-size: 10px;
+  color: #6b7785;
+}
+.dark .device-metric .label {
+  color: #9ca3af;
+}
+
+/* Port Indicators */
+.port-status-group {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.port-indicator {
+  width: 6px;
+  height: 22px;
+  border-radius: 2px;
+  background: #e5e7eb;
+}
+.dark .port-indicator {
+  background: #4b5563;
+}
+
+.port-indicator.up {
+  background: #10b981;
+}
+
+.port-indicator.down {
+  background: #ef4444;
+}
+
+/* Status Badges */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.status-pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-pill.up { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.status-pill.up::before { background: #10b981; }
+
+.status-pill.down { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.status-pill.down::before { background: #ef4444; }
+
+.status-pill.warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.status-pill.warning::before { background: #f59e0b; }
+
+.status-pill.maintenance { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.status-pill.maintenance::before { background: #3b82f6; }
+
+.status-pill.unknown { background: rgba(107, 114, 128, 0.1); color: #6b7280; }
+.status-pill.unknown::before { background: #6b7280; }
+

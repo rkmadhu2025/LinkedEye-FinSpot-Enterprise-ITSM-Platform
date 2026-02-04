@@ -133,23 +133,24 @@ const IncidentDetailPage = () => {
 
   const slaInfo = getSlaInfo();
 
-  // Get priority gradient class
+  // Get priority gradient class - Using ITSM semantic colors
+  // Critical = Red, High = Orange, Medium = Amber, Healthy = Green
   const getPriorityGradient = () => {
     switch (incident.priority) {
       case 'critical':
-        return 'from-red-500 to-red-600';
+        return 'from-red-500 to-red-600'; // Critical = Red
       case 'high':
-        return 'from-orange-500 to-orange-600';
+        return 'from-orange-500 to-orange-600'; // High = Orange
       case 'medium':
-        return 'from-amber-500 to-amber-600';
+        return 'from-amber-500 to-amber-600'; // Medium = Amber
       case 'low':
-        return 'from-blue-500 to-blue-600';
+        return 'from-blue-500 to-blue-600'; // Low = Blue (enterprise)
       default:
-        return 'from-slate-500 to-slate-600';
+        return 'from-gray-500 to-gray-600'; // Unknown = Grey
     }
   };
 
-  // Get priority badge styles
+  // Get priority badge styles - Semantic ITSM colors
   const getPriorityBadge = () => {
     switch (incident.priority) {
       case 'critical':
@@ -161,7 +162,7 @@ const IncidentDetailPage = () => {
       case 'low':
         return { bg: 'bg-white/90', text: 'text-blue-600', icon: <Activity size={12} /> };
       default:
-        return { bg: 'bg-white/90', text: 'text-slate-600', icon: <Activity size={12} /> };
+        return { bg: 'bg-white/90', text: 'text-gray-600', icon: <Activity size={12} /> };
     }
   };
 
@@ -327,7 +328,7 @@ const IncidentDetailPage = () => {
         <div className="flex items-center gap-4">
           <Link
             to="/incidents"
-            className="w-9 h-9 border rounded-lg flex items-center justify-center hover:text-blue-600 hover:border-blue-500 transition-all"
+            className="w-9 h-9 border rounded-lg flex items-center justify-center hover:text-amber-600 hover:border-amber-500 transition-all"
             style={{ background: isDark ? 'rgba(255,255,255,0.03)' : '#ffffff', borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb', color: isDark ? '#94a3b8' : '#6b7280' }}
           >
             <ArrowLeft size={16} />
@@ -339,14 +340,14 @@ const IncidentDetailPage = () => {
               incident.priority === 'critical' && 'bg-red-500 text-white',
               incident.priority === 'high' && 'bg-orange-500 text-white',
               incident.priority === 'medium' && 'bg-amber-500 text-gray-900',
-              incident.priority === 'low' && 'bg-blue-500 text-white'
+              incident.priority === 'low' && 'bg-amber-500 text-white'
             )}>
               {incident.priority === 'critical' && <Flame size={12} />}
               {incident.priority?.charAt(0).toUpperCase() + incident.priority?.slice(1)}
             </span>
             <span className={clsx(
               'px-3 py-1 rounded-full text-xs font-semibold',
-              incident.status === 'open' && 'bg-blue-100 text-blue-700',
+              incident.status === 'open' && 'bg-amber-100 text-amber-700',
               incident.status === 'in_progress' && 'bg-purple-100 text-purple-700',
               incident.status === 'pending' && 'bg-amber-100 text-amber-700',
               incident.status === 'resolved' && 'bg-green-100 text-green-700',
@@ -375,7 +376,7 @@ const IncidentDetailPage = () => {
           </Link>
           <button
             onClick={() => setShowResolveModal(true)}
-            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg text-xs font-medium flex items-center gap-2 hover:shadow-lg hover:shadow-blue-500/30 transition-all"
+            className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg text-xs font-medium flex items-center gap-2 hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
           >
             <Check size={14} />
             Resolve
@@ -455,66 +456,175 @@ const IncidentDetailPage = () => {
               </div>
             )}
 
-            {/* People Card — moved to left for quick access */}
-            <div className="rounded-xl overflow-hidden" style={{ background: isDark ? 'rgba(17,28,50,0.95)' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb'}` }}>
-              <div className="px-4 py-3" style={{ borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb'}` }}>
+            {/* People Card — ITSM Enterprise Style */}
+            <div className="rounded-xl overflow-hidden shadow-sm" style={{ background: isDark ? 'rgba(17,28,50,0.95)' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb'}` }}>
+              <div className="px-4 py-3 bg-gradient-to-r from-blue-500/10 to-cyan-500/10" style={{ borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb'}` }}>
                 <h3 className="font-semibold text-xs flex items-center gap-2" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>
-                  <Users size={14} className="text-blue-500" />
+                  <div className="w-6 h-6 rounded-md bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                    <Users size={12} className="text-white" />
+                  </div>
                   People
                 </h3>
               </div>
-              <div className="p-4 space-y-3">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Reporter</p>
+              <div className="p-4 space-y-4">
+                {/* Reporter */}
+                <div className="p-3 rounded-lg transition-all hover:bg-blue-50/50" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc' }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>
+                    <User size={10} />
+                    Reporter
+                  </p>
                   {incident.reporter ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-semibold">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                         {incident.reporter.firstName?.charAt(0)}{incident.reporter.lastName?.charAt(0)}
                       </div>
-                      <span className="text-xs font-medium" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>{incident.reporter.firstName} {incident.reporter.lastName}</span>
+                      <div>
+                        <span className="text-sm font-semibold block" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>{incident.reporter.firstName} {incident.reporter.lastName}</span>
+                        {incident.reporter.email && <span className="text-[10px]" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>{incident.reporter.email}</span>}
+                      </div>
                     </div>
-                  ) : <span className="text-xs" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Unknown</span>}
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: isDark ? 'rgba(148, 163, 184, 0.1)' : '#f1f5f9' }}>
+                          <User size={14} style={{ color: isDark ? '#64748b' : '#94a3b8' }} />
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium block" style={{ color: isDark ? '#94a3b8' : '#64748b' }}>Not specified</span>
+                          <span className="text-[10px]" style={{ color: isDark ? '#475569' : '#cbd5e1' }}>No reporter assigned</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Assigned To</p>
+
+                {/* Assigned To */}
+                <div className="p-3 rounded-lg transition-all hover:bg-blue-50/50" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc' }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>
+                    <User size={10} />
+                    Assigned To
+                  </p>
                   {incident.assignee ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-semibold">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                         {incident.assignee.firstName?.charAt(0)}{incident.assignee.lastName?.charAt(0)}
                       </div>
-                      <span className="text-xs font-medium" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>{incident.assignee.firstName} {incident.assignee.lastName}</span>
+                      <div>
+                        <span className="text-sm font-semibold block" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>{incident.assignee.firstName} {incident.assignee.lastName}</span>
+                        {incident.assignee.email && <span className="text-[10px]" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>{incident.assignee.email}</span>}
+                      </div>
                     </div>
-                  ) : <span className="text-xs" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Unassigned</span>}
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                          <User size={14} className="text-amber-500" />
+                        </div>
+                        <span className="text-sm font-medium text-amber-600">Unassigned</span>
+                      </div>
+                      <button className="px-2.5 py-1 text-[10px] font-semibold bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                        Assign
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Group</p>
+
+                {/* Assignment Group */}
+                <div className="p-3 rounded-lg transition-all hover:bg-blue-50/50" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc' }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>
+                    <Users size={10} />
+                    Assignment Group
+                  </p>
                   {incident.assignedGroup ? (
-                    <div className="flex items-center gap-2">
-                      <Users size={12} className="text-blue-500" />
-                      <span className="text-xs font-medium" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>{incident.assignedGroup.name}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white shadow-sm">
+                        <Users size={14} />
+                      </div>
+                      <div>
+                        <span className="text-sm font-semibold block" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>{incident.assignedGroup.name}</span>
+                        <span className="text-[10px]" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Support Team</span>
+                      </div>
                     </div>
-                  ) : <span className="text-xs" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Not assigned</span>}
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center">
+                          <Users size={14} className="text-gray-400" />
+                        </div>
+                        <span className="text-sm" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Not assigned</span>
+                      </div>
+                      <button className="px-2.5 py-1 text-[10px] font-semibold bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                        Assign
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Quick Status Change Buttons */}
-            <div className="space-y-2">
-              {['in_progress', 'pending', 'resolved'].filter(s => s !== incident.status).map(s => (
-                <button
-                  key={s}
-                  onClick={() => handleStatusChange(s)}
-                  className="w-full px-4 py-2.5 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2"
-                  style={{
-                    background: isDark ? 'rgba(255,255,255,0.06)' : '#f9fafb',
-                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb'}`,
-                    color: isDark ? '#cbd5e1' : '#475569',
-                  }}
-                >
-                  {s === 'resolved' ? <Check size={13} /> : <Activity size={13} />}
-                  Mark as {s.replace('_', ' ').charAt(0).toUpperCase() + s.replace('_', ' ').slice(1)}
-                </button>
-              ))}
+            {/* Quick Status Actions — ITSM Enterprise Style */}
+            <div className="rounded-xl overflow-hidden shadow-sm" style={{ background: isDark ? 'rgba(17,28,50,0.95)' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb'}` }}>
+              <div className="px-4 py-3 bg-gradient-to-r from-blue-500/10 to-cyan-500/10" style={{ borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb'}` }}>
+                <h3 className="font-semibold text-xs flex items-center gap-2" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>
+                  <div className="w-6 h-6 rounded-md bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                    <Activity size={12} className="text-white" />
+                  </div>
+                  Quick Actions
+                </h3>
+              </div>
+              <div className="p-4 space-y-2">
+                {['in_progress', 'pending', 'resolved'].filter(s => s !== incident.status).map(s => {
+                  const statusConfig: Record<string, { icon: React.ReactNode; gradient: string; hoverBg: string; hoverBorder: string }> = {
+                    in_progress: {
+                      icon: <Play size={14} />,
+                      gradient: 'from-blue-500 to-blue-600',
+                      hoverBg: 'hover:bg-blue-50',
+                      hoverBorder: 'hover:border-blue-300'
+                    },
+                    pending: {
+                      icon: <Clock size={14} />,
+                      gradient: 'from-amber-500 to-amber-600',
+                      hoverBg: 'hover:bg-amber-50',
+                      hoverBorder: 'hover:border-amber-300'
+                    },
+                    resolved: {
+                      icon: <Check size={14} />,
+                      gradient: 'from-emerald-500 to-emerald-600',
+                      hoverBg: 'hover:bg-emerald-50',
+                      hoverBorder: 'hover:border-emerald-300'
+                    }
+                  };
+                  const config = statusConfig[s];
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => handleStatusChange(s)}
+                      className={clsx(
+                        'w-full px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center gap-3 group border',
+                        config.hoverBg,
+                        config.hoverBorder
+                      )}
+                      style={{
+                        background: isDark ? 'rgba(255,255,255,0.03)' : '#ffffff',
+                        borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb',
+                        color: isDark ? '#cbd5e1' : '#475569',
+                      }}
+                    >
+                      <div className={clsx('w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-110', config.gradient)}>
+                        {config.icon}
+                      </div>
+                      <div className="text-left">
+                        <span className="font-semibold block">Mark as {s.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>
+                        <span className="text-[10px] opacity-70">
+                          {s === 'in_progress' && 'Start working on this incident'}
+                          {s === 'pending' && 'Waiting for external action'}
+                          {s === 'resolved' && 'Mark incident as resolved'}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -532,7 +642,7 @@ const IncidentDetailPage = () => {
                       'px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-all',
                       activeTab === tab.id
                         ? 'bg-blue-600 text-white'
-                        : 'text-gray-500 hover:bg-white hover:text-gray-900'
+                        : isDark ? 'text-gray-400 hover:bg-white/10 hover:text-gray-200' : 'text-gray-500 hover:bg-white hover:text-gray-900'
                     )}
                   >
                     {tab.icon}
@@ -598,7 +708,7 @@ const IncidentDetailPage = () => {
                         label="Affected Host"
                         value={
                           <div className="flex items-center gap-2">
-                            <Server size={14} className="text-blue-500" />
+                            <Server size={14} className="text-amber-500" />
                             <span>{incident.customFields?.labels?.instance || '-'}</span>
                           </div>
                         }
@@ -632,124 +742,153 @@ const IncidentDetailPage = () => {
                       </div>
                     </div>
 
-                    {/* Host & Network Information */}
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <Network size={16} className="text-blue-500" />
-                        Host & Network Information
-                      </h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Server className="text-blue-600" size={16} />
-                            <span className="text-xs font-semibold text-gray-600 uppercase">Hostname</span>
-                          </div>
-                          <p className="text-lg font-bold text-gray-900">{alertInfo.hostname}</p>
+                    {/* Host & Network Information — ITSM Enterprise Style */}
+                    <div className="rounded-xl overflow-hidden" style={{ background: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb'}` }}>
+                      <div className="px-5 py-4 flex items-center gap-3" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(16, 185, 129, 0.05))', borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e8eb'}` }}>
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                          <Network size={20} className="text-white" />
                         </div>
-                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Network className="text-green-600" size={16} />
-                            <span className="text-xs font-semibold text-gray-600 uppercase">IP Address</span>
-                          </div>
-                          <p className="text-lg font-bold text-gray-900 font-mono">{alertInfo.ipAddress}</p>
+                        <div>
+                          <h4 className="font-semibold text-sm" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>Host & Network Information</h4>
+                          <p className="text-xs" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Infrastructure details for this incident</p>
                         </div>
-                        <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Building2 className="text-purple-600" size={16} />
-                            <span className="text-xs font-semibold text-gray-600 uppercase">Client</span>
+                      </div>
+                      <div className="p-5 grid grid-cols-2 gap-4">
+                        {/* Hostname */}
+                        <div className="p-4 rounded-xl transition-all hover:shadow-md group" style={{ background: isDark ? 'rgba(245, 158, 11, 0.08)' : 'rgba(245, 158, 11, 0.06)', border: `1px solid ${isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.2)'}` }}>
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                              <Server size={14} className="text-white" />
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: isDark ? '#f59e0b' : '#d97706' }}>Hostname</span>
                           </div>
-                          <p className="text-lg font-bold text-gray-900">
-                            {incident.client?.display_name || incident.client?.name || alertInfo.client}
+                          <p className="text-lg font-bold" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>{alertInfo.hostname || 'Not specified'}</p>
+                        </div>
+                        {/* IP Address */}
+                        <div className="p-4 rounded-xl transition-all hover:shadow-md group" style={{ background: isDark ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.06)', border: `1px solid ${isDark ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.2)'}` }}>
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                              <Network size={14} className="text-white" />
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: isDark ? '#10b981' : '#059669' }}>IP Address</span>
+                          </div>
+                          <p className="text-lg font-bold font-mono" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>{alertInfo.ipAddress || 'Not specified'}</p>
+                        </div>
+                        {/* Client */}
+                        <div className="p-4 rounded-xl transition-all hover:shadow-md group" style={{ background: isDark ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.06)', border: `1px solid ${isDark ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.2)'}` }}>
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                              <Building2 size={14} className="text-white" />
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: isDark ? '#8b5cf6' : '#7c3aed' }}>Client</span>
+                          </div>
+                          <p className="text-lg font-bold" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>
+                            {incident.client?.display_name || incident.client?.name || alertInfo.client || 'Not specified'}
                           </p>
                           {incident.client?.client_code && (
-                            <p className="text-xs text-gray-500 mt-1 font-mono">{incident.client.client_code}</p>
+                            <p className="text-xs font-mono mt-1" style={{ color: isDark ? '#a78bfa' : '#8b5cf6' }}>{incident.client.client_code}</p>
                           )}
                         </div>
-                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Database className="text-amber-600" size={16} />
-                            <span className="text-xs font-semibold text-gray-600 uppercase">Product Model</span>
+                        {/* Product Model */}
+                        <div className="p-4 rounded-xl transition-all hover:shadow-md group" style={{ background: isDark ? 'rgba(59, 130, 246, 0.08)' : 'rgba(59, 130, 246, 0.06)', border: `1px solid ${isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.2)'}` }}>
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                              <Database size={14} className="text-white" />
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: isDark ? '#3b82f6' : '#2563eb' }}>Product Model</span>
                           </div>
-                          <p className="text-lg font-bold text-gray-900 capitalize">{alertInfo.productModel}</p>
+                          <p className="text-lg font-bold capitalize" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>{alertInfo.productModel || 'Not specified'}</p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Alert Details */}
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <Info size={16} className="text-indigo-500" />
-                        Alert Details
-                      </h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <InfoItem label="Alert Type" value={alertInfo.alertType} />
-                        <InfoItem label="Monitor Status" value={
-                          <Badge className={clsx(
-                            alertInfo.monitorStatus === 'critical' ? 'bg-red-100 text-red-800' :
-                            alertInfo.monitorStatus === 'high' ? 'bg-orange-100 text-orange-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          )}>
-                            {alertInfo.monitorStatus}
-                          </Badge>
-                        } />
-                        <InfoItem label="Alert Datetime" value={alertInfo.alertDatetime} />
-                        <InfoItem label="Source" value={incident.source || 'Prometheus'} />
-                        <InfoItem label="Fingerprint" value={incident.customFields?.fingerprint?.slice(0, 16) || '-'} />
-                        <InfoItem label="Integration" value={incident.customFields?.integration_id ? 'Connected' : '-'} />
+                    {/* Alert Details — ServiceNow Form Style */}
+                    <div className="rounded-lg overflow-hidden" style={{ border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#d2d6dc'}` }}>
+                      <SNSectionHeader icon={<Info size={14} />} title="Alert Details" isDark={isDark} subtitle="Technical Information" />
+                      <div style={{ background: isDark ? 'rgba(17, 28, 50, 0.95)' : '#ffffff' }}>
+                        {/* Row 1 */}
+                        <div className="grid grid-cols-2" style={{ borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e8eb'}` }}>
+                          <SNFormGroup label="Alert Type" value={alertInfo.alertType} isDark={isDark} />
+                          <SNFormGroup label="Monitor Status" value={
+                            <span className={clsx(
+                              'px-2.5 py-1 rounded text-xs font-semibold',
+                              alertInfo.monitorStatus === 'critical' ? 'bg-red-100 text-red-700' :
+                              alertInfo.monitorStatus === 'high' ? 'bg-orange-100 text-orange-700' :
+                              'bg-yellow-100 text-yellow-700'
+                            )}>
+                              {alertInfo.monitorStatus?.toUpperCase()}
+                            </span>
+                          } isDark={isDark} />
+                        </div>
+                        {/* Row 2 */}
+                        <div className="grid grid-cols-2" style={{ borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e8eb'}` }}>
+                          <SNFormGroup label="Alert Datetime" value={alertInfo.alertDatetime} isDark={isDark} />
+                          <SNFormGroup label="Source" value={
+                            <span className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                              {incident.source || 'Prometheus'}
+                            </span>
+                          } isDark={isDark} />
+                        </div>
+                        {/* Row 3 */}
+                        <div className="grid grid-cols-2">
+                          <SNFormGroup label="Fingerprint" value={
+                            <code className="text-xs px-2 py-1 rounded" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9', fontFamily: 'monospace' }}>
+                              {incident.customFields?.fingerprint?.slice(0, 16) || '-'}
+                            </code>
+                          } isDark={isDark} />
+                          <SNFormGroup label="Integration" value={
+                            incident.customFields?.integration_id ? (
+                              <span className="flex items-center gap-2 text-green-600">
+                                <Check size={14} /> Connected
+                              </span>
+                            ) : '-'
+                          } isDark={isDark} />
+                        </div>
                       </div>
                     </div>
 
-                    {/* Escalation Details */}
+                    {/* Escalation Details — ServiceNow Form Style */}
                     {incident.customFields?.escalation && (
-                      <div>
-                        <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                          <Shield size={16} className="text-purple-500" />
-                          Escalation Details
-                        </h4>
-                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-gray-700">Current Status</span>
-                              <span className="text-sm font-semibold text-gray-900">
-                                {incident.customFields.escalation.current_status || 'Level 0'}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-gray-700">Escalation Level</span>
-                              <span className="text-sm font-semibold text-gray-900">
+                      <div className="rounded-lg overflow-hidden" style={{ border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#d2d6dc'}` }}>
+                        <SNSectionHeader icon={<Shield size={14} />} title="Escalation Details" isDark={isDark} />
+                        <div style={{ background: isDark ? 'rgba(17, 28, 50, 0.95)' : '#ffffff' }}>
+                          <div className="grid grid-cols-2" style={{ borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e8eb'}` }}>
+                            <SNFormGroup label="Current Status" value={incident.customFields.escalation.current_status || 'Level 0'} isDark={isDark} />
+                            <SNFormGroup label="Escalation Level" value={
+                              <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">
                                 Level {incident.customFields.escalation.level || 0}
                               </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-gray-700">Notified To</span>
-                              <div className="flex items-center gap-2">
-                                <Mail size={14} className="text-gray-500" />
-                                <span className="text-sm font-semibold text-gray-900">
-                                  {incident.customFields.escalation.notified_to || 'rohinth.kumaresan@finspot.in'}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-gray-700">Created At</span>
-                              <span className="text-sm text-gray-600">
-                                {incident.customFields.escalation.created_at || format(new Date(incident.createdAt), 'yyyy-MM-dd HH:mm:ss')}
+                            } isDark={isDark} />
+                          </div>
+                          <div className="grid grid-cols-2">
+                            <SNFormGroup label="Notified To" value={
+                              <span className="flex items-center gap-2">
+                                <Mail size={14} style={{ color: isDark ? '#94a3b8' : '#6b7280' }} />
+                                {incident.customFields.escalation.notified_to || 'rohinth.kumaresan@finspot.in'}
                               </span>
-                            </div>
+                            } isDark={isDark} />
+                            <SNFormGroup label="Created At" value={incident.customFields.escalation.created_at || format(new Date(incident.createdAt), 'yyyy-MM-dd HH:mm:ss')} isDark={isDark} />
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* Labels & Annotations */}
+                    {/* Labels & Annotations — Terminal Style */}
                     {(Object.keys(alertInfo.labels).length > 0 || Object.keys(alertInfo.annotations).length > 0) && (
-                      <div>
-                        <h4 className="text-sm font-semibold text-gray-900 mb-4">Raw Alert Data</h4>
-                        <div className="grid grid-cols-2 gap-4">
+                      <div className="rounded-lg overflow-hidden" style={{ border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#d2d6dc'}` }}>
+                        <div className="px-4 py-3 flex items-center gap-3" style={{ background: 'linear-gradient(90deg, #1a1a1a 0%, #2d2d2d 100%)', borderBottom: '2px solid #ff9800' }}>
+                          <Terminal size={14} className="text-white" />
+                          <span className="text-xs font-semibold text-white uppercase tracking-wider">Raw Alert Data</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-0" style={{ background: '#1e1e1e' }}>
                           {Object.keys(alertInfo.labels).length > 0 && (
-                            <div>
-                              <h5 className="text-xs font-semibold text-gray-600 mb-2">Labels</h5>
-                              <div className="bg-gray-50 rounded-lg p-3 max-h-48 overflow-y-auto">
-                                <pre className="text-xs font-mono text-gray-700">
+                            <div style={{ borderRight: '1px solid #333' }}>
+                              <div className="px-3 py-2 border-b" style={{ borderColor: '#333', background: 'rgba(255,255,255,0.02)' }}>
+                                <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Labels</span>
+                              </div>
+                              <div className="p-3 max-h-48 overflow-y-auto">
+                                <pre className="text-[11px] font-mono text-gray-300 leading-relaxed whitespace-pre-wrap">
                                   {JSON.stringify(alertInfo.labels, null, 2)}
                                 </pre>
                               </div>
@@ -757,9 +896,11 @@ const IncidentDetailPage = () => {
                           )}
                           {Object.keys(alertInfo.annotations).length > 0 && (
                             <div>
-                              <h5 className="text-xs font-semibold text-gray-600 mb-2">Annotations</h5>
-                              <div className="bg-gray-50 rounded-lg p-3 max-h-48 overflow-y-auto">
-                                <pre className="text-xs font-mono text-gray-700">
+                              <div className="px-3 py-2 border-b" style={{ borderColor: '#333', background: 'rgba(255,255,255,0.02)' }}>
+                                <span className="text-[10px] font-semibold text-cyan-400 uppercase tracking-wider">Annotations</span>
+                              </div>
+                              <div className="p-3 max-h-48 overflow-y-auto">
+                                <pre className="text-[11px] font-mono text-gray-300 leading-relaxed whitespace-pre-wrap">
                                   {JSON.stringify(alertInfo.annotations, null, 2)}
                                 </pre>
                               </div>
@@ -771,49 +912,46 @@ const IncidentDetailPage = () => {
                   </div>
                 )}
 
-                {/* Timeline Tab */}
+                {/* Timeline Tab — ITSM Enterprise Style */}
                 {activeTab === 'timeline' && (
-                  <div className="relative pl-7">
-                    <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-gray-200" />
+                  <div className="relative pl-8">
+                    <div className="absolute left-3 top-0 bottom-0 w-0.5" style={{ background: isDark ? 'rgba(255,255,255,0.1)' : 'linear-gradient(180deg, #3b82f6, #8b5cf6, #10b981)' }} />
                     {(incident.activities || []).length > 0 ? (
                       incident.activities?.map((activity, index) => {
                         const iconInfo = getTimelineIcon(activity.activityType);
+                        const iconColors: Record<string, { bg: string; shadow: string }> = {
+                          info: { bg: 'linear-gradient(135deg, #3b82f6, #2563eb)', shadow: 'rgba(59, 130, 246, 0.3)' },
+                          success: { bg: 'linear-gradient(135deg, #10b981, #059669)', shadow: 'rgba(16, 185, 129, 0.3)' },
+                          warning: { bg: 'linear-gradient(135deg, #f59e0b, #d97706)', shadow: 'rgba(245, 158, 11, 0.3)' },
+                          purple: { bg: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', shadow: 'rgba(139, 92, 246, 0.3)' },
+                        };
+                        const colors = iconColors[iconInfo.color] || iconColors.info;
                         return (
                           <div key={activity.id || index} className="relative pb-6 last:pb-0">
-                            <div className={clsx(
-                              'absolute -left-5 w-5 h-5 rounded-full border-2 flex items-center justify-center bg-white',
-                              iconInfo.color === 'info' && 'border-blue-500',
-                              iconInfo.color === 'success' && 'border-green-500',
-                              iconInfo.color === 'warning' && 'border-amber-500',
-                              iconInfo.color === 'purple' && 'border-purple-500'
-                            )}>
-                              <span className={clsx(
-                                iconInfo.color === 'info' && 'text-blue-500',
-                                iconInfo.color === 'success' && 'text-green-500',
-                                iconInfo.color === 'warning' && 'text-amber-500',
-                                iconInfo.color === 'purple' && 'text-purple-500'
-                              )}>
-                                {iconInfo.icon}
-                              </span>
+                            <div
+                              className="absolute -left-5 w-7 h-7 rounded-lg flex items-center justify-center shadow-md"
+                              style={{ background: colors.bg, boxShadow: `0 4px 12px ${colors.shadow}` }}
+                            >
+                              <span className="text-white">{iconInfo.icon}</span>
                             </div>
-                            <div className="bg-gray-50 rounded-lg p-3.5 ml-2">
-                              <div className="flex justify-between items-start mb-1.5">
-                                <span className="font-semibold text-sm text-gray-900">
+                            <div className="rounded-xl p-4 ml-4 transition-all hover:shadow-md" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb'}` }}>
+                              <div className="flex justify-between items-start mb-2">
+                                <span className="font-semibold text-sm" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>
                                   {activity.activityType?.replace('_', ' ').charAt(0).toUpperCase() + activity.activityType?.replace('_', ' ').slice(1)}
                                 </span>
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs px-2 py-0.5 rounded-md" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(59, 130, 246, 0.1)', color: isDark ? '#94a3b8' : '#3b82f6' }}>
                                   {format(toZonedTime(new Date(activity.createdAt), 'Asia/Kolkata'), 'HH:mm:ss', { timeZone: 'Asia/Kolkata' })}
                                 </span>
                               </div>
-                              <p className="text-xs text-gray-600 leading-relaxed">
+                              <p className="text-sm leading-relaxed" style={{ color: isDark ? '#94a3b8' : '#475569' }}>
                                 {activity.comment || `${activity.fieldName} changed from "${activity.oldValue}" to "${activity.newValue}"`}
                               </p>
                               {activity.user && (
-                                <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500">
-                                  <div className="w-5 h-5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-[8px] font-semibold">
+                                <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e8eb'}` }}>
+                                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-[9px] font-bold shadow-sm">
                                     {activity.user.firstName?.charAt(0)}{activity.user.lastName?.charAt(0)}
                                   </div>
-                                  <span>{activity.user.firstName} {activity.user.lastName}</span>
+                                  <span className="text-xs font-medium" style={{ color: isDark ? '#cbd5e1' : '#64748b' }}>{activity.user.firstName} {activity.user.lastName}</span>
                                 </div>
                               )}
                             </div>
@@ -821,89 +959,76 @@ const IncidentDetailPage = () => {
                         );
                       })
                     ) : (
-                      <p className="text-gray-500 text-center py-8">No activity yet</p>
+                      <div className="rounded-xl p-8 text-center" style={{ background: isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e8eb'}` }}>
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center mx-auto mb-4">
+                          <History size={28} style={{ color: isDark ? '#64748b' : '#94a3b8' }} />
+                        </div>
+                        <p className="font-semibold mb-1" style={{ color: isDark ? '#f8fafc' : '#0f1c3f' }}>No Activity Yet</p>
+                        <p className="text-sm" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Timeline events will appear here as the incident progresses</p>
+                      </div>
                     )}
                   </div>
                 )}
 
-                {/* Metrics Tab - Enhanced */}
+                {/* Metrics Tab - Grafana Panel Style */}
                 {activeTab === 'metrics' && (
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <BarChart3 size={16} className="text-orange-500" />
-                        Grafana Metrics Dashboard
-                      </h4>
-                      <div className="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-lg h-96 flex flex-col items-center justify-center text-white mb-4">
+                  <div className="space-y-5">
+                    {/* Grafana Dashboard Panel */}
+                    <div className="rounded-lg overflow-hidden" style={{ border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#d2d6dc'}` }}>
+                      <div className="px-4 py-3 flex items-center justify-between" style={{ background: 'linear-gradient(90deg, #1a1a1a 0%, #2d2d2d 100%)', borderBottom: '2px solid #ff9800' }}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-6 h-6 rounded bg-orange-500 flex items-center justify-center text-[10px] font-bold text-white">G</div>
+                          <span className="text-sm font-semibold text-white">Real-time Metrics — {alertInfo.hostname} (Live from Grafana)</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                          <Clock size={12} />
+                          <span>Auto-refresh: 10s</span>
+                        </div>
+                      </div>
+                      <div className="h-96" style={{ background: '#1a1a1a' }}>
                         <iframe
                           src={`https://fs-le-dev-grafana.finspot.in/d/node-exporter?orgId=1&var-instance=${alertInfo.ipAddress}&kiosk=tv`}
-                          className="w-full h-full border-0 rounded-lg"
+                          className="w-full h-full border-0"
                           title="Grafana Metrics Dashboard"
                         />
                       </div>
-                    </div>
-
-                    {/* Key Metrics Cards */}
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-900 mb-4">Key Metrics</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Cpu className="text-red-600" size={16} />
-                            <span className="text-xs font-semibold text-gray-600">CPU Usage</span>
-                          </div>
-                          <p className="text-2xl font-bold text-red-600">75%</p>
-                          <p className="text-xs text-gray-500 mt-1">Threshold: 75%</p>
+                      {/* Metrics Grid — 4 Column Layout */}
+                      <div className="grid grid-cols-4 gap-0 p-4" style={{ background: isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc' }}>
+                        <div className="p-4 text-center" style={{ background: isDark ? 'rgba(17, 28, 50, 0.95)' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb'}`, borderRadius: '4px', margin: '0 4px' }}>
+                          <div className="text-3xl font-bold text-red-500">75%</div>
+                          <div className="text-[10px] uppercase tracking-wider mt-1" style={{ color: isDark ? '#64748b' : '#6b7785' }}>Current CPU</div>
                         </div>
-                        <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <MemoryStick className="text-orange-600" size={16} />
-                            <span className="text-xs font-semibold text-gray-600">Memory Usage</span>
-                          </div>
-                          <p className="text-2xl font-bold text-orange-600">82%</p>
-                          <p className="text-xs text-gray-500 mt-1">Available: 18%</p>
+                        <div className="p-4 text-center" style={{ background: isDark ? 'rgba(17, 28, 50, 0.95)' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb'}`, borderRadius: '4px', margin: '0 4px' }}>
+                          <div className="text-3xl font-bold text-orange-500">82%</div>
+                          <div className="text-[10px] uppercase tracking-wider mt-1" style={{ color: isDark ? '#64748b' : '#6b7785' }}>Memory Usage</div>
                         </div>
-                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <HardDrive className="text-yellow-600" size={16} />
-                            <span className="text-xs font-semibold text-gray-600">Disk Usage</span>
-                          </div>
-                          <p className="text-2xl font-bold text-yellow-600">68%</p>
-                          <p className="text-xs text-gray-500 mt-1">Free: 32%</p>
+                        <div className="p-4 text-center" style={{ background: isDark ? 'rgba(17, 28, 50, 0.95)' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb'}`, borderRadius: '4px', margin: '0 4px' }}>
+                          <div className="text-3xl font-bold text-amber-500">68%</div>
+                          <div className="text-[10px] uppercase tracking-wider mt-1" style={{ color: isDark ? '#64748b' : '#6b7785' }}>Disk Usage</div>
                         </div>
-                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Network className="text-blue-600" size={16} />
-                            <span className="text-xs font-semibold text-gray-600">Network I/O</span>
-                          </div>
-                          <p className="text-2xl font-bold text-blue-600">2.4 Gbps</p>
-                          <p className="text-xs text-gray-500 mt-1">In/Out: 1.2/1.2</p>
+                        <div className="p-4 text-center" style={{ background: isDark ? 'rgba(17, 28, 50, 0.95)' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb'}`, borderRadius: '4px', margin: '0 4px' }}>
+                          <div className="text-3xl font-bold text-green-500">2.4s</div>
+                          <div className="text-[10px] uppercase tracking-wider mt-1" style={{ color: isDark ? '#64748b' : '#6b7785' }}>Response Time</div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Metric Details */}
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-900 mb-4">Metric Details</h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <InfoItem 
-                          label="Current Value" 
-                          value={<span className="text-red-600 font-bold">75%</span>} 
-                        />
-                        <InfoItem 
-                          label="Threshold" 
-                          value={<span className="text-gray-700 font-semibold">≥ 75%</span>} 
-                        />
-                        <InfoItem 
-                          label="Alert Duration" 
-                          value={formatDistanceToNow(new Date(incident.createdAt), { addSuffix: false })} 
-                        />
-                        <InfoItem 
-                          label="Trend" 
-                          value={<span className="text-red-600 font-semibold flex items-center gap-1">
-                            <TrendingUp size={14} /> Increasing
-                          </span>} 
-                        />
+                    {/* Metric Details — ServiceNow Form Style */}
+                    <div className="rounded-lg overflow-hidden" style={{ border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#d2d6dc'}` }}>
+                      <SNSectionHeader icon={<BarChart3 size={14} />} title="Metric Details" isDark={isDark} />
+                      <div style={{ background: isDark ? 'rgba(17, 28, 50, 0.95)' : '#ffffff' }}>
+                        <div className="grid grid-cols-2" style={{ borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e8eb'}` }}>
+                          <SNFormGroup label="Current Value" value={<span className="text-red-500 font-bold">75%</span>} isDark={isDark} />
+                          <SNFormGroup label="Threshold" value={<span className="font-semibold">≥ 75%</span>} isDark={isDark} />
+                        </div>
+                        <div className="grid grid-cols-2">
+                          <SNFormGroup label="Alert Duration" value={formatDistanceToNow(new Date(incident.createdAt), { addSuffix: false })} isDark={isDark} />
+                          <SNFormGroup label="Trend" value={
+                            <span className="flex items-center gap-1.5 text-red-500 font-semibold">
+                              <TrendingUp size={14} /> Increasing
+                            </span>
+                          } isDark={isDark} />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -982,7 +1107,7 @@ const IncidentDetailPage = () => {
                         </tbody>
                       </table>
                     </div>
-                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                       <p className="text-xs text-gray-700">
                         <strong>Note:</strong> Process data is fetched from Prometheus node_exporter. 
                         Top process: <strong>{processCpuData[0]?.process}</strong> using <strong>{processCpuData[0]?.cpu}%</strong> CPU.
@@ -1030,11 +1155,11 @@ const IncidentDetailPage = () => {
                           Warning
                         </span>
                         <span className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-blue-500" />
+                          <div className="w-2 h-2 rounded-full bg-amber-500" />
                           Info
                         </span>
                       </div>
-                      <button className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                      <button className="text-xs text-amber-600 hover:text-amber-700 font-medium">
                         View in Loki →
                       </button>
                     </div>
@@ -1111,7 +1236,7 @@ const IncidentDetailPage = () => {
                       <div>
                         <h5 className="text-xs font-semibold text-gray-700 mb-3 uppercase">Long-term Solutions</h5>
                         <div className="space-y-3">
-                          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                             <h6 className="font-semibold text-sm text-gray-900 mb-2 flex items-center gap-2">
                               <TrendingUp size={14} />
                               Increase System Memory
@@ -1152,15 +1277,15 @@ const IncidentDetailPage = () => {
                           Related Documentation
                         </h6>
                         <div className="space-y-2 text-xs text-gray-700">
-                          <a href="#" className="flex items-center gap-2 text-blue-600 hover:text-blue-700">
+                          <a href="#" className="flex items-center gap-2 text-amber-600 hover:text-amber-700">
                             <ChevronRight size={12} />
                             Memory Troubleshooting Guide
                           </a>
-                          <a href="#" className="flex items-center gap-2 text-blue-600 hover:text-blue-700">
+                          <a href="#" className="flex items-center gap-2 text-amber-600 hover:text-amber-700">
                             <ChevronRight size={12} />
                             Process Optimization Best Practices
                           </a>
-                          <a href="#" className="flex items-center gap-2 text-blue-600 hover:text-blue-700">
+                          <a href="#" className="flex items-center gap-2 text-amber-600 hover:text-amber-700">
                             <ChevronRight size={12} />
                             Similar Incidents Resolution History
                           </a>
@@ -1178,13 +1303,13 @@ const IncidentDetailPage = () => {
                         placeholder="Add a work note... Describe investigation progress, findings, or next steps."
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        className="w-full p-3.5 border border-gray-200 rounded-lg text-sm resize-y min-h-[100px] focus:outline-none focus:border-blue-500 transition-colors"
+                        className="w-full p-3.5 border border-gray-200 rounded-lg text-sm resize-y min-h-[100px] focus:outline-none focus:border-amber-500 transition-colors"
                       />
                       <div className="flex gap-2 mt-3">
                         <button
                           onClick={handleAddComment}
                           disabled={!comment.trim() || isSubmitting}
-                          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg text-xs font-medium flex items-center gap-2 hover:shadow-lg hover:shadow-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg text-xs font-medium flex items-center gap-2 hover:shadow-lg hover:shadow-amber-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Send size={14} />
                           Add Note
@@ -1204,7 +1329,7 @@ const IncidentDetailPage = () => {
                       {(incident.activities || [])
                         .filter((a) => a.activityType === 'comment')
                         .map((note, index) => (
-                          <div key={note.id || index} className="p-4 bg-gray-50 rounded-lg border-l-[3px] border-blue-500">
+                          <div key={note.id || index} className="p-4 bg-gray-50 rounded-lg border-l-[3px] border-amber-500">
                             <div className="flex justify-between items-center mb-2">
                               <div className="flex items-center gap-2">
                                 <div className="w-7 h-7 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-semibold">
@@ -1229,10 +1354,10 @@ const IncidentDetailPage = () => {
 
           {/* ====== RIGHT COLUMN — Context Panel (CMDB, topology, related) ====== */}
           <div className="space-y-5">
-            {/* AI Recommendations Panel */}
-            <div className="bg-gradient-to-br from-[#0f1c3f] to-[#1e3a5f] rounded-xl p-5 text-white">
+            {/* AI Recommendations Panel - Context Differentiator */}
+            <div className="bg-gradient-to-br from-[#0f1c3f] to-[#1e3a5f] rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
                   <Bot size={20} />
                 </div>
                 <div>
@@ -1243,21 +1368,21 @@ const IncidentDetailPage = () => {
 
               <div className="space-y-3">
                 <AISuggestion
-                  icon={<BookOpen size={14} className="text-green-400" />}
+                  icon={<BookOpen size={14} className="text-emerald-400" />}
                   title="Suggested Runbook"
                   description="Execute automated recovery runbook. 92% success rate for similar incidents."
                   actionLabel="Execute Runbook"
                   actionIcon={<Play size={12} />}
                 />
                 <AISuggestion
-                  icon={<Copy size={14} className="text-blue-400" />}
+                  icon={<Copy size={14} className="text-cyan-400" />}
                   title="Similar Incidents"
                   description="3 similar incidents found. Avg MTTR: 28 minutes."
                   actionLabel="View Similar"
                   actionIcon={<Eye size={12} />}
                 />
                 <AISuggestion
-                  icon={<User size={14} className="text-amber-400" />}
+                  icon={<User size={14} className="text-blue-400" />}
                   title="Escalation Suggestion"
                   description="If not resolved in 15 minutes, escalate to senior engineer."
                   actionLabel="Escalate Now"
@@ -1269,7 +1394,7 @@ const IncidentDetailPage = () => {
             {/* Related Incidents */}
             <div className="border rounded-xl overflow-hidden" style={{ background: isDark ? 'rgba(17, 28, 50, 0.95)' : '#ffffff', borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb' }}>
               <div className="p-4 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb' }}>
-                <h3 className="font-semibold text-sm flex items-center gap-2">
+                <h3 className="font-semibold text-sm flex items-center gap-2" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>
                   <Link2 size={16} className="text-blue-500" />
                   Related Incidents
                 </h3>
@@ -1278,7 +1403,8 @@ const IncidentDetailPage = () => {
                 {relatedIncidents.map((related) => (
                   <div
                     key={related.id}
-                    className="p-3.5 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                    className="p-3.5 rounded-lg cursor-pointer transition-colors"
+                    style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#f9fafb' }}
                   >
                     <div className="text-blue-600 font-semibold text-xs mb-1">{related.id}</div>
                     <div className="text-xs text-gray-600 mb-2">{related.title}</div>
@@ -1298,8 +1424,8 @@ const IncidentDetailPage = () => {
             {/* Affected CIs */}
             <div className="border rounded-xl overflow-hidden" style={{ background: isDark ? 'rgba(17, 28, 50, 0.95)' : '#ffffff', borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb' }}>
               <div className="p-4 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e5e8eb' }}>
-                <h3 className="font-semibold text-sm flex items-center gap-2">
-                  <Server size={16} className="text-blue-500" />
+                <h3 className="font-semibold text-sm flex items-center gap-2" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>
+                  <Server size={16} className="text-cyan-500" />
                   Affected CIs
                 </h3>
               </div>
@@ -1307,10 +1433,11 @@ const IncidentDetailPage = () => {
                 {affectedCIs.map((ci) => (
                   <div
                     key={ci.id}
-                    className="p-3.5 bg-gray-50 rounded-lg"
+                    className="p-3.5 rounded-lg"
+                    style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#f9fafb' }}
                   >
-                    <div className="text-blue-600 font-semibold text-xs mb-1">{ci.id}</div>
-                    <div className="text-xs text-gray-600 mb-2">{ci.name}</div>
+                    <div className="text-cyan-600 font-semibold text-xs mb-1">{ci.id}</div>
+                    <div className="text-xs mb-2" style={{ color: isDark ? '#94a3b8' : '#64748b' }}>{ci.name}</div>
                     <span className={clsx(
                       'px-2 py-0.5 rounded text-[10px] font-medium',
                       ci.status === 'critical' && 'bg-red-100 text-red-700',
@@ -1387,18 +1514,54 @@ const IncidentDetailPage = () => {
   );
 };
 
-// Info Item Component
+// ServiceNow-Style Form Components
+interface SNFormGroupProps {
+  label: string;
+  value: React.ReactNode;
+  isDark?: boolean;
+  fullWidth?: boolean;
+}
+
+const SNFormGroup = ({ label, value, isDark = false }: SNFormGroupProps) => (
+  <div className="grid grid-cols-[160px_1fr]" style={{ borderRight: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e8eb'}` }}>
+    <div className="px-4 py-3 flex items-center text-xs font-medium" style={{ background: isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc', borderRight: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e8eb'}`, color: isDark ? '#94a3b8' : '#475569' }}>
+      {label}
+    </div>
+    <div className="px-4 py-3 flex items-center text-sm font-medium" style={{ color: isDark ? '#f1f5f9' : '#0f1c3f' }}>
+      {value}
+    </div>
+  </div>
+);
+
+interface SNSectionHeaderProps {
+  icon: React.ReactNode;
+  title: string;
+  isDark?: boolean;
+  subtitle?: string;
+}
+
+const SNSectionHeader = ({ icon, title, isDark = false, subtitle }: SNSectionHeaderProps) => (
+  <div className="px-5 py-3 flex items-center gap-3" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : '#e8eef5', borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#d2d6dc'}` }}>
+    <span style={{ color: isDark ? '#94a3b8' : '#475569' }}>{icon}</span>
+    <div>
+      <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: isDark ? '#94a3b8' : '#424952' }}>{title}</span>
+      {subtitle && <span className="text-[10px] ml-2" style={{ color: isDark ? '#64748b' : '#6b7785' }}>({subtitle})</span>}
+    </div>
+  </div>
+);
+
+// Legacy Info Item Component (for backwards compatibility)
 interface InfoItemProps {
   label: string;
   value: React.ReactNode;
 }
 
 const InfoItem = ({ label, value }: InfoItemProps) => (
-  <div className="p-3.5 bg-gray-50 rounded-lg">
-    <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">
+  <div className="p-3.5 bg-gray-50 rounded-lg dark:bg-slate-800/50">
+    <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">
       {label}
     </label>
-    <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+    <div className="text-sm font-medium text-gray-900 dark:text-slate-100 flex items-center gap-2">
       {value}
     </div>
   </div>
@@ -1418,7 +1581,7 @@ const LogLine = ({ time, level, message }: LogLineProps) => (
       'px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase',
       level === 'error' && 'bg-red-500/20 text-red-400',
       level === 'warn' && 'bg-amber-500/20 text-amber-400',
-      level === 'info' && 'bg-blue-500/20 text-blue-400'
+      level === 'info' && 'bg-amber-500/20 text-amber-400'
     )}>
       {level}
     </span>

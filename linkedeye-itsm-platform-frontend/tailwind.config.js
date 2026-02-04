@@ -8,7 +8,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        // LinkedEye Reference UI Color Palette
+        // LinkedEye Enterprise ITSM Color Palette v6.0
+        // Professional Blue primary with Teal/Cyan secondary
         gray: {
           50: '#f9fafb',
           100: '#f4f6f9',
@@ -22,6 +23,7 @@ export default {
           900: '#111827',
           950: '#030712',
         },
+        // Primary - Professional Blue (Enterprise standard)
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -35,7 +37,21 @@ export default {
           900: '#1e3a8a',
           950: '#172554',
         },
-        // LinkedEye Navy - Primary sidebar/dark background
+        // Secondary - Teal/Cyan (Modern enterprise accent)
+        secondary: {
+          50: '#ecfeff',
+          100: '#cffafe',
+          200: '#a5f3fc',
+          300: '#67e8f9',
+          400: '#22d3ee',
+          500: '#06b6d4',
+          600: '#0891b2',
+          700: '#0e7490',
+          800: '#155e75',
+          900: '#164e63',
+          950: '#083344',
+        },
+        // LinkedEye Navy - Sidebar/dark background
         navy: {
           50: '#f0f4ff',
           100: '#e0e8ff',
@@ -49,6 +65,8 @@ export default {
           900: '#050a14',
           950: '#020408',
         },
+        // Status Colors - Semantic ITSM palette
+        // Critical = Red, High = Orange, Medium = Amber, Healthy = Green, Paused = Grey
         success: {
           50: '#ecfdf5',
           100: '#d1fae5',
@@ -85,7 +103,20 @@ export default {
           800: '#991b1b',
           900: '#7f1d1d',
         },
-        // Additional semantic colors
+        // High priority - Orange
+        high: {
+          50: '#fff7ed',
+          100: '#ffedd5',
+          200: '#fed7aa',
+          300: '#fdba74',
+          400: '#fb923c',
+          500: '#f97316',
+          600: '#ea580c',
+          700: '#c2410c',
+          800: '#9a3412',
+          900: '#7c2d12',
+        },
+        // Info/Teal for secondary actions
         info: {
           50: '#ecfeff',
           100: '#cffafe',
@@ -97,6 +128,19 @@ export default {
           700: '#0e7490',
           800: '#155e75',
           900: '#164e63',
+        },
+        // Paused/Unknown - Grey
+        paused: {
+          50: '#f9fafb',
+          100: '#f3f4f6',
+          200: '#e5e7eb',
+          300: '#d1d5db',
+          400: '#9ca3af',
+          500: '#6b7280',
+          600: '#4b5563',
+          700: '#374151',
+          800: '#1f2937',
+          900: '#111827',
         },
       },
       fontFamily: {
@@ -116,19 +160,26 @@ export default {
         '128': '32rem',
       },
       backgroundImage: {
-        // LinkedEye Reference UI Gradients
-        'linkedeye-sidebar': 'linear-gradient(135deg, #0f1c3f 0%, #1e3a5f 50%, #2d4a6f 100%)',
-        'linkedeye-sidebar-dark': 'linear-gradient(135deg, #0f1c3f 0%, #1e3a5f 100%)',
-        'linkedeye-btn-primary': 'linear-gradient(135deg, #0f1c3f 0%, #1e3a5f 100%)',
-        'linkedeye-btn-blue': 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-        'linkedeye-logo': 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
-        'linkedeye-avatar': 'linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%)',
-        // Feature icons
-        'linkedeye-icon-yellow': 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-        'linkedeye-icon-pink': 'linear-gradient(135deg, #ec4899, #8b5cf6)',
-        'linkedeye-icon-orange': 'linear-gradient(135deg, #f97316, #ea580c)',
-        'linkedeye-icon-green': 'linear-gradient(135deg, #22c55e, #16a34a)',
+        // LinkedEye Enterprise ITSM Gradients v6.0 - Professional Blue Theme
+        'linkedeye-sidebar': 'linear-gradient(180deg, #0f1c3f 0%, #1e3a5f 100%)',
+        'linkedeye-sidebar-dark': 'linear-gradient(180deg, #0a1428 0%, #0f1c3f 100%)',
+        'linkedeye-btn-primary': 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+        'linkedeye-btn-secondary': 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+        'linkedeye-logo': 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
+        'linkedeye-avatar': 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
+        // Feature icons - Enterprise palette
         'linkedeye-icon-blue': 'linear-gradient(135deg, #3b82f6, #2563eb)',
+        'linkedeye-icon-teal': 'linear-gradient(135deg, #06b6d4, #0891b2)',
+        'linkedeye-icon-green': 'linear-gradient(135deg, #10b981, #059669)',
+        'linkedeye-icon-orange': 'linear-gradient(135deg, #f97316, #ea580c)',
+        'linkedeye-icon-red': 'linear-gradient(135deg, #ef4444, #dc2626)',
+        'linkedeye-icon-purple': 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+        // Status gradients for cards
+        'status-critical': 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+        'status-high': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+        'status-medium': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+        'status-healthy': 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        'status-paused': 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
         // Original gradients (kept for compatibility)
         'premium-gradient': 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
         'premium-dark': 'linear-gradient(135deg, #0a0f1a 0%, #1e1b4b 50%, #0a0f1a 100%)',

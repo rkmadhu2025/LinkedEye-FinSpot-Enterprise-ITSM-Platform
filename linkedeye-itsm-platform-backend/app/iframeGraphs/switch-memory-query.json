@@ -1,0 +1,4 @@
+{
+  "huawei--Memory-scale-in-Percentage": "(hwEntityMemUsage{ entPhysicalIndex = '67108873', instance = '__FILTER__'})",
+  "dell--Memory-scale-in-Percentage": "(hrStorageUsed{instance = '__FILTER__', hrStorageIndex='1'})"
+}

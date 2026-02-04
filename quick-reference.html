@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedEye Platform - Quick Reference Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            padding: 20px;
+            color: #eee;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #16213e;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            color: #00d9ff;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 0 0 20px rgba(0,217,255,0.5);
+        }
+
+        h2 {
+            color: #00d9ff;
+            margin: 30px 0 15px 0;
+            border-bottom: 2px solid #00d9ff;
+            padding-bottom: 8px;
+        }
+
+        h3 {
+            color: #4db8ff;
+            margin: 20px 0 10px 0;
+        }
+
+        .quick-ref-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .ref-card {
+            background: #0f3460;
+            border: 1px solid #00d9ff;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .ref-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0,217,255,0.3);
+            border-color: #4db8ff;
+        }
+
+        .ref-card h4 {
+            color: #00d9ff;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .ref-card p {
+            margin: 5px 0;
+            font-size: 0.95em;
+        }
+
+        .ref-card .label {
+            color: #aaa;
+            font-weight: 600;
+        }
+
+        .ref-card .value {
+            color: #fff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: #0f3460;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background: #00d9ff;
+            color: #000;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #1a1a2e;
+        }
+
+        tr:hover {
+            background: #1a1a2e;
+        }
+
+        .code {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid #00d9ff;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin: 2px;
+        }
+
+        .badge-critical {
+            background: #ff4757;
+            color: white;
+        }
+
+        .badge-warning {
+            background: #ffa502;
+            color: white;
+        }
+
+        .badge-good {
+            background: #2ed573;
+            color: white;
+        }
+
+        .badge-info {
+            background: #1e90ff;
+            color: white;
+        }
+
+        .section {
+            background: #0f3460;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #00d9ff;
+        }
+
+        .command-box {
+            background: #1a1a2e;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            color: #2ed573;
+        }
+
+        a {
+            color: #00d9ff;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ LinkedEye Platform - Quick Reference Guide</h1>
+        <p style="text-align: center; color: #aaa; font-size: 1.2em; margin-bottom: 10px;">Finspot Technology Solutions Pvt. Ltd.</p>
+        <p style="text-align: center; color: #00d9ff; font-size: 1em; margin-bottom: 20px;">Production Environment: fs-le-dev.finspot.in</p>
+
+        <div class="section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 30px;">
+            <h2 style="color: white; border-bottom-color: white;">🏢 Finspot Technology Solutions - Infrastructure Overview</h2>
+            <div class="quick-ref-grid" style="margin-top: 20px;">
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
+                    <h4 style="color: #fff;">🎯 Mission</h4>
+                    <p>Financial trading platform monitoring and automation for NSE, BSE, and NSEFO markets</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
+                    <h4 style="color: #fff;">🏭 Platform</h4>
+                    <p>LinkedEye - Comprehensive monitoring and incident management for trading infrastructure</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
+                    <h4 style="color: #fff;">⚡ SLA Target</h4>
+                    <p>99.9% uptime during trading hours (9:00 AM - 3:30 PM IST)</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
+                    <h4 style="color: #fff;">🔧 Technology Stack</h4>
+                    <p>Kubernetes, Prometheus, Grafana, StackStorm, Neo4j, Redis, RabbitMQ</p>
+                </div>
+            </div>
+        </div>
+
+        <h2>🔐 Authentication & Access</h2>
+        <div class="quick-ref-grid">
+            <div class="ref-card">
+                <h4>Keycloak SSO</h4>
+                <p><span class="label">URL:</span> <span class="value">https://fs-le-dev-keycloak.finspot.in</span></p>
+                <p><span class="label">Realm:</span> <span class="value">linkedeye</span></p>
+                <p><span class="label">Admin Console:</span> <span class="value">/admin</span></p>
+                <p><span class="label">Port:</span> <span class="value">8080 (HTTP), 8443 (HTTPS)</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Grafana</h4>
+                <p><span class="label">URL:</span> <span class="value">https://fs-le-dev-grafana.finspot.in</span></p>
+                <p><span class="label">Auth:</span> <span class="value">Keycloak OAuth2</span></p>
+                <p><span class="label">Port:</span> <span class="value">3000</span></p>
+                <p><span class="label">Admin Role:</span> <span class="value">grafana-admin group</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Prometheus</h4>
+                <p><span class="label">URL:</span> <span class="value">https://fs-le-dev-prometheus.finspot.in</span></p>
+                <p><span class="label">Auth:</span> <span class="value">Basic Auth (via Grafana)</span></p>
+                <p><span class="label">Port:</span> <span class="value">9090</span></p>
+                <p><span class="label">HA Port:</span> <span class="value">9091</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>StackStorm UI</h4>
+                <p><span class="label">URL:</span> <span class="value">https://fs-le-dev-stackstom.finspot.in</span></p>
+                <p><span class="label">Auth:</span> <span class="value">LDAP via Keycloak</span></p>
+                <p><span class="label">Port:</span> <span class="value">443</span></p>
+                <p><span class="label">API:</span> <span class="value">/api/v1</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Neo4j Graph DB</h4>
+                <p><span class="label">URL:</span> <span class="value">https://fs-le-dev-neo4j.finspot.in</span></p>
+                <p><span class="label">Browser:</span> <span class="value">/browser</span></p>
+                <p><span class="label">Port:</span> <span class="value">7474 (HTTP), 7687 (Bolt)</span></p>
+                <p><span class="label">Usage:</span> <span class="value">Topology/Entity relationships</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Redmine (Project Mgmt)</h4>
+                <p><span class="label">URL:</span> <span class="value">https://fs-le-dev-redmine.finspot.in</span></p>
+                <p><span class="label">Auth:</span> <span class="value">LDAP/Keycloak</span></p>
+                <p><span class="label">Port:</span> <span class="value">3000</span></p>
+                <p><span class="label">Usage:</span> <span class="value">Issue tracking, tickets</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Redis</h4>
+                <p><span class="label">URL:</span> <span class="value">https://fs-le-dev-redis.finspot.in</span></p>
+                <p><span class="label">Port:</span> <span class="value">6379</span></p>
+                <p><span class="label">Web UI:</span> <span class="value">Redis Commander</span></p>
+                <p><span class="label">Usage:</span> <span class="value">Cache, state management</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>RabbitMQ</h4>
+                <p><span class="label">URL:</span> <span class="value">https://fs-le-dev-rabbitmq.finspot.in</span></p>
+                <p><span class="label">Management:</span> <span class="value">/#/</span></p>
+                <p><span class="label">Port:</span> <span class="value">15672 (Mgmt), 5672 (AMQP)</span></p>
+                <p><span class="label">Usage:</span> <span class="value">Message broker, async tasks</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>LinkedEye Main</h4>
+                <p><span class="label">URL:</span> <span class="value">https://fs-le-dev.finspot.in</span></p>
+                <p><span class="label">Environment:</span> <span class="value">Development</span></p>
+                <p><span class="label">Backend API:</span> <span class="value">/api/v1</span></p>
+                <p><span class="label">Usage:</span> <span class="value">Main platform access</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>ArgoCD (Recommended)</h4>
+                <p><span class="label">URL:</span> <span class="value">https://argocd.finspot.in</span></p>
+                <p><span class="label">Auth:</span> <span class="value">Keycloak OIDC/SAML</span></p>
+                <p><span class="label">Port:</span> <span class="value">443</span></p>
+                <p><span class="label">CLI:</span> <span class="value">argocd login argocd.finspot.in</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Jenkins (CI/CD)</h4>
+                <p><span class="label">URL:</span> <span class="value">https://jenkins.finspot.in</span></p>
+                <p><span class="label">Auth:</span> <span class="value">Keycloak OIDC</span></p>
+                <p><span class="label">Port:</span> <span class="value">8080</span></p>
+                <p><span class="label">Admin Role:</span> <span class="value">jenkins-admins group</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>AlertManager</h4>
+                <p><span class="label">URL:</span> <span class="value">https://alertmanager.finspot.in</span></p>
+                <p><span class="label">Port:</span> <span class="value">9093</span></p>
+                <p><span class="label">Replicas:</span> <span class="value">3 (HA)</span></p>
+                <p><span class="label">Cluster Port:</span> <span class="value">9094</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Loki (Log Aggregation)</h4>
+                <p><span class="label">URL:</span> <span class="value">https://loki.finspot.in</span></p>
+                <p><span class="label">Port:</span> <span class="value">3100</span></p>
+                <p><span class="label">Datasource:</span> <span class="value">Grafana integrated</span></p>
+                <p><span class="label">Usage:</span> <span class="value">Log queries & alerts</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Jaeger (Tracing)</h4>
+                <p><span class="label">URL:</span> <span class="value">https://jaeger.finspot.in</span></p>
+                <p><span class="label">UI Port:</span> <span class="value">16686</span></p>
+                <p><span class="label">Collector:</span> <span class="value">14268</span></p>
+                <p><span class="label">Backend:</span> <span class="value">Elasticsearch</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Kibana (ELK)</h4>
+                <p><span class="label">URL:</span> <span class="value">https://kibana.finspot.in</span></p>
+                <p><span class="label">Port:</span> <span class="value">5601</span></p>
+                <p><span class="label">Auth:</span> <span class="value">Keycloak SAML</span></p>
+                <p><span class="label">Backend:</span> <span class="value">Elasticsearch analytics-es</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Harbor (Container Registry)</h4>
+                <p><span class="label">URL:</span> <span class="value">https://harbor.finspot.in</span></p>
+                <p><span class="label">Port:</span> <span class="value">443</span></p>
+                <p><span class="label">Auth:</span> <span class="value">LDAP/OIDC</span></p>
+                <p><span class="label">Usage:</span> <span class="value">Docker images, Helm charts</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Vault (Secrets)</h4>
+                <p><span class="label">URL:</span> <span class="value">https://vault.finspot.in</span></p>
+                <p><span class="label">Port:</span> <span class="value">8200</span></p>
+                <p><span class="label">Auth:</span> <span class="value">Kubernetes SA, OIDC</span></p>
+                <p><span class="label">Usage:</span> <span class="value">Secret management, PKI</span></p>
+            </div>
+        </div>
+
+        <h2>🖥️ Hardware Monitoring Endpoints</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Device Type</th>
+                    <th>Exporter</th>
+                    <th>Port</th>
+                    <th>Scrape Interval</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>HPE iLO</td>
+                    <td>ilo-exporter</td>
+                    <td>9416</td>
+                    <td>60s</td>
+                    <td><span class="badge badge-warning">SSL Issue</span></td>
+                </tr>
+                <tr>
+                    <td>Dell iDRAC</td>
+                    <td>idrac-exporter</td>
+                    <td>9348</td>
+                    <td>60s</td>
+                    <td><span class="badge badge-good">Active</span></td>
+                </tr>
+                <tr>
+                    <td>Generic IPMI</td>
+                    <td>ipmi-exporter</td>
+                    <td>9290</td>
+                    <td>60s</td>
+                    <td><span class="badge badge-good">Active</span></td>
+                </tr>
+                <tr>
+                    <td>Network Devices</td>
+                    <td>snmp-exporter</td>
+                    <td>9116</td>
+                    <td>30s</td>
+                    <td><span class="badge badge-good">Active</span></td>
+                </tr>
+                <tr>
+                    <td>Blackbox Probing</td>
+                    <td>blackbox-exporter</td>
+                    <td>9115</td>
+                    <td>15s</td>
+                    <td><span class="badge badge-good">Active</span></td>
+                </tr>
+                <tr>
+                    <td>MySQL</td>
+                    <td>mysqld-exporter</td>
+                    <td>9104</td>
+                    <td>30s</td>
+                    <td><span class="badge badge-good">Active</span></td>
+                </tr>
+                <tr>
+                    <td>PostgreSQL</td>
+                    <td>postgres-exporter</td>
+                    <td>9187</td>
+                    <td>30s</td>
+                    <td><span class="badge badge-good">Active</span></td>
+                </tr>
+                <tr>
+                    <td>MongoDB</td>
+                    <td>mongodb-exporter</td>
+                    <td>9216</td>
+                    <td>30s</td>
+                    <td><span class="badge badge-good">Active</span></td>
+                </tr>
+                <tr>
+                    <td>Redis</td>
+                    <td>redis-exporter</td>
+                    <td>9121</td>
+                    <td>15s</td>
+                    <td><span class="badge badge-good">Active</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>🌐 Network Device Inventory</h2>
+        <div class="section">
+            <h3>SNMP Community Strings</h3>
+            <div class="code">
+Read-Only Community: linkedeye_readonly
+SNMP Version: v2c (switches/firewalls), v3 (routers - secure)
+            </div>
+
+            <h3>Device Categories</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Count</th>
+                        <th>Monitoring Module</th>
+                        <th>Key OIDs</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Core Switches</td>
+                        <td>2</td>
+                        <td>cisco_switch</td>
+                        <td>IF-MIB, CISCO-VTP-MIB</td>
+                    </tr>
+                    <tr>
+                        <td>Edge Switches</td>
+                        <td>4</td>
+                        <td>cisco_switch</td>
+                        <td>IF-MIB, PORT-SECURITY-MIB</td>
+                    </tr>
+                    <tr>
+                        <td>Firewalls</td>
+                        <td>2 (HA)</td>
+                        <td>palo_alto_firewall</td>
+                        <td>PAN-COMMON-MIB</td>
+                    </tr>
+                    <tr>
+                        <td>Routers</td>
+                        <td>2</td>
+                        <td>router_exporter</td>
+                        <td>BGP4-MIB, OSPF-MIB</td>
+                    </tr>
+                    <tr>
+                        <td>iLO Controllers</td>
+                        <td>8</td>
+                        <td>ilo_exporter</td>
+                        <td>Redfish API</td>
+                    </tr>
+                    <tr>
+                        <td>iDRAC Controllers</td>
+                        <td>6</td>
+                        <td>idrac_exporter</td>
+                        <td>Redfish API</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>🔧 Common Troubleshooting Commands</h2>
+
+        <div class="section">
+            <h3>iLO Exporter Issues</h3>
+            <div class="command-box">
+# Check iLO connectivity
+curl -k https://192.168.1.10/redfish/v1/
+
+# Test exporter endpoint
+curl http://ilo-exporter:9416/metrics
+
+# Check Prometheus target
+kubectl port-forward svc/prometheus 9090:9090
+# Visit: http://localhost:9090/targets
+
+# View exporter logs
+kubectl logs -n monitoring deployment/ilo-exporter -f
+            </div>
+
+            <h3>SNMP Exporter Testing</h3>
+            <div class="command-box">
+# Test SNMP walk
+snmpwalk -v2c -c linkedeye_readonly 192.168.1.1 1.3.6.1.2.1.1
+
+# Test exporter
+curl 'http://snmp-exporter:9116/snmp?target=192.168.1.1&module=cisco_switch'
+
+# Generate custom SNMP config
+docker run --rm -v "${PWD}:/opt" prom/snmp-generator generate
+            </div>
+
+            <h3>Keycloak Operations</h3>
+            <div class="command-box">
+# Access Keycloak CLI
+kubectl exec -it deployment/keycloak -n auth -- bash
+cd /opt/keycloak/bin
+./kcadm.sh config credentials --server http://localhost:8080 \
+  --realm master --user admin
+
+# List realms
+./kcadm.sh get realms
+
+# Export realm configuration
+./kcadm.sh get realms/linkedeye > linkedeye-realm.json
+
+# Create new client
+./kcadm.sh create clients -r linkedeye -f client.json
+            </div>
+
+            <h3>Prometheus Queries</h3>
+            <div class="command-box">
+# Check target up status
+up{job="ilo-exporter"}
+
+# iLO temperature metrics
+ilo_temperature_celsius{sensor=~".*CPU.*"}
+
+# Network interface bandwidth
+rate(ifHCInOctets[5m]) * 8
+
+# Alert rules status
+ALERTS{alertstate="firing"}
+
+# Scrape duration
+scrape_duration_seconds{job="snmp-exporter"}
+            </div>
+
+            <h3>Jenkins Pipeline Debugging</h3>
+            <div class="command-box">
+# Check Jenkins logs
+kubectl logs -n cicd deployment/jenkins -f
+
+# Get pipeline console output
+kubectl exec -it deployment/jenkins -n cicd -- \
+  cat /var/jenkins_home/jobs/linkedeye-backend/builds/lastBuild/log
+
+# Test Keycloak connection
+curl -X POST https://keycloak.linkedeye.local/realms/linkedeye/protocol/openid-connect/token \
+  -d "client_id=jenkins-client" \
+  -d "client_secret=YOUR_SECRET" \
+  -d "grant_type=client_credentials"
+            </div>
+
+            <h3>ArgoCD Operations</h3>
+            <div class="command-box">
+# Login to ArgoCD
+argocd login argocd.linkedeye.local --sso
+
+# List applications
+argocd app list
+
+# Sync application
+argocd app sync le-backend --prune
+
+# Get application details
+argocd app get le-backend
+
+# View sync status
+argocd app wait le-backend --health
+
+# Rollback
+argocd app rollback le-backend
+            </div>
+        </div>
+
+        <h2>📊 Key Grafana Dashboard IDs</h2>
+        <div class="quick-ref-grid">
+            <div class="ref-card">
+                <h4>Kubernetes Cluster</h4>
+                <p><span class="label">Dashboard:</span> <span class="value">K8s Cluster Overview</span></p>
+                <p><span class="label">ID:</span> <span class="value">7249</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Node Metrics</h4>
+                <p><span class="label">Dashboard:</span> <span class="value">Node Exporter Full</span></p>
+                <p><span class="label">ID:</span> <span class="value">1860</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Network Interfaces</h4>
+                <p><span class="label">Dashboard:</span> <span class="value">SNMP Stats</span></p>
+                <p><span class="label">ID:</span> <span class="value">11169</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>MySQL</h4>
+                <p><span class="label">Dashboard:</span> <span class="value">MySQL Overview</span></p>
+                <p><span class="label">ID:</span> <span class="value">7362</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>PostgreSQL</h4>
+                <p><span class="label">Dashboard:</span> <span class="value">PostgreSQL Database</span></p>
+                <p><span class="label">ID:</span> <span class="value">9628</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Redis</h4>
+                <p><span class="label">Dashboard:</span> <span class="value">Redis Dashboard</span></p>
+                <p><span class="label">ID:</span> <span class="value">11835</span></p>
+            </div>
+        </div>
+
+        <h2>🚨 Critical Alert Rules</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Alert Name</th>
+                    <th>Severity</th>
+                    <th>Condition</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>iLOTemperatureCritical</td>
+                    <td><span class="badge badge-critical">Critical</span></td>
+                    <td>temp > 85°C for 5m</td>
+                    <td>Check server cooling, trigger incident</td>
+                </tr>
+                <tr>
+                    <td>NetworkInterfaceDown</td>
+                    <td><span class="badge badge-critical">Critical</span></td>
+                    <td>ifOperStatus == down for 2m</td>
+                    <td>Check physical connection, failover</td>
+                </tr>
+                <tr>
+                    <td>FirewallSessionLimit</td>
+                    <td><span class="badge badge-warning">Warning</span></td>
+                    <td>sessions > 80% capacity</td>
+                    <td>Review rules, prepare scale-up</td>
+                </tr>
+                <tr>
+                    <td>TradingPlatformDown</td>
+                    <td><span class="badge badge-critical">Critical</span></td>
+                    <td>probe_success == 0 for 1m</td>
+                    <td>Emergency restart, notify trading desk</td>
+                </tr>
+                <tr>
+                    <td>DatabaseConnectionPoolExhausted</td>
+                    <td><span class="badge badge-critical">Critical</span></td>
+                    <td>connections > 95% max</td>
+                    <td>Kill long queries, scale pool</td>
+                </tr>
+                <tr>
+                    <td>DiskSpaceLow</td>
+                    <td><span class="badge badge-warning">Warning</span></td>
+                    <td>disk usage > 85%</td>
+                    <td>Clean logs, expand volume</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>📡 AlertManager Webhook Receivers (13 Categories)</h2>
+        <div class="section">
+            <p style="color: #aaa; margin-bottom: 20px;">All alerts are routed through AlertManager to appropriate webhook receivers based on device type and alert category.</p>
+            
+            <h3>Network Devices (6 receivers)</h3>
+            <table class="monitoring-table">
+                <thead>
+                    <tr>
+                        <th>Receiver Name</th>
+                        <th>Device Category</th>
+                        <th>Vendor/Type</th>
+                        <th>Alert Examples</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>snmpwebhook</strong></td>
+                        <td>Network Switches</td>
+                        <td>Cisco Switches (Generic SNMP)</td>
+                        <td>Interface down, high errors, VLAN issues</td>
+                    </tr>
+                    <tr>
+                        <td><strong>fortigatewebhook</strong></td>
+                        <td>Firewalls</td>
+                        <td>FortiGate Firewalls</td>
+                        <td>Session limit, VPN down, threat detected</td>
+                    </tr>
+                    <tr>
+                        <td><strong>routerwebhook</strong></td>
+                        <td>Routers</td>
+                        <td>Cisco/Juniper Routers</td>
+                        <td>BGP peer down, high latency, packet loss</td>
+                    </tr>
+                    <tr>
+                        <td><strong>huaweiwebhook</strong></td>
+                        <td>Switches</td>
+                        <td>Huawei Switches</td>
+                        <td>Port status, bandwidth utilization</td>
+                    </tr>
+                    <tr>
+                        <td><strong>arubawebhook</strong></td>
+                        <td>Switches</td>
+                        <td>Aruba Switches</td>
+                        <td>PoE alerts, interface errors</td>
+                    </tr>
+                    <tr>
+                        <td><strong>aristawebhook</strong></td>
+                        <td>Switches</td>
+                        <td>Arista Switches</td>
+                        <td>Interface metrics, STP changes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>dellwebhook</strong></td>
+                        <td>Switches</td>
+                        <td>Dell Networking Switches</td>
+                        <td>Port failures, temperature alerts</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Physical Server Hardware (3 receivers)</h3>
+            <table class="monitoring-table">
+                <thead>
+                    <tr>
+                        <th>Receiver Name</th>
+                        <th>Device Category</th>
+                        <th>Vendor/Type</th>
+                        <th>Alert Examples</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ilowebhook</strong></td>
+                        <td>Physical Servers</td>
+                        <td>HPE iLO Controllers</td>
+                        <td>High temp, fan failure, PSU alert, health</td>
+                    </tr>
+                    <tr>
+                        <td><strong>idracwebhook</strong></td>
+                        <td>Physical Servers</td>
+                        <td>Dell iDRAC Controllers</td>
+                        <td>Temperature, RAID degraded, PSU failure</td>
+                    </tr>
+                    <tr>
+                        <td><strong>hardwarewebhook</strong></td>
+                        <td>Physical Servers</td>
+                        <td>Linux Hardware (Generic IPMI)</td>
+                        <td>CPU temp, disk health, memory errors</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Server Operating Systems (2 receivers)</h3>
+            <table class="monitoring-table">
+                <thead>
+                    <tr>
+                        <th>Receiver Name</th>
+                        <th>Device Category</th>
+                        <th>OS Type</th>
+                        <th>Alert Examples</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>windowswebhook</strong></td>
+                        <td>Servers</td>
+                        <td>Windows Servers</td>
+                        <td>Service down, disk space, CPU/memory high</td>
+                    </tr>
+                    <tr>
+                        <td><strong>virtualnicwebhook</strong></td>
+                        <td>Virtual Machines</td>
+                        <td>VM Network Interfaces</td>
+                        <td>Virtual NIC errors, bandwidth issues</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Connectivity Monitoring (1 receiver)</h3>
+            <table class="monitoring-table">
+                <thead>
+                    <tr>
+                        <th>Receiver Name</th>
+                        <th>Device Category</th>
+                        <th>Check Type</th>
+                        <th>Alert Examples</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>pingwebhook</strong></td>
+                        <td>All Devices</td>
+                        <td>ICMP/Blackbox Probes</td>
+                        <td>Host unreachable, high latency, packet loss</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Alert Routing by Category</h3>
+        <div class="section">
+            <div class="code">
+<span style="color: #78909c;"># AlertManager Route Configuration Summary</span>
+
+<span style="color: #80cbc4;">Network Infrastructure Alerts:</span>
+  - Cisco Switches → snmpwebhook
+  - Dell Switches → dellwebhook
+  - Huawei Switches → huaweiwebhook
+  - Aruba Switches → arubawebhook
+  - Arista Switches → aristawebhook
+  - FortiGate Firewalls → fortigatewebhook
+  - Routers (Cisco/Juniper) → routerwebhook
+
+<span style="color: #80cbc4;">Physical Server Hardware:</span>
+  - HPE Servers (iLO) → ilowebhook
+  - Dell Servers (iDRAC) → idracwebhook
+  - Generic Linux Hardware → hardwarewebhook
+
+<span style="color: #80cbc4;">Operating Systems:</span>
+  - Windows Servers → windowswebhook
+  - Virtual Machine NICs → virtualnicwebhook
+
+<span style="color: #80cbc4;">Connectivity:</span>
+  - All device reachability → pingwebhook
+            </div>
+        </div>
+
+        <h2>🔗 Important URLs</h2>
+        <div class="section">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Service</th>
+                        <th>URL</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>LinkedEye Main Platform</td>
+                        <td><a href="https://fs-le-dev.finspot.in" target="_blank">https://fs-le-dev.finspot.in</a></td>
+                        <td>Main application & API</td>
+                    </tr>
+                    <tr>
+                        <td>Keycloak Admin</td>
+                        <td><a href="https://fs-le-dev-keycloak.finspot.in/admin" target="_blank">https://fs-le-dev-keycloak.finspot.in/admin</a></td>
+                        <td>User/client/SSO management</td>
+                    </tr>
+                    <tr>
+                        <td>Grafana</td>
+                        <td><a href="https://fs-le-dev-grafana.finspot.in" target="_blank">https://fs-le-dev-grafana.finspot.in</a></td>
+                        <td>Metrics visualization & dashboards</td>
+                    </tr>
+                    <tr>
+                        <td>Prometheus</td>
+                        <td><a href="https://fs-le-dev-prometheus.finspot.in" target="_blank">https://fs-le-dev-prometheus.finspot.in</a></td>
+                        <td>Metrics query & alerting</td>
+                    </tr>
+                    <tr>
+                        <td>StackStorm UI</td>
+                        <td><a href="https://fs-le-dev-stackstom.finspot.in" target="_blank">https://fs-le-dev-stackstom.finspot.in</a></td>
+                        <td>Automation workflows</td>
+                    </tr>
+                    <tr>
+                        <td>Neo4j Browser</td>
+                        <td><a href="https://fs-le-dev-neo4j.finspot.in/browser" target="_blank">https://fs-le-dev-neo4j.finspot.in/browser</a></td>
+                        <td>Graph database & topology</td>
+                    </tr>
+                    <tr>
+                        <td>Redmine</td>
+                        <td><a href="https://fs-le-dev-redmine.finspot.in" target="_blank">https://fs-le-dev-redmine.finspot.in</a></td>
+                        <td>Project management & tickets</td>
+                    </tr>
+                    <tr>
+                        <td>Redis Commander</td>
+                        <td><a href="https://fs-le-dev-redis.finspot.in" target="_blank">https://fs-le-dev-redis.finspot.in</a></td>
+                        <td>Cache management</td>
+                    </tr>
+                    <tr>
+                        <td>RabbitMQ Management</td>
+                        <td><a href="https://fs-le-dev-rabbitmq.finspot.in" target="_blank">https://fs-le-dev-rabbitmq.finspot.in</a></td>
+                        <td>Message broker management</td>
+                    </tr>
+                    <tr>
+                        <td>AlertManager</td>
+                        <td><a href="https://alertmanager.finspot.in" target="_blank">https://alertmanager.finspot.in</a></td>
+                        <td>Alert management & silencing</td>
+                    </tr>
+                    <tr>
+                        <td>Jaeger UI</td>
+                        <td><a href="https://jaeger.finspot.in" target="_blank">https://jaeger.finspot.in</a></td>
+                        <td>Distributed tracing</td>
+                    </tr>
+                    <tr>
+                        <td>Kibana</td>
+                        <td><a href="https://kibana.finspot.in" target="_blank">https://kibana.finspot.in</a></td>
+                        <td>Log analysis (ELK)</td>
+                    </tr>
+                    <tr>
+                        <td>Jenkins</td>
+                        <td><a href="https://jenkins.finspot.in" target="_blank">https://jenkins.finspot.in</a></td>
+                        <td>CI/CD pipelines</td>
+                    </tr>
+                    <tr>
+                        <td>ArgoCD</td>
+                        <td><a href="https://argocd.finspot.in" target="_blank">https://argocd.finspot.in</a></td>
+                        <td>GitOps deployments</td>
+                    </tr>
+                    <tr>
+                        <td>Loki</td>
+                        <td><a href="https://loki.finspot.in" target="_blank">https://loki.finspot.in</a></td>
+                        <td>Log aggregation & queries</td>
+                    </tr>
+                    <tr>
+                        <td>Tempo</td>
+                        <td><a href="https://tempo.finspot.in" target="_blank">https://tempo.finspot.in</a></td>
+                        <td>Distributed tracing (alternative)</td>
+                    </tr>
+                    <tr>
+                        <td>Harbor Registry</td>
+                        <td><a href="https://harbor.finspot.in" target="_blank">https://harbor.finspot.in</a></td>
+                        <td>Container & Helm chart registry</td>
+                    </tr>
+                    <tr>
+                        <td>Vault</td>
+                        <td><a href="https://vault.finspot.in" target="_blank">https://vault.finspot.in</a></td>
+                        <td>Secrets management & PKI</td>
+                    </tr>
+                    <tr>
+                        <td>Elasticsearch</td>
+                        <td><a href="https://elasticsearch.finspot.in" target="_blank">https://elasticsearch.finspot.in</a></td>
+                        <td>Search & analytics backend</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>📱 On-Call Contacts - Finspot Technology Solutions</h2>
+        <div class="quick-ref-grid">
+            <div class="ref-card">
+                <h4>🚨 Primary On-Call</h4>
+                <p><span class="label">Name:</span> <span class="value">Rajkumar Madhu</span></p>
+                <p><span class="label">Role:</span> <span class="value">Senior DevOps Engineer</span></p>
+                <p><span class="label">Mobile:</span> <span class="value">+91-917-677-2077</span></p>
+                <p><span class="label">Email:</span> <span class="value">rajkumar.madhu@rmadhu.in</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>🔧 DevOps Lead</h4>
+                <p><span class="label">Name:</span> <span class="value">Hoysala Bise</span></p>
+                <p><span class="label">Email:</span> <span class="value">hoysala.bise@finspot.in</span></p>
+                <p><span class="label">Mobile:</span> <span class="value">+91-998-014-6101</span></p>
+                <p><span class="label">Escalation:</span> <span class="value">Critical infrastructure issues</span></p>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 30px; color: #00d9ff;">Network Operations Team</h3>
+        <div class="quick-ref-grid">
+            <div class="ref-card">
+                <h4>Network Lead</h4>
+                <p><span class="label">Name:</span> <span class="value">Siva Kadirannagari</span></p>
+                <p><span class="label">Email:</span> <span class="value">siva.kadirannagari@finspot.in</span></p>
+                <p><span class="label">Mobile:</span> <span class="value">+91-960-368-3828</span></p>
+                <p><span class="label">Slack:</span> <span class="value">#network-ops</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Network Engineer</h4>
+                <p><span class="label">Name:</span> <span class="value">Edukondalu P</span></p>
+                <p><span class="label">Email:</span> <span class="value">edukondalu.p@finspot.in</span></p>
+                <p><span class="label">Mobile:</span> <span class="value">+91-984-002-3898</span></p>
+                <p><span class="label">Focus:</span> <span class="value">Switches, Firewalls, Routing</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Network Engineer</h4>
+                <p><span class="label">Name:</span> <span class="value">Devendrareddy Puppala</span></p>
+                <p><span class="label">Email:</span> <span class="value">devendrareddy.puppala@finspot.in</span></p>
+                <p><span class="label">Mobile:</span> <span class="value">+91-630-146-2775</span></p>
+                <p><span class="label">Focus:</span> <span class="value">Network monitoring, SNMP</span></p>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 30px; color: #00d9ff;">Database Administration Team</h3>
+        <div class="quick-ref-grid">
+            <div class="ref-card">
+                <h4>Database Administrator</h4>
+                <p><span class="label">Name:</span> <span class="value">Rajkumar Ashokan</span></p>
+                <p><span class="label">Email:</span> <span class="value">rajkumar.ashokan@finspot.in</span></p>
+                <p><span class="label">Mobile:</span> <span class="value">+91-975-189-2775</span></p>
+                <p><span class="label">Expertise:</span> <span class="value">MySQL, PostgreSQL, MongoDB</span></p>
+                <p><span class="label">Slack:</span> <span class="value">#database-ops</span></p>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 30px; color: #00d9ff;">Trading Platform Team</h3>
+        <div class="quick-ref-grid">
+            <div class="ref-card">
+                <h4>Trading Platform Lead</h4>
+                <p><span class="label">Name:</span> <span class="value">Siva Kadirannagari</span></p>
+                <p><span class="label">Email:</span> <span class="value">siva.kadirannagari@finspot.in</span></p>
+                <p><span class="label">Mobile:</span> <span class="value">+91-960-368-3828</span></p>
+                <p><span class="label">Responsibility:</span> <span class="value">NSE/BSE/NSEFO connectivity</span></p>
+            </div>
+            <div class="ref-card">
+                <h4>Trading Platform Support</h4>
+                <p><span class="label">Name:</span> <span class="value">Edukondalu P</span></p>
+                <p><span class="label">Email:</span> <span class="value">edukondalu.p@finspot.in</span></p>
+                <p><span class="label">Mobile:</span> <span class="value">+91-984-002-3898</span></p>
+                <p><span class="label">Responsibility:</span> <span class="value">BOD/EOD operations</span></p>
+                <p><span class="label">Slack:</span> <span class="value">#trading-critical</span></p>
+            </div>
+        </div>
+
+        <h2>📝 Quick Checklist - Daily Operations</h2>
+        <div class="section">
+            <h3>Morning Health Check</h3>
+            <div class="code">
+□ Check Grafana: All dashboards green
+□ Prometheus targets: All UP
+□ AlertManager: No critical alerts
+□ iLO/iDRAC: Temperature < 75°C
+□ Network devices: All interfaces UP
+□ Trading platform: Response time < 100ms
+□ Database connections: < 70% utilization
+□ Disk space: All volumes < 80%
+□ Backup status: Last 24h successful
+            </div>
+
+            <h3>Pre-Market Checklist (Trading)</h3>
+            <div class="code">
+□ NSE/BSE/NSEFO connectivity verified
+□ BOD engine completed successfully
+□ All trading services healthy
+□ Order book database responsive
+□ Network latency < 5ms to exchanges
+□ Firewall rules updated
+□ DDoS protection active
+            </div>
+
+            <h3>Post-Market Checklist (Trading)</h3>
+            <div class="code">
+□ EOD engine completed
+□ Settlement files generated
+□ Backup completed successfully
+□ Reconciliation reports verified
+□ Audit logs archived
+□ Capacity planning review
+            </div>
+        </div>
+
+        <h2>🎯 Emergency Procedures</h2>
+        <div class="section">
+            <h3>iLO Temperature Alert</h3>
+            <div class="command-box">
+1. Check current temperature: kubectl logs deployment/ilo-exporter | grep temp
+2. Identify affected server from alert labels
+3. Verify cooling system via iLO web UI
+4. If temp > 90°C: Initiate workload migration
+5. Contact datacenter for physical inspection
+6. Document in incident tracker
+            </div>
+
+            <h3>Network Interface Down</h3>
+            <div class="command-box">
+1. Identify interface from AlertManager
+2. Check physical connectivity
+3. Verify SNMP data: snmpget -v2c -c linkedeye_readonly IP IF-MIB::ifOperStatus.X
+4. Check switch logs for errors
+5. Failover to redundant link if available
+6. Create change ticket for physical repair
+            </div>
+
+            <h3>Trading Platform Outage</h3>
+            <div class="command-box">
+1. IMMEDIATE: Notify trading desk
+2. Check Blackbox probe results
+3. Verify backend services: kubectl get pods -n trading
+4. Check database connectivity
+5. Review recent deployments in ArgoCD
+6. Rollback if deployment-related
+7. Execute disaster recovery if hardware failure
+8. Document timeline for post-mortem
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; padding: 20px; background: #0f3460; border-radius: 8px;">
+            <h3 style="color: #00d9ff;">📞 Emergency Hotline</h3>
+            <p style="font-size: 1.5em; color: #fff; font-weight: bold;">+91-917-677-2077</p>
+            <p style="color: #fff; margin-top: 5px;">Rajkumar Madhu (Primary On-Call)</p>
+            <p style="color: #aaa; margin-top: 10px;">24/7 Critical Infrastructure Support</p>
+            <p style="color: #aaa; font-size: 0.9em; margin-top: 15px;">Escalation: hoysala.bise@finspot.in | +91-998-014-6101</p>
+        </div>
+    </div>
+</body>
+</html>

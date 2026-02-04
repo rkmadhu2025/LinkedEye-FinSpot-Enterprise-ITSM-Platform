@@ -1,0 +1,174 @@
+# Default values for linkedeye-backend
+# This is a YAML-formatted file
+
+replicaCount: 3
+
+image:
+  repository: registry.gitlab.com/finspot-le-dev/fs-le-dev-finspot-incident-tool/backend
+  tag: latest
+  pullPolicy: Always
+  pullSecrets:
+    - name: gitlab-registry-auth
+
+# Application configuration
+app:
+  name: linkedeye-backend
+  environment: production
+  debug: false
+
+# Database configuration (external PostgreSQL)
+database:
+  host: postgres-service
+  port: 5432
+  name: linkedeye_itsm
+  user: linkedeye_user
+  # Password should be set via secret
+  existingSecret: itsm-backend-secrets
+  existingSecretKeys:
+    password: DATABASE_PASSWORD
+
+# Redis configuration (external Redis)
+redis:
+  host: redis-service
+  port: 6379
+  existingSecret: itsm-backend-secrets
+  existingSecretKeys:
+    password: REDIS_PASSWORD
+
+# JWT configuration
+jwt:
+  existingSecret: itsm-backend-secrets
+  existingSecretKeys:
+    secret: JWT_SECRET_KEY
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8000
+  targetPort: 8000
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: fs-le-dev-inc.api.finspot.in
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: tls-certificate
+      hosts:
+        - fs-le-dev-inc.api.finspot.in
+
+# Resource configuration
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+
+# Liveness and readiness probes
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+startupProbe:
+  enabled: true
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 30
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app: linkedeye-backend
+          topologyKey: kubernetes.io/hostname
+
+# Monitoring
+monitoring:
+  enabled: true
+  prometheus:
+    scrape: true
+    port: 8000
+    path: /metrics
+
+# Logging
+logging:
+  level: INFO
+  format: json
+
+# Extra environment variables
+extraEnv: []
+
+# Extra volumes
+extraVolumes: []
+
+# Extra volume mounts
+extraVolumeMounts: []
+
+# Sidecar containers
+sidecars: []
+
+# Init containers
+initContainers: []
+
+# Security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL

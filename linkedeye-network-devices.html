@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Device Management | LinkedEye-FinSpot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --danger-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+
+            --primary-color: #667eea;
+            --success-color: #22c55e;
+            --warning-color: #f59e0b;
+            --danger-color: #ff6b6b;
+
+            --bg-main: #f8f9fa;
+            --bg-card: #ffffff;
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --border-color: #e2e8f0;
+
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+        }
+
+        .header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 30px 40px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .logo-text h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .logo-text p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .header-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .header-stat {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .header-stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .header-stat-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .btn-primary {
+            padding: 12px 24px;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .filters-bar {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-main);
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .search-box input {
+            border: none;
+            background: none;
+            outline: none;
+            flex: 1;
+            font-size: 0.95rem;
+        }
+
+        .filter-select {
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--bg-main);
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        .topology-view {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .topology-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        .topology-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .device-category {
+            background: var(--bg-main);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .category-icon {
+            font-size: 1.5rem;
+        }
+
+        .category-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .device-cards {
+            display: grid;
+            gap: 12px;
+        }
+
+        .device-card {
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 16px;
+            border: 2px solid var(--border-color);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .device-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .device-card.online {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .device-card.offline {
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .device-card.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .device-name {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .device-model {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .device-meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+        }
+
+        .device-ip {
+            color: var(--text-secondary);
+        }
+
+        .status-indicator {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.75rem;
+        }
+
+        .status-online {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success-color);
+        }
+
+        .status-offline {
+            background: rgba(255, 107, 107, 0.15);
+            color: var(--danger-color);
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning-color);
+        }
+
+        .changes-table {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .table-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        thead {
+            background: var(--bg-main);
+        }
+
+        th {
+            padding: 14px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        th:first-child {
+            border-top-left-radius: 10px;
+        }
+
+        th:last-child {
+            border-top-right-radius: 10px;
+        }
+
+        td {
+            padding: 16px 14px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr {
+            transition: all 0.2s;
+        }
+
+        tbody tr:hover {
+            background: var(--bg-main);
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .badge.success {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success-color);
+        }
+
+        .badge.pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning-color);
+        }
+
+        .badge.scheduled {
+            background: rgba(102, 126, 234, 0.15);
+            color: var(--primary-color);
+        }
+
+        .change-type {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .btn-view {
+            padding: 6px 16px;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.8rem;
+        }
+
+        .btn-view:hover {
+            box-shadow: var(--shadow-sm);
+        }
+
+        @media (max-width: 1024px) {
+            .topology-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="header-top">
+                <div class="logo-section">
+                    <div class="logo">LE</div>
+                    <div class="logo-text">
+                        <h1>LinkedEye-FinSpot</h1>
+                        <p>Network Device Management</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="header-stats">
+                <div class="header-stat">
+                    <div class="header-stat-number">127</div>
+                    <div class="header-stat-label">Total Devices</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-number">119</div>
+                    <div class="header-stat-label">Online</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-number">5</div>
+                    <div class="header-stat-label">Warning</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-number">3</div>
+                    <div class="header-stat-label">Offline</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h2 class="page-title">Network Infrastructure</h2>
+            <button class="btn-primary">➕ Add Device</button>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-bar">
+            <div class="search-box">
+                <span>🔍</span>
+                <input type="text" placeholder="Search devices by name, IP, or model...">
+            </div>
+            <select class="filter-select">
+                <option>All Locations</option>
+                <option>Data Center A</option>
+                <option>Data Center B</option>
+                <option>Edge Locations</option>
+            </select>
+            <select class="filter-select">
+                <option>All Status</option>
+                <option>Online</option>
+                <option>Warning</option>
+                <option>Offline</option>
+            </select>
+            <select class="filter-select">
+                <option>All Types</option>
+                <option>Routers</option>
+                <option>Switches</option>
+                <option>Firewalls</option>
+                <option>Load Balancers</option>
+            </select>
+        </div>
+
+        <!-- Topology View -->
+        <div class="topology-view">
+            <h3 class="topology-title">🌐 Network Topology</h3>
+
+            <div class="topology-grid">
+                <!-- Edge/Firewall -->
+                <div class="device-category">
+                    <div class="category-header">
+                        <span class="category-icon">🛡️</span>
+                        <span class="category-name">Edge & Firewall</span>
+                    </div>
+                    <div class="device-cards">
+                        <div class="device-card online">
+                            <div class="device-name">Firewall-PROD-01</div>
+                            <div class="device-model">Cisco ASR 1006-X</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.100.1</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                        <div class="device-card online">
+                            <div class="device-name">Firewall-PROD-02</div>
+                            <div class="device-model">Cisco ASR 1006-X</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.100.2</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                        <div class="device-card warning">
+                            <div class="device-name">EDGE-RTR-01</div>
+                            <div class="device-model">Cisco ASR 1002-HX</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.100.10</span>
+                                <span class="status-indicator status-warning">High CPU</span>
+                            </div>
+                        </div>
+                        <div class="device-card online">
+                            <div class="device-name">EDGE-RTR-02</div>
+                            <div class="device-model">Cisco ASR 1002-HX</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.100.11</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Core Switches -->
+                <div class="device-category">
+                    <div class="category-header">
+                        <span class="category-icon">🔀</span>
+                        <span class="category-name">Core Switches</span>
+                    </div>
+                    <div class="device-cards">
+                        <div class="device-card online">
+                            <div class="device-name">CORE-SW-A01</div>
+                            <div class="device-model">Cisco Catalyst 9500</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.10.1</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                        <div class="device-card online">
+                            <div class="device-name">CORE-SW-A02</div>
+                            <div class="device-model">Cisco Catalyst 9500</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.10.2</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                        <div class="device-card warning">
+                            <div class="device-name">CORE-SW-B01</div>
+                            <div class="device-model">Cisco Catalyst 9500</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.10.10</span>
+                                <span class="status-indicator status-warning">Config Drift</span>
+                            </div>
+                        </div>
+                        <div class="device-card online">
+                            <div class="device-name">CORE-SW-B02</div>
+                            <div class="device-model">Cisco Catalyst 9500</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.10.11</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Distribution & Access -->
+                <div class="device-category">
+                    <div class="category-header">
+                        <span class="category-icon">📡</span>
+                        <span class="category-name">Distribution & Access</span>
+                    </div>
+                    <div class="device-cards">
+                        <div class="device-card online">
+                            <div class="device-name">DIST-SW-01</div>
+                            <div class="device-model">Cisco Catalyst 9300</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.20.1</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                        <div class="device-card online">
+                            <div class="device-name">DIST-SW-02</div>
+                            <div class="device-model">Cisco Catalyst 9300</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.20.2</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                        <div class="device-card offline">
+                            <div class="device-name">ACCESS-SW-FL3-01</div>
+                            <div class="device-model">Cisco Catalyst 2960-X</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.30.15</span>
+                                <span class="status-indicator status-offline">Offline</span>
+                            </div>
+                        </div>
+                        <div class="device-card online">
+                            <div class="device-name">ACCESS-SW-FL3-02</div>
+                            <div class="device-model">Cisco Catalyst 2960-X</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.30.16</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Load Balancers -->
+                <div class="device-category">
+                    <div class="category-header">
+                        <span class="category-icon">⚖️</span>
+                        <span class="category-name">Load Balancers</span>
+                    </div>
+                    <div class="device-cards">
+                        <div class="device-card online">
+                            <div class="device-name">F5-LB-PROD-01</div>
+                            <div class="device-model">F5 BIG-IP 4200v</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.50.1</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                        <div class="device-card online">
+                            <div class="device-name">F5-LB-PROD-02</div>
+                            <div class="device-model">F5 BIG-IP 4200v</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.50.2</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WAN Routers -->
+                <div class="device-category">
+                    <div class="category-header">
+                        <span class="category-icon">🌍</span>
+                        <span class="category-name">WAN Routers</span>
+                    </div>
+                    <div class="device-cards">
+                        <div class="device-card online">
+                            <div class="device-name">WAN-RTR-SITE-A</div>
+                            <div class="device-model">Cisco ISR 4451</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">10.1.1.1</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                        <div class="device-card warning">
+                            <div class="device-name">WAN-RTR-SITE-B</div>
+                            <div class="device-model">Cisco ISR 4451</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">10.1.2.1</span>
+                                <span class="status-indicator status-warning">Link Flap</span>
+                            </div>
+                        </div>
+                        <div class="device-card online">
+                            <div class="device-name">WAN-RTR-SITE-C</div>
+                            <div class="device-model">Cisco ISR 4351</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">10.1.3.1</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wireless Controllers -->
+                <div class="device-category">
+                    <div class="category-header">
+                        <span class="category-icon">📶</span>
+                        <span class="category-name">Wireless</span>
+                    </div>
+                    <div class="device-cards">
+                        <div class="device-card online">
+                            <div class="device-name">WLC-PROD-01</div>
+                            <div class="device-model">Cisco 9800-CL</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.60.1</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                        <div class="device-card online">
+                            <div class="device-name">WLC-PROD-02</div>
+                            <div class="device-model">Cisco 9800-CL</div>
+                            <div class="device-meta-row">
+                                <span class="device-ip">192.168.60.2</span>
+                                <span class="status-indicator status-online">Online</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Changes Table -->
+        <div class="changes-table">
+            <div class="table-header">
+                <h3 class="table-title">📝 Recent Device Changes</h3>
+                <button class="btn-primary">View All Changes</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Change ID</th>
+                        <th>Device</th>
+                        <th>Change Type</th>
+                        <th>Performed By</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>CHG-20001</td>
+                        <td>Firewall-PROD-01, Firewall-PROD-02</td>
+                        <td class="change-type">Firewall ACL Update</td>
+                        <td>Mike Johnson</td>
+                        <td>Dec 11, 2:00 PM</td>
+                        <td><span class="badge success">Completed</span></td>
+                        <td><button class="btn-view">View</button></td>
+                    </tr>
+                    <tr>
+                        <td>CHG-20002</td>
+                        <td>CORE-SW-A01 to CORE-SW-A06</td>
+                        <td class="change-type">IOS Upgrade</td>
+                        <td>Sarah Miller</td>
+                        <td>Dec 15, 2:00 AM</td>
+                        <td><span class="badge scheduled">Scheduled</span></td>
+                        <td><button class="btn-view">View</button></td>
+                    </tr>
+                    <tr>
+                        <td>CHG-20003</td>
+                        <td>EDGE-RTR-01, EDGE-RTR-02</td>
+                        <td class="change-type">BGP Configuration</td>
+                        <td>David Wilson</td>
+                        <td>Dec 14, 10:00 PM</td>
+                        <td><span class="badge scheduled">Scheduled</span></td>
+                        <td><button class="btn-view">View</button></td>
+                    </tr>
+                    <tr>
+                        <td>CHG-20004</td>
+                        <td>All Distribution & Access Switches</td>
+                        <td class="change-type">VLAN Configuration</td>
+                        <td>Emma Brown</td>
+                        <td>Dec 16, 3:00 PM</td>
+                        <td><span class="badge pending">Pending</span></td>
+                        <td><button class="btn-view">View</button></td>
+                    </tr>
+                    <tr>
+                        <td>CHG-20005</td>
+                        <td>F5-LB-PROD-01, F5-LB-PROD-02</td>
+                        <td class="change-type">Health Check Update</td>
+                        <td>John Doe</td>
+                        <td>Dec 13, 11:00 PM</td>
+                        <td><span class="badge success">Completed</span></td>
+                        <td><button class="btn-view">View</button></td>
+                    </tr>
+                    <tr>
+                        <td>CHG-19998</td>
+                        <td>WLC-PROD-01, WLC-PROD-02</td>
+                        <td class="change-type">Firmware Update</td>
+                        <td>Mike Johnson</td>
+                        <td>Dec 10, 1:00 AM</td>
+                        <td><span class="badge success">Completed</span></td>
+                        <td><button class="btn-view">View</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        // Device card click handler
+        document.querySelectorAll('.device-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const deviceName = this.querySelector('.device-name').textContent;
+                const deviceIp = this.querySelector('.device-ip').textContent;
+                alert(`Device: ${deviceName}\nIP: ${deviceIp}\n\nOpening device details...`);
+            });
+        });
+
+        // View button click handler
+        document.querySelectorAll('.btn-view').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const changeId = this.closest('tr').querySelector('td').textContent;
+                window.location.href = 'linkedeye-change-detail.html';
+            });
+        });
+
+        // Add device button
+        document.querySelector('.page-header .btn-primary').addEventListener('click', function() {
+            alert('Opening Add Device form...');
+        });
+
+        // View all changes button
+        document.querySelector('.table-header .btn-primary').addEventListener('click', function() {
+            window.location.href = 'linkedeye-change-management.html';
+        });
+    </script>
+</body>
+</html>

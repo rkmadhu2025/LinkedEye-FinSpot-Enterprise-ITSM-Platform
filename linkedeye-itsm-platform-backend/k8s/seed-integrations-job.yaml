@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seed-integrations
+  namespace: incident-linkedeye-itsm
+spec:
+  template:
+    spec:
+      containers:
+        - name: seed-integrations
+          image: registry.gitlab.com/rajkumar.finspot/finspot-le-dev/linkedeye-backend:latest
+          imagePullPolicy: Always
+          command: ["python", "seed_stackstorm_integration.py"]
+          envFrom:
+            - configMapRef:
+                name: itsm-backend-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: linkedeye-secrets
+                  key: database_url
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: gitlab-registry-auth
+  backoffLimit: 2

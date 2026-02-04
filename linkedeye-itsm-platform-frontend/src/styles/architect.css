@@ -1,0 +1,581 @@
+/* ============================================
+   ARCHITECT DESIGN SYSTEM v6.0
+   Senior Full-Stack Engineer Edition
+   20-Year Veteran UI Architecture
+   ============================================ */
+
+:root {
+  /* Fluid Typography - Perfect scaling across all viewports */
+  --text-xs: clamp(0.7rem, 0.65rem + 0.25vw, 0.75rem);
+  --text-sm: clamp(0.8rem, 0.75rem + 0.25vw, 0.875rem);
+  --text-base: clamp(0.9rem, 0.85rem + 0.25vw, 1rem);
+  --text-lg: clamp(1.1rem, 1rem + 0.5vw, 1.25rem);
+  --text-xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+  --text-3xl: clamp(2rem, 1.7rem + 1.5vw, 3rem);
+  --text-4xl: clamp(2.5rem, 2rem + 2vw, 4rem);
+  --text-hero: clamp(3rem, 2.5rem + 2.5vw, 5rem);
+
+  /* Physics-based Easing - Natural Motion */
+  --ease-spring: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Next-Gen Glassmorphism - Enhanced */
+  --glass-opacity: 0.12;
+  --glass-blur: 24px;
+  --glass-blur-heavy: 40px;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-bright: rgba(255, 255, 255, 0.15);
+  --glass-shine: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    transparent 40%,
+    transparent 60%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  --glass-shine-strong: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.05) 30%,
+    transparent 60%
+  );
+
+  /* Architect Color Palette - Electric & Deep */
+  --color-hyper-indigo: #6366f1;
+  --color-hyper-violet: #8b5cf6;
+  --color-hyper-cyan: #22d3ee;
+  --color-hyper-pink: #f472b6;
+  --color-hyper-emerald: #34d399;
+  --color-architect-bg: #030712;
+  --color-architect-bg-elevated: #0a0f1a;
+  --color-architect-card: rgba(17, 24, 39, 0.75);
+  --color-architect-card-hover: rgba(31, 41, 55, 0.8);
+
+  /* Depth Layers */
+  --layer-base: 0;
+  --layer-elevated: 1;
+  --layer-overlay: 10;
+  --layer-modal: 100;
+  --layer-tooltip: 1000;
+}
+
+/* Base Level Polish */
+.architect-root {
+  font-smoothing: antialiased;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  color-scheme: dark;
+  background-color: var(--color-architect-bg);
+}
+
+/* ============================================
+   INNOVATIVE LAYOUT UTILITIES
+   ============================================ */
+
+/* Adaptive Mesh Background */
+.mesh-aura {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--color-architect-bg);
+}
+
+.mesh-aura::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(99, 102, 241, 0.15) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(139, 92, 246, 0.1) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 20% 80%,
+      rgba(6, 182, 212, 0.12) 0%,
+      transparent 40%
+    );
+  filter: blur(80px);
+  animation: aura-drift 20s ease-in-out infinite alternate;
+}
+
+@keyframes aura-drift {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  100% {
+    transform: rotate(5deg) scale(1.1);
+  }
+}
+
+/* Glassmorphism 2.0 Card */
+.glass-2 {
+  background: var(--color-architect-card);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-2::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--glass-shine);
+  pointer-events: none;
+}
+
+/* Architect Interactive Card */
+.architect-card {
+  @apply relative rounded-3xl transition-all duration-700;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(31, 41, 55, 0.4);
+}
+
+.architect-card:hover {
+  @apply -translate-y-2;
+  background: rgba(31, 41, 55, 0.6);
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow:
+    0 20px 40px -10px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(99, 102, 241, 0.1);
+}
+
+/* Hyper-Badge */
+.badge-hyper {
+  @apply px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] flex items-center gap-2;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.badge-hyper-glow {
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+/* Architect Heading */
+.heading-architect {
+  font-family: "Outfit", sans-serif;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ============================================
+   ADVANCED ANIMATIONS
+   ============================================ */
+
+/* Staggered Reveal */
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: reveal 0.8s var(--ease-spring) forwards;
+}
+
+.reveal-stagger > *:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.reveal-stagger > *:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.reveal-stagger > *:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.reveal-stagger > *:nth-child(4) {
+  animation-delay: 0.4s;
+}
+.reveal-stagger > *:nth-child(5) {
+  animation-delay: 0.5s;
+}
+
+@keyframes reveal {
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Glow Pulse */
+.glow-pulse {
+  animation: hyper-pulse 2s infinite alternate;
+}
+
+@keyframes hyper-pulse {
+  0% {
+    filter: drop-shadow(0 0 2px rgba(99, 102, 241, 0.4));
+  }
+  100% {
+    filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.8));
+  }
+}
+
+/* Floating Elements */
+.float-slow {
+  animation: float-y 6s ease-in-out infinite;
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* ============================================
+   REACTIVE UI COMPONENTS
+   ============================================ */
+
+/* High-Tech Table */
+.tech-table {
+  @apply w-full border-separate border-spacing-y-2;
+}
+
+.tech-table tr {
+  @apply transition-all duration-300;
+}
+
+.tech-table tr td {
+  @apply py-4 px-6;
+  background: rgba(30, 41, 59, 0.4);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.tech-table tr td:first-child {
+  @apply rounded-l-2xl border-l border-t border-b border-white/5;
+}
+.tech-table tr td:last-child {
+  @apply rounded-r-2xl border-r border-t border-b border-white/5;
+}
+
+.tech-table tr:hover td {
+  background: rgba(51, 65, 85, 0.6);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+/* Circular Progress Architect */
+.progress-ring {
+  @apply relative flex items-center justify-center;
+}
+
+.progress-ring svg {
+  @apply transform -rotate-90;
+}
+
+.progress-ring-circle {
+  transition: stroke-dashoffset 1s ease-in-out;
+  stroke-linecap: round;
+}
+
+@keyframes blob {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.delay-2000 { animation-delay: 2s; }
+.delay-4000 { animation-delay: 4s; }
+
+/* ============================================
+   ADVANCED ARCHITECT COMPONENTS
+   ============================================ */
+
+/* Holographic Card Effect */
+.card-holographic {
+  @apply relative rounded-3xl overflow-hidden;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.1) 0%,
+    rgba(139, 92, 246, 0.08) 50%,
+    rgba(236, 72, 153, 0.1) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.5s var(--ease-out-expo);
+}
+
+.card-holographic::before {
+  content: '';
+  @apply absolute inset-0 opacity-0 transition-opacity duration-500;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.2) 0%,
+    rgba(139, 92, 246, 0.15) 50%,
+    rgba(236, 72, 153, 0.2) 100%
+  );
+}
+
+.card-holographic:hover::before {
+  @apply opacity-100;
+}
+
+.card-holographic:hover {
+  transform: translateY(-8px) rotateX(2deg);
+  box-shadow:
+    0 25px 50px -12px rgba(99, 102, 241, 0.25),
+    0 0 40px rgba(139, 92, 246, 0.15);
+}
+
+/* Neon Border Effect */
+.neon-border {
+  @apply relative;
+}
+
+.neon-border::after {
+  content: '';
+  @apply absolute inset-0 rounded-[inherit] pointer-events-none;
+  padding: 1px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899, #6366f1);
+  background-size: 300% 300%;
+  animation: neon-flow 6s linear infinite;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+@keyframes neon-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Metric Display - Enterprise */
+.metric-display {
+  @apply relative;
+}
+
+.metric-display-value {
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-weight: 700;
+  font-size: var(--text-3xl);
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.metric-display-label {
+  @apply text-xs font-semibold uppercase tracking-[0.15em] mt-2;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+/* Status Indicator - Premium */
+.status-indicator {
+  @apply relative flex items-center gap-2;
+}
+
+.status-indicator-dot {
+  @apply w-3 h-3 rounded-full relative;
+}
+
+.status-indicator-dot::after {
+  content: '';
+  @apply absolute inset-0 rounded-full;
+  animation: status-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes status-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.status-indicator-online .status-indicator-dot {
+  background: #34d399;
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.6);
+}
+
+.status-indicator-online .status-indicator-dot::after {
+  background: #34d399;
+}
+
+.status-indicator-offline .status-indicator-dot {
+  background: #64748b;
+  box-shadow: none;
+}
+
+.status-indicator-offline .status-indicator-dot::after {
+  animation: none;
+}
+
+.status-indicator-warning .status-indicator-dot {
+  background: #fbbf24;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.6);
+}
+
+.status-indicator-warning .status-indicator-dot::after {
+  background: #fbbf24;
+}
+
+.status-indicator-critical .status-indicator-dot {
+  background: #f87171;
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.6);
+}
+
+.status-indicator-critical .status-indicator-dot::after {
+  background: #f87171;
+  animation-duration: 0.8s;
+}
+
+/* Data Grid Row Highlight */
+.data-row-highlight {
+  @apply relative transition-all duration-300;
+}
+
+.data-row-highlight::before {
+  content: '';
+  @apply absolute left-0 top-0 bottom-0 w-1 rounded-r opacity-0 transition-opacity duration-300;
+  background: var(--color-hyper-indigo);
+}
+
+.data-row-highlight:hover::before {
+  @apply opacity-100;
+}
+
+/* Interactive Icon Button */
+.icon-btn-architect {
+  @apply relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.icon-btn-architect:hover {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.2);
+}
+
+.icon-btn-architect:active {
+  transform: translateY(0);
+}
+
+/* Command Palette Style Input */
+.command-input {
+  @apply relative;
+}
+
+.command-input input {
+  @apply w-full px-5 py-4 rounded-2xl text-base;
+  background: rgba(17, 24, 39, 0.9);
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  color: #f8fafc;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.3s var(--ease-out-quart);
+}
+
+.command-input input::placeholder {
+  color: rgba(148, 163, 184, 0.6);
+}
+
+.command-input input:focus {
+  outline: none;
+  border-color: rgba(99, 102, 241, 0.6);
+  box-shadow:
+    0 0 0 4px rgba(99, 102, 241, 0.1),
+    0 0 40px rgba(99, 102, 241, 0.15);
+}
+
+/* Skeleton Loader - Premium */
+.skeleton-architect {
+  @apply rounded-lg;
+  background: linear-gradient(
+    90deg,
+    rgba(71, 85, 105, 0.2) 0%,
+    rgba(71, 85, 105, 0.4) 50%,
+    rgba(71, 85, 105, 0.2) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Tooltip - Architect Style */
+.tooltip-architect {
+  @apply absolute z-50 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  color: #f1f5f9;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  animation: tooltip-appear 0.2s var(--ease-out-quart);
+}
+
+@keyframes tooltip-appear {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Number Counter Animation */
+.counter-animate {
+  @apply tabular-nums;
+  font-family: 'JetBrains Mono', monospace;
+  transition: all 0.3s var(--ease-out-quart);
+}
+
+/* Scrollbar Architect */
+.scrollbar-architect::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-architect::-webkit-scrollbar-track {
+  background: rgba(71, 85, 105, 0.1);
+  border-radius: 3px;
+}
+
+.scrollbar-architect::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.6), rgba(139, 92, 246, 0.6));
+  border-radius: 3px;
+}
+
+.scrollbar-architect::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.8));
+}

@@ -1,0 +1,378 @@
+---
+# Network Policies for LinkedEye ITSM Platform
+# Production-grade security hardening
+
+# Default deny all ingress traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: incident-linkedeye-itsm
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+
+---
+# Allow ingress controller to reach frontend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-frontend
+  namespace: incident-linkedeye-itsm
+spec:
+  podSelector:
+    matchLabels:
+      app: linkedeye-frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+
+---
+# Allow ingress controller to reach backend API
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-backend
+  namespace: incident-linkedeye-itsm
+spec:
+  podSelector:
+    matchLabels:
+      app: linkedeye-backend
+  policyTypes:
+    - Ingress
+  ingress:
+    # From ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8000
+    # From frontend (for API calls during SSR if needed)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: linkedeye-frontend
+      ports:
+        - protocol: TCP
+          port: 8000
+    # From Celery workers (for internal API calls)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: celery-worker
+      ports:
+        - protocol: TCP
+          port: 8000
+    # From Prometheus for metrics scraping
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: fs-linkedeye
+        - podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 9090
+
+---
+# Allow backend to access PostgreSQL
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-postgres
+  namespace: incident-linkedeye-itsm
+spec:
+  podSelector:
+    matchLabels:
+      app: linkedeye-backend
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: fs-linkedeye
+        - podSelector:
+            matchLabels:
+              app: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+
+---
+# Allow backend to access Redis
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-redis
+  namespace: incident-linkedeye-itsm
+spec:
+  podSelector:
+    matchLabels:
+      app: linkedeye-backend
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: fs-linkedeye
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+
+---
+# Allow Celery workers to access databases
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-celery-to-databases
+  namespace: incident-linkedeye-itsm
+spec:
+  podSelector:
+    matchLabels:
+      app: celery-worker
+  policyTypes:
+    - Egress
+  egress:
+    # PostgreSQL
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: fs-linkedeye
+        - podSelector:
+            matchLabels:
+              app: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Redis
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: fs-linkedeye
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+
+---
+# Allow Celery beat to access Redis
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-celery-beat-to-redis
+  namespace: incident-linkedeye-itsm
+spec:
+  podSelector:
+    matchLabels:
+      app: celery-beat
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: fs-linkedeye
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+
+---
+# Allow backend and celery to access external monitoring services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-external-integrations
+  namespace: incident-linkedeye-itsm
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - linkedeye-backend
+          - celery-worker
+  policyTypes:
+    - Egress
+  egress:
+    # Prometheus
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: fs-linkedeye
+        - podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - protocol: TCP
+          port: 9090
+    # Grafana
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: fs-linkedeye
+        - podSelector:
+            matchLabels:
+              app: grafana
+      ports:
+        - protocol: TCP
+          port: 3000
+    # Elasticsearch
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: fs-linkedeye
+        - podSelector:
+            matchLabels:
+              app: elasticsearch
+      ports:
+        - protocol: TCP
+          port: 9200
+    # StackStorm
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: fs-linkedeye
+        - podSelector:
+            matchLabels:
+              app: stackstorm
+      ports:
+        - protocol: TCP
+          port: 443
+    # Loki
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: fs-linkedeye
+        - podSelector:
+            matchLabels:
+              app: loki
+      ports:
+        - protocol: TCP
+          port: 3100
+
+---
+# Allow DNS resolution for all pods
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: incident-linkedeye-itsm
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# Allow external HTTPS for integrations (Slack, Teams, external APIs)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-external-https
+  namespace: incident-linkedeye-itsm
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - linkedeye-backend
+          - celery-worker
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+
+---
+# Allow Vault access for secret injection
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-vault-access
+  namespace: incident-linkedeye-itsm
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: fs-linkedeye
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: vault
+      ports:
+        - protocol: TCP
+          port: 8200

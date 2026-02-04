@@ -8,31 +8,49 @@
    Modern Premium Design - January 2026
    ============================================ */
 
-/* Modern Design CSS Variables - LinkedEye Reference UI */
+/* Modern Design CSS Variables - LinkedEye Enterprise ITSM Theme v6.0 */
 :root {
-  /* Primary Brand Colors - LinkedEye Blue (Reference UI) */
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
-  --color-primary-light: #3b82f6;
-  --color-primary-lighter: #60a5fa;
-  --color-primary-glow: rgba(37, 99, 235, 0.35);
-  --color-primary-subtle: rgba(37, 99, 235, 0.08);
+  /* Primary Brand Colors - Professional Blue (Enterprise Standard) */
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --color-primary-light: #60a5fa;
+  --color-primary-lighter: #93c5fd;
+  --color-primary-glow: rgba(59, 130, 246, 0.35);
+  --color-primary-subtle: rgba(59, 130, 246, 0.08);
 
-  /* Secondary - Modern Violet Accent */
-  --color-secondary: #7c3aed;
-  --color-secondary-dark: #6d28d9;
-  --color-secondary-light: #8b5cf6;
+  /* Secondary - Teal/Cyan (Modern Enterprise Accent) */
+  --color-secondary: #06b6d4;
+  --color-secondary-dark: #0891b2;
+  --color-secondary-light: #22d3ee;
 
-  /* Accent Colors - Fresh & Vibrant */
+  /* Accent Colors - Enterprise Palette */
   --color-accent-cyan: #06b6d4;
   --color-accent-emerald: #10b981;
   --color-accent-amber: #f59e0b;
   --color-accent-rose: #f43f5e;
-  --color-accent-pink: #ec4899;
+  --color-accent-purple: #8b5cf6;
   --color-accent-sky: #0ea5e9;
   --color-accent-teal: #14b8a6;
 
-  /* Status Colors - Premium Palette */
+  /* ITSM Status Colors - Semantic Palette (Critical Rule) */
+  /* Critical = Red, High = Orange, Medium = Amber, Healthy = Green, Paused = Grey */
+  --color-critical: #ef4444;
+  --color-critical-dark: #dc2626;
+  --color-critical-light: #f87171;
+  --color-high: #f97316;
+  --color-high-dark: #ea580c;
+  --color-high-light: #fb923c;
+  --color-medium: #f59e0b;
+  --color-medium-dark: #d97706;
+  --color-medium-light: #fbbf24;
+  --color-healthy: #10b981;
+  --color-healthy-dark: #059669;
+  --color-healthy-light: #34d399;
+  --color-paused: #6b7280;
+  --color-paused-dark: #4b5563;
+  --color-paused-light: #9ca3af;
+
+  /* Legacy status aliases for compatibility */
   --color-success: #10b981;
   --color-success-dark: #059669;
   --color-success-light: #34d399;
@@ -42,9 +60,9 @@
   --color-danger: #ef4444;
   --color-danger-dark: #dc2626;
   --color-danger-light: #f87171;
-  --color-info: #0ea5e9;
-  --color-info-dark: #0284c7;
-  --color-info-light: #38bdf8;
+  --color-info: #06b6d4;
+  --color-info-dark: #0891b2;
+  --color-info-light: #22d3ee;
 
   /* Navy Sidebar - LinkedEye Reference Navy */
   --color-navy: #0f1c3f;
@@ -71,13 +89,13 @@
   --shadow-xl: 0 20px 40px -8px rgba(0, 0, 0, 0.16), 0 8px 16px -4px rgba(0, 0, 0, 0.08);
   --shadow-2xl: 0 32px 64px -16px rgba(0, 0, 0, 0.24);
   --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.04);
-  --shadow-glow: 0 0 24px rgba(79, 70, 229, 0.2);
-  --shadow-glow-lg: 0 0 40px rgba(79, 70, 229, 0.25);
-  --shadow-glow-xl: 0 0 60px rgba(79, 70, 229, 0.3);
-  --shadow-neon: 0 0 12px rgba(79, 70, 229, 0.4);
+  --shadow-glow: 0 0 24px rgba(245, 158, 11, 0.2);
+  --shadow-glow-lg: 0 0 40px rgba(245, 158, 11, 0.25);
+  --shadow-glow-xl: 0 0 60px rgba(245, 158, 11, 0.3);
+  --shadow-neon: 0 0 12px rgba(245, 158, 11, 0.4);
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 1px rgba(0, 0, 0, 0.08);
   --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
-  --shadow-colored: 0 8px 24px -4px rgba(79, 70, 229, 0.25);
+  --shadow-colored: 0 8px 24px -4px rgba(245, 158, 11, 0.25);
 
   /* Light Theme - LinkedEye Reference */
   --bg-primary: #f4f6f9;
@@ -93,29 +111,33 @@
   --text-inverse: #ffffff;
   --border-color: #e5e8eb;
   --border-color-strong: #cbd5e1;
-  --border-color-focus: rgba(37, 99, 235, 0.5);
+  --border-color-focus: rgba(245, 158, 11, 0.5);
   --divider: #e5e8eb;
 
-  /* Premium Gradients - LinkedEye Reference */
-  --gradient-primary: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  --gradient-primary-hover: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-  --gradient-secondary: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-  --gradient-success: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
-  --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
-  --gradient-danger: linear-gradient(135deg, #ef4444 0%, #f43f5e 100%);
+  /* Premium Gradients - LinkedEye Enterprise Blue Theme */
+  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --gradient-primary-hover: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  --gradient-secondary: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   --gradient-critical: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  --gradient-cool: linear-gradient(135deg, #06b6d4 0%, #6366f1 100%);
+  --gradient-high: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  --gradient-medium: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --gradient-healthy: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --gradient-paused: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  --gradient-cool: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
   --gradient-warm: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
   --gradient-aurora: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 50%, #ec4899 100%);
   --gradient-sunset: linear-gradient(135deg, #f97316 0%, #f43f5e 50%, #a855f7 100%);
-  --gradient-ocean: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+  --gradient-ocean: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
   --gradient-forest: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
   --gradient-dark: linear-gradient(180deg, #0f1c3f 0%, #1e3a5f 100%);
   --gradient-sidebar: linear-gradient(180deg, #0f1c3f 0%, #1e3a5f 100%);
   --gradient-card-shine: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 60%);
-  --gradient-mesh: radial-gradient(at 40% 20%, hsla(265, 89%, 68%, 0.1) 0px, transparent 50%),
-                   radial-gradient(at 80% 0%, hsla(189, 94%, 43%, 0.08) 0px, transparent 50%),
-                   radial-gradient(at 0% 50%, hsla(265, 89%, 68%, 0.06) 0px, transparent 50%);
+  --gradient-mesh: radial-gradient(at 40% 20%, hsla(217, 91%, 60%, 0.1) 0px, transparent 50%),
+                   radial-gradient(at 80% 0%, hsla(187, 94%, 43%, 0.08) 0px, transparent 50%),
+                   radial-gradient(at 0% 50%, hsla(217, 91%, 60%, 0.06) 0px, transparent 50%);
 
   /* Enhanced Glassmorphism */
   --glass-bg: rgba(255, 255, 255, 0.85);
@@ -125,12 +147,12 @@
 
 /* Dark Mode Variables - LinkedEye Dark Theme */
 .dark {
-  --color-primary: #3b82f6;
-  --color-primary-dark: #2563eb;
-  --color-primary-light: #60a5fa;
-  --color-primary-lighter: #93c5fd;
-  --color-primary-glow: rgba(59, 130, 246, 0.35);
-  --color-primary-subtle: rgba(59, 130, 246, 0.12);
+  --color-primary: #fbbf24;
+  --color-primary-dark: #f59e0b;
+  --color-primary-light: #fcd34d;
+  --color-primary-lighter: #fde68a;
+  --color-primary-glow: rgba(251, 191, 36, 0.35);
+  --color-primary-subtle: rgba(251, 191, 36, 0.12);
 
   /* Status Colors for Dark Mode */
   --color-success: #34d399;

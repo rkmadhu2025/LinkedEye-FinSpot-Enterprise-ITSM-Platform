@@ -119,3 +119,36 @@ linkedeye-finspot/
 
 # Local archive for sensitive files
 .secure_archive/
+
+# Build artifacts and archives
+*.tar
+*.tar.gz
+*.b64
+build_log.txt
+build_output.txt
+context.txt
+
+# SSL certificate folders
+finspot.in_ssl_*/
+*_ssl_*/
+
+# Excel temporary files
+~$*.xlsx
+~$*.xls
+
+# Hypothesis test cache
+.hypothesis/
+
+# Kubernetes status files
+k8s_status.txt
+
+# Test marker files
+test_marker.txt
+
+# Additional documentation generated during development
+*_COMPLETE.md
+*_SUMMARY.md
+*_FIX.md
+*_FIXES.md
+DEBUG_*.md
+DEPLOYMENT_*.md

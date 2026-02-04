@@ -1,0 +1,94 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: itsm-seed-integrations
+  namespace: incident-linkedeye-itsm
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: itsm-seed-integrations
+    spec:
+      restartPolicy: OnFailure
+      imagePullSecrets:
+      - name: gitlab-registry-auth
+      containers:
+      - name: seed-integrations
+        image: registry.gitlab.com/rajkumar.finspot/finspot-le-dev/linkedeye-backend:latest
+        imagePullPolicy: Always
+        command: ["python", "/app/seed_integrations.py"]
+        env:
+        - name: DATABASE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: DATABASE_HOST
+        - name: DATABASE_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: DATABASE_PORT
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: itsm-backend-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: itsm-backend-secrets
+              key: DATABASE_PASSWORD
+        - name: DATABASE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: DATABASE_NAME
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)?sslmode=disable"
+        - name: PROMETHEUS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: PROMETHEUS_URL
+        - name: LOKI_URL
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: LOKI_URL
+        - name: LOKI_ORG_ID
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: LOKI_ORG_ID
+        - name: GRAFANA_URL
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: GRAFANA_URL
+        - name: GRAFANA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: itsm-backend-secrets
+              key: GRAFANA_USERNAME
+        - name: GRAFANA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: itsm-backend-secrets
+              key: GRAFANA_PASSWORD
+        - name: STACKSTORM_URL
+          valueFrom:
+            configMapKeyRef:
+              name: itsm-backend-config
+              key: STACKSTORM_URL
+        - name: STACKSTORM_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: itsm-backend-secrets
+              key: STACKSTORM_USERNAME
+        - name: STACKSTORM_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: itsm-backend-secrets
+              key: STACKSTORM_PASSWORD

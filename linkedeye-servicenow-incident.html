@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INC0015847 - Database Connection Pool Exhausted | LinkedEye Enterprise</title>
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* ServiceNow Color Palette */
+            --sn-navy: #0f1c3f;
+            --sn-blue: #016;
+            --sn-blue-light: #2e4a6a;
+            --sn-green: #4caf50;
+            --sn-red: #d32f2f;
+            --sn-orange: #ff9800;
+            --sn-yellow: #ffc107;
+            
+            --bg-body: #f4f6f9;
+            --bg-white: #ffffff;
+            --bg-light: #fafbfc;
+            --bg-section: #e8eef5;
+            
+            --text-primary: #000;
+            --text-secondary: #424952;
+            --text-muted: #6b7785;
+            --text-white: #fff;
+            
+            --border-main: #d2d6dc;
+            --border-light: #e5e8eb;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0,0,0,.05);
+            --shadow-md: 0 2px 4px 0 rgba(0,0,0,.08);
+            --shadow-lg: 0 4px 8px 0 rgba(0,0,0,.12);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* Header - ServiceNow style */
+        .sn-header {
+            background: var(--sn-navy);
+            color: var(--text-white);
+            height: 52px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-md);
+        }
+
+        .sn-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-right: 30px;
+        }
+
+        .sn-logo-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .sn-logo-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .sn-nav {
+            display: flex;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .sn-nav-item {
+            padding: 0 16px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            transition: all 0.2s;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .sn-nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        .sn-nav-item.active {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border-bottom: 2px solid #fff;
+        }
+
+        .sn-header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-left: auto;
+        }
+
+        .sn-icon-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.85);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .sn-icon-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        .sn-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: var(--sn-red);
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 10px;
+            min-width: 16px;
+            text-align: center;
+        }
+
+        .sn-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px 4px 4px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.1);
+            cursor: pointer;
+        }
+
+        .sn-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Main Layout */
+        .sn-container {
+            max-width: 1920px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Breadcrumb */
+        .sn-breadcrumb {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .sn-breadcrumb a {
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+
+        .sn-breadcrumb a:hover {
+            color: var(--sn-blue);
+            text-decoration: underline;
+        }
+
+        .sn-breadcrumb-separator {
+            color: var(--border-main);
+        }
+
+        /* Incident Form Header */
+        .sn-form-header {
+            background: var(--bg-white);
+            border: 1px solid var(--border-main);
+            border-radius: 4px 4px 0 0;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0;
+        }
+
+        .sn-form-title-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .sn-incident-number {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--sn-blue);
+            font-family: 'Courier New', monospace;
+            letter-spacing: -0.5px;
+        }
+
+        .sn-priority-badge {
+            padding: 6px 14px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .priority-1-critical {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef5350;
+        }
+
+        .priority-2-high {
+            background: #fff3e0;
+            color: #e65100;
+            border: 1px solid #ff9800;
+        }
+
+        .priority-3-moderate {
+            background: #fff9c4;
+            color: #f57f17;
+            border: 1px solid #fbc02d;
+        }
+
+        .priority-4-low {
+            background: #e3f2fd;
+            color: #0277bd;
+            border: 1px solid #42a5f5;
+        }
+
+        .sn-state-badge {
+            padding: 6px 14px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .state-new {
+            background: #e3f2fd;
+            color: #0277bd;
+        }
+
+        .state-in-progress {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .state-on-hold {
+            background: #fce4ec;
+            color: #c2185b;
+        }
+
+        .state-resolved {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .state-closed {
+            background: #f5f5f5;
+            color: #616161;
+        }
+
+        .sn-form-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .sn-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border-main);
+            border-radius: 3px;
+            background: var(--bg-white);
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sn-btn:hover {
+            background: var(--bg-light);
+            border-color: var(--sn-blue);
+        }
+
+        .sn-btn-primary {
+            background: var(--sn-blue);
+            color: white;
+            border-color: var(--sn-blue);
+        }
+
+        .sn-btn-primary:hover {
+            background: var(--sn-blue-light);
+        }
+
+        /* Form Layout */
+        .sn-form-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        /* Form Body - Two Column Layout */
+        .sn-form-body {
+            background: var(--bg-white);
+            border: 1px solid var(--border-main);
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .sn-form-section {
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .sn-section-header {
+            background: var(--bg-section);
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .sn-section-icon {
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+
+        .sn-section-content {
+            padding: 0;
+        }
+
+        .sn-form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .sn-form-group {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            border-right: 1px solid var(--border-light);
+            min-height: 40px;
+        }
+
+        .sn-form-group:last-child {
+            border-right: none;
+        }
+
+        .sn-form-group.full-width {
+            grid-column: 1 / -1;
+            border-right: none;
+        }
+
+        .sn-label {
+            padding: 10px 16px;
+            background: var(--bg-light);
+            font-weight: 500;
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            border-right: 1px solid var(--border-light);
+        }
+
+        .sn-label.required::after {
+            content: '*';
+            color: var(--sn-red);
+            margin-left: 4px;
+        }
+
+        .sn-value {
+            padding: 10px 16px;
+            background: var(--bg-white);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .sn-input {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid var(--border-main);
+            border-radius: 3px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .sn-input:focus {
+            outline: none;
+            border-color: var(--sn-blue);
+            box-shadow: 0 0 0 2px rgba(0,17,102,0.1);
+        }
+
+        .sn-textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border-main);
+            border-radius: 3px;
+            font-size: 13px;
+            font-family: inherit;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .sn-select {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid var(--border-main);
+            border-radius: 3px;
+            font-size: 13px;
+            background: white;
+        }
+
+        .sn-readonly {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .sn-link {
+            color: var(--sn-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .sn-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Activity Section */
+        .sn-activity-section {
+            background: var(--bg-white);
+            border: 1px solid var(--border-main);
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+
+        .sn-activity-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-main);
+            background: var(--bg-light);
+        }
+
+        .sn-activity-tab {
+            padding: 12px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .sn-activity-tab.active {
+            color: var(--sn-blue);
+            border-bottom-color: var(--sn-blue);
+            background: white;
+        }
+
+        .sn-activity-content {
+            padding: 20px;
+        }
+
+        .sn-comment-box {
+            margin-bottom: 20px;
+        }
+
+        .sn-comment-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 1px solid var(--border-main);
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        .sn-comment-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .sn-activity-stream {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sn-activity-item {
+            display: flex;
+            gap: 12px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .sn-activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .sn-activity-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .sn-activity-content-wrapper {
+            flex: 1;
+        }
+
+        .sn-activity-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .sn-activity-user {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        .sn-activity-action {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .sn-activity-time {
+            color: var(--text-muted);
+            font-size: 11px;
+            margin-left: auto;
+        }
+
+        .sn-activity-body {
+            background: var(--bg-light);
+            padding: 10px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* Right Sidebar */
+        .sn-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sn-sidebar-card {
+            background: var(--bg-white);
+            border: 1px solid var(--border-main);
+            border-radius: 4px;
+        }
+
+        .sn-sidebar-header {
+            background: var(--bg-section);
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-main);
+        }
+
+        .sn-sidebar-content {
+            padding: 16px;
+        }
+
+        .sn-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 12px;
+        }
+
+        .sn-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .sn-info-label {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .sn-info-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .sn-metric {
+            text-align: center;
+            padding: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .sn-metric:last-child {
+            border-bottom: none;
+        }
+
+        .sn-metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--sn-blue);
+            margin-bottom: 4px;
+        }
+
+        .sn-metric-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sn-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sn-timeline-item {
+            display: flex;
+            gap: 10px;
+            font-size: 11px;
+        }
+
+        .sn-timeline-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 9px;
+        }
+
+        .sn-timeline-icon.created {
+            background: #e3f2fd;
+            color: var(--sn-blue);
+        }
+
+        .sn-timeline-icon.assigned {
+            background: #fff3e0;
+            color: var(--sn-orange);
+        }
+
+        .sn-timeline-icon.updated {
+            background: #e8f5e9;
+            color: var(--sn-green);
+        }
+
+        .sn-timeline-content {
+            flex: 1;
+        }
+
+        .sn-timeline-time {
+            color: var(--text-muted);
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* Related Records */
+        .sn-related-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sn-related-item {
+            padding: 10px 12px;
+            background: var(--bg-light);
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .sn-related-item:hover {
+            background: var(--bg-section);
+        }
+
+        .sn-related-item-title {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .sn-related-item-id {
+            color: var(--sn-blue);
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .sn-form-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sn-form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .sn-form-group {
+                grid-template-columns: 1fr;
+                border-right: none;
+                border-bottom: 1px solid var(--border-light);
+            }
+
+            .sn-label {
+                border-right: none;
+                border-bottom: 1px solid var(--border-light);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="sn-header">
+        <div class="sn-logo">
+            <div class="sn-logo-icon">LE</div>
+            <div class="sn-logo-text">LinkedEye</div>
+        </div>
+
+        <nav class="sn-nav">
+            <a href="#" class="sn-nav-item active">Incidents</a>
+            <a href="#" class="sn-nav-item">Changes</a>
+            <a href="#" class="sn-nav-item">Problems</a>
+            <a href="#" class="sn-nav-item">Assets</a>
+            <a href="#" class="sn-nav-item">Network</a>
+        </nav>
+
+        <div class="sn-header-actions">
+            <div class="sn-icon-btn">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="sn-icon-btn">
+                <i class="fas fa-bell"></i>
+                <span class="sn-badge">8</span>
+            </div>
+            <div class="sn-icon-btn">
+                <i class="fas fa-question-circle"></i>
+            </div>
+            <div class="sn-user">
+                <div class="sn-avatar">RM</div>
+                <span>Rajkumar M.</span>
+                <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="sn-container">
+        <!-- Breadcrumb -->
+        <div class="sn-breadcrumb">
+            <a href="#">Home</a>
+            <span class="sn-breadcrumb-separator">›</span>
+            <a href="#">Incident Management</a>
+            <span class="sn-breadcrumb-separator">›</span>
+            <a href="#">All Incidents</a>
+            <span class="sn-breadcrumb-separator">›</span>
+            <span>INC0015847</span>
+        </div>
+
+        <!-- Form Header -->
+        <div class="sn-form-header">
+            <div class="sn-form-title-section">
+                <span class="sn-incident-number">INC0015847</span>
+                <span class="sn-priority-badge priority-1-critical">
+                    <i class="fas fa-circle"></i> 1 - Critical
+                </span>
+                <span class="sn-state-badge state-in-progress">
+                    <i class="fas fa-spinner"></i> In Progress
+                </span>
+            </div>
+            <div class="sn-form-actions">
+                <button class="sn-btn">
+                    <i class="fas fa-copy"></i> Clone
+                </button>
+                <button class="sn-btn">
+                    <i class="fas fa-link"></i> Link
+                </button>
+                <button class="sn-btn">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <button class="sn-btn sn-btn-primary">
+                    <i class="fas fa-save"></i> Update
+                </button>
+            </div>
+        </div>
+
+        <!-- Form Layout -->
+        <div class="sn-form-layout">
+            <!-- Main Form -->
+            <div>
+                <div class="sn-form-body">
+                    <!-- Incident Details Section -->
+                    <div class="sn-form-section">
+                        <div class="sn-section-header">
+                            <i class="fas fa-chevron-down sn-section-icon"></i>
+                            Incident Details
+                        </div>
+                        <div class="sn-section-content">
+                            <div class="sn-form-row">
+                                <div class="sn-form-group">
+                                    <div class="sn-label required">Number</div>
+                                    <div class="sn-value sn-readonly">INC0015847</div>
+                                </div>
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Opened</div>
+                                    <div class="sn-value sn-readonly">2025-12-12 14:32:18</div>
+                                </div>
+                            </div>
+
+                            <div class="sn-form-row">
+                                <div class="sn-form-group">
+                                    <div class="sn-label required">Caller</div>
+                                    <div class="sn-value">
+                                        <a href="#" class="sn-link">Monitoring System</a>
+                                    </div>
+                                </div>
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Category</div>
+                                    <div class="sn-value">
+                                        <select class="sn-select">
+                                            <option>Database</option>
+                                            <option>Network</option>
+                                            <option>Hardware</option>
+                                            <option>Software</option>
+                                            <option>Inquiry / Help</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sn-form-row">
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Subcategory</div>
+                                    <div class="sn-value">
+                                        <select class="sn-select">
+                                            <option>PostgreSQL</option>
+                                            <option>MySQL</option>
+                                            <option>MongoDB</option>
+                                            <option>Redis</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Contact Type</div>
+                                    <div class="sn-value">
+                                        <select class="sn-select">
+                                            <option>Alert</option>
+                                            <option>Email</option>
+                                            <option>Phone</option>
+                                            <option>Self-service</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sn-form-row">
+                                <div class="sn-form-group">
+                                    <div class="sn-label">State</div>
+                                    <div class="sn-value">
+                                        <select class="sn-select">
+                                            <option>New</option>
+                                            <option selected>In Progress</option>
+                                            <option>On Hold</option>
+                                            <option>Resolved</option>
+                                            <option>Closed</option>
+                                            <option>Canceled</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Impact</div>
+                                    <div class="sn-value">
+                                        <select class="sn-select">
+                                            <option selected>1 - High</option>
+                                            <option>2 - Medium</option>
+                                            <option>3 - Low</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sn-form-row">
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Urgency</div>
+                                    <div class="sn-value">
+                                        <select class="sn-select">
+                                            <option selected>1 - High</option>
+                                            <option>2 - Medium</option>
+                                            <option>3 - Low</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Priority</div>
+                                    <div class="sn-value sn-readonly" style="color: #c62828; font-weight: 600;">
+                                        1 - Critical
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sn-form-row">
+                                <div class="sn-form-group full-width">
+                                    <div class="sn-label required">Short Description</div>
+                                    <div class="sn-value">
+                                        <input type="text" class="sn-input" value="PostgreSQL Connection Pool Exhausted on prod-db-01" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sn-form-row">
+                                <div class="sn-form-group full-width">
+                                    <div class="sn-label">Description</div>
+                                    <div class="sn-value">
+                                        <textarea class="sn-textarea">Alert received from Prometheus at 14:32:18 IST:
+
+Database: prod-db-01 (PostgreSQL 15.4)
+Issue: Connection pool exhausted (100/100 connections in use)
+Current Load: 450 active queries
+Impact: Trading API experiencing 500 errors, order processing delayed
+Affected Services: trading-api, order-management, risk-calculator
+
+Initial Analysis:
+- Connection leak detected in trading-api service (v2.4.3)
+- Multiple long-running queries identified
+- Connection timeout not properly configured
+
+Automated Remediation Attempted:
+- StackStorm triggered connection pool restart (Failed)
+- Load balancer redirected traffic to db-replica-01 (Successful)</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Assignment Section -->
+                    <div class="sn-form-section">
+                        <div class="sn-section-header">
+                            <i class="fas fa-chevron-down sn-section-icon"></i>
+                            Assignment
+                        </div>
+                        <div class="sn-section-content">
+                            <div class="sn-form-row">
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Assignment Group</div>
+                                    <div class="sn-value">
+                                        <select class="sn-select">
+                                            <option selected>Database Operations</option>
+                                            <option>Network Team</option>
+                                            <option>DevOps Team</option>
+                                            <option>Application Support</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Assigned To</div>
+                                    <div class="sn-value">
+                                        <select class="sn-select">
+                                            <option selected>Rajkumar Madhu</option>
+                                            <option>Arun Kumar</option>
+                                            <option>Priya Sharma</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sn-form-row">
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Configuration Item</div>
+                                    <div class="sn-value">
+                                        <a href="#" class="sn-link">prod-db-01.finspot.com</a>
+                                    </div>
+                                </div>
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Business Service</div>
+                                    <div class="sn-value">
+                                        <a href="#" class="sn-link">Trading Platform</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resolution Information -->
+                    <div class="sn-form-section">
+                        <div class="sn-section-header">
+                            <i class="fas fa-chevron-down sn-section-icon"></i>
+                            Resolution Information
+                        </div>
+                        <div class="sn-section-content">
+                            <div class="sn-form-row">
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Resolution Code</div>
+                                    <div class="sn-value">
+                                        <select class="sn-select">
+                                            <option>-- None --</option>
+                                            <option>Fixed</option>
+                                            <option>Workaround</option>
+                                            <option>Not Reproducible</option>
+                                            <option>Duplicate</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Resolved</div>
+                                    <div class="sn-value sn-readonly">--</div>
+                                </div>
+                            </div>
+
+                            <div class="sn-form-row">
+                                <div class="sn-form-group full-width">
+                                    <div class="sn-label">Resolution Notes</div>
+                                    <div class="sn-value">
+                                        <textarea class="sn-textarea" placeholder="Enter resolution details..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sn-form-row">
+                                <div class="sn-form-group full-width">
+                                    <div class="sn-label">Root Cause</div>
+                                    <div class="sn-value">
+                                        <textarea class="sn-textarea" placeholder="Describe the root cause..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alert Details -->
+                    <div class="sn-form-section">
+                        <div class="sn-section-header">
+                            <i class="fas fa-chevron-down sn-section-icon"></i>
+                            Alert Details (Prometheus)
+                        </div>
+                        <div class="sn-section-content">
+                            <div class="sn-form-row">
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Alert Name</div>
+                                    <div class="sn-value sn-readonly">PostgreSQLConnectionPoolExhausted</div>
+                                </div>
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Alert Severity</div>
+                                    <div class="sn-value sn-readonly" style="color: #c62828; font-weight: 600;">critical</div>
+                                </div>
+                            </div>
+
+                            <div class="sn-form-row">
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Source</div>
+                                    <div class="sn-value sn-readonly">Prometheus</div>
+                                </div>
+                                <div class="sn-form-group">
+                                    <div class="sn-label">Alert Fingerprint</div>
+                                    <div class="sn-value sn-readonly" style="font-family: 'Courier New', monospace; font-size: 11px;">
+                                        a8f7e3c9b2d4f6e1
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sn-form-row">
+                                <div class="sn-form-group full-width">
+                                    <div class="sn-label">Alert Labels</div>
+                                    <div class="sn-value sn-readonly" style="font-family: 'Courier New', monospace; font-size: 11px;">
+                                        instance="prod-db-01:9187", job="postgres-exporter", severity="critical", environment="production"
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Section -->
+                <div class="sn-activity-section">
+                    <div class="sn-activity-tabs">
+                        <div class="sn-activity-tab active">Work Notes</div>
+                        <div class="sn-activity-tab">Additional Comments</div>
+                        <div class="sn-activity-tab">Activities</div>
+                        <div class="sn-activity-tab">Related Records (3)</div>
+                    </div>
+
+                    <div class="sn-activity-content">
+                        <!-- Comment Box -->
+                        <div class="sn-comment-box">
+                            <textarea class="sn-comment-textarea" placeholder="Add work notes (visible to support team only)..."></textarea>
+                            <div class="sn-comment-actions">
+                                <button class="sn-btn sn-btn-primary">Post</button>
+                                <button class="sn-btn">Attach File</button>
+                                <button class="sn-btn">@Mention</button>
+                            </div>
+                        </div>
+
+                        <!-- Activity Stream -->
+                        <div class="sn-activity-stream">
+                            <div class="sn-activity-item">
+                                <div class="sn-activity-avatar">RM</div>
+                                <div class="sn-activity-content-wrapper">
+                                    <div class="sn-activity-header">
+                                        <span class="sn-activity-user">Rajkumar Madhu</span>
+                                        <span class="sn-activity-action">added a work note</span>
+                                        <span class="sn-activity-time">8 minutes ago</span>
+                                    </div>
+                                    <div class="sn-activity-body">
+                                        Identified the issue: trading-api v2.4.3 has a connection leak in the order processing module. The service is not properly closing database connections after completing transactions. 
+                                        <br><br>
+                                        Immediate action: Restarting trading-api pods in rolling fashion to release stale connections. 
+                                        <br><br>
+                                        Long-term fix: Deploying v2.4.4 with proper connection pooling and timeout configuration.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sn-activity-item">
+                                <div class="sn-activity-avatar" style="background: linear-gradient(135deg, #9c27b0, #7b1fa2);">ST</div>
+                                <div class="sn-activity-content-wrapper">
+                                    <div class="sn-activity-header">
+                                        <span class="sn-activity-user">StackStorm Automation</span>
+                                        <span class="sn-activity-action">executed workflow</span>
+                                        <span class="sn-activity-time">12 minutes ago</span>
+                                    </div>
+                                    <div class="sn-activity-body">
+                                        Workflow: database_connection_pool_recovery
+                                        <br>Status: Partially Successful
+                                        <br>Actions Taken:
+                                        <br>✓ Traffic redirected to db-replica-01
+                                        <br>✗ Connection pool restart failed (requires manual intervention)
+                                        <br>✓ Alert escalated to Database Operations team
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sn-activity-item">
+                                <div class="sn-activity-avatar" style="background: linear-gradient(135deg, #f44336, #c62828);">SY</div>
+                                <div class="sn-activity-content-wrapper">
+                                    <div class="sn-activity-header">
+                                        <span class="sn-activity-user">System</span>
+                                        <span class="sn-activity-action">assigned incident</span>
+                                        <span class="sn-activity-time">15 minutes ago</span>
+                                    </div>
+                                    <div class="sn-activity-body">
+                                        Incident automatically assigned to <strong>Rajkumar Madhu</strong> via smart routing based on:
+                                        <br>• Current availability (on-call rotation)
+                                        <br>• Skill match: PostgreSQL, Database Operations
+                                        <br>• Past performance: 98% MTTR compliance
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sn-activity-item">
+                                <div class="sn-activity-avatar" style="background: linear-gradient(135deg, #ff9800, #f57c00);">PR</div>
+                                <div class="sn-activity-content-wrapper">
+                                    <div class="sn-activity-header">
+                                        <span class="sn-activity-user">Prometheus</span>
+                                        <span class="sn-activity-action">created incident</span>
+                                        <span class="sn-activity-time">18 minutes ago</span>
+                                    </div>
+                                    <div class="sn-activity-body">
+                                        Alert triggered: PostgreSQL connection pool exhausted on prod-db-01
+                                        <br>Threshold: 100/100 connections active
+                                        <br>Severity: Critical
+                                        <br>Auto-created incident via Alertmanager webhook integration
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sn-sidebar">
+                <!-- SLA Information -->
+                <div class="sn-sidebar-card">
+                    <div class="sn-sidebar-header">
+                        <i class="fas fa-clock"></i> SLA Information
+                    </div>
+                    <div class="sn-metric" style="border-bottom: 1px solid var(--border-light);">
+                        <div class="sn-metric-value" style="color: #f57c00;">18m</div>
+                        <div class="sn-metric-label">Time to Resolution</div>
+                        <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">
+                            Target: 4h | Remaining: 3h 42m
+                        </div>
+                    </div>
+                    <div class="sn-metric">
+                        <div class="sn-metric-value" style="color: var(--sn-green);">3m</div>
+                        <div class="sn-metric-label">Response Time</div>
+                        <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">
+                            Target: 15m | Status: Met ✓
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Incident Stats -->
+                <div class="sn-sidebar-card">
+                    <div class="sn-sidebar-header">
+                        <i class="fas fa-chart-bar"></i> Incident Metrics
+                    </div>
+                    <div class="sn-sidebar-content">
+                        <div class="sn-info-row">
+                            <span class="sn-info-label">Age</span>
+                            <span class="sn-info-value">18 minutes</span>
+                        </div>
+                        <div class="sn-info-row">
+                            <span class="sn-info-label">Reopen Count</span>
+                            <span class="sn-info-value">0</span>
+                        </div>
+                        <div class="sn-info-row">
+                            <span class="sn-info-label">Reassignment Count</span>
+                            <span class="sn-info-value">0</span>
+                        </div>
+                        <div class="sn-info-row">
+                            <span class="sn-info-label">Follow Up</span>
+                            <span class="sn-info-value">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="sn-sidebar-card">
+                    <div class="sn-sidebar-header">
+                        <i class="fas fa-history"></i> Activity Timeline
+                    </div>
+                    <div class="sn-sidebar-content">
+                        <div class="sn-timeline">
+                            <div class="sn-timeline-item">
+                                <div class="sn-timeline-icon updated">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="sn-timeline-content">
+                                    <div><strong>Work Note Added</strong></div>
+                                    <span class="sn-timeline-time">8 min ago by Rajkumar M.</span>
+                                </div>
+                            </div>
+
+                            <div class="sn-timeline-item">
+                                <div class="sn-timeline-icon assigned">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="sn-timeline-content">
+                                    <div><strong>Assigned to Rajkumar M.</strong></div>
+                                    <span class="sn-timeline-time">15 min ago (Auto-assigned)</span>
+                                </div>
+                            </div>
+
+                            <div class="sn-timeline-item">
+                                <div class="sn-timeline-icon created">
+                                    <i class="fas fa-plus"></i>
+                                </div>
+                                <div class="sn-timeline-content">
+                                    <div><strong>Incident Created</strong></div>
+                                    <span class="sn-timeline-time">18 min ago by Prometheus</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Related Records -->
+                <div class="sn-sidebar-card">
+                    <div class="sn-sidebar-header">
+                        <i class="fas fa-link"></i> Related Records
+                    </div>
+                    <div class="sn-sidebar-content">
+                        <div class="sn-related-list">
+                            <div class="sn-related-item">
+                                <div>
+                                    <div class="sn-related-item-title">Connection leak fix</div>
+                                    <div class="sn-related-item-id">CHG0012456</div>
+                                </div>
+                                <i class="fas fa-external-link-alt" style="color: var(--text-muted); font-size: 10px;"></i>
+                            </div>
+
+                            <div class="sn-related-item">
+                                <div>
+                                    <div class="sn-related-item-title">DB pool exhausted</div>
+                                    <div class="sn-related-item-id">PRB0003421</div>
+                                </div>
+                                <i class="fas fa-external-link-alt" style="color: var(--text-muted); font-size: 10px;"></i>
+                            </div>
+
+                            <div class="sn-related-item">
+                                <div>
+                                    <div class="sn-related-item-title">prod-db-01 server</div>
+                                    <div class="sn-related-item-id">CI0008834</div>
+                                </div>
+                                <i class="fas fa-external-link-alt" style="color: var(--text-muted); font-size: 10px;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Automation Actions -->
+                <div class="sn-sidebar-card">
+                    <div class="sn-sidebar-header">
+                        <i class="fas fa-robot"></i> Automation
+                    </div>
+                    <div class="sn-sidebar-content">
+                        <button class="sn-btn" style="width: 100%; margin-bottom: 8px;">
+                            <i class="fas fa-play"></i> Run Diagnostics
+                        </button>
+                        <button class="sn-btn" style="width: 100%; margin-bottom: 8px;">
+                            <i class="fas fa-sync"></i> Restart Services
+                        </button>
+                        <button class="sn-btn" style="width: 100%;">
+                            <i class="fas fa-terminal"></i> Execute Runbook
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Collapsible sections
+        document.querySelectorAll('.sn-section-header').forEach(header => {
+            header.addEventListener('click', function() {
+                const icon = this.querySelector('.sn-section-icon');
+                const content = this.nextElementSibling;
+                
+                if (content.style.display === 'none') {
+                    content.style.display = 'block';
+                    icon.style.transform = 'rotate(0deg)';
+                } else {
+                    content.style.display = 'none';
+                    icon.style.transform = 'rotate(-90deg)';
+                }
+            });
+        });
+
+        // Activity tabs
+        document.querySelectorAll('.sn-activity-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.sn-activity-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Auto-save indication
+        let saveTimeout;
+        document.querySelectorAll('.sn-input, .sn-select, .sn-textarea').forEach(field => {
+            field.addEventListener('input', function() {
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(() => {
+                    console.log('Auto-saved at', new Date().toLocaleTimeString());
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>

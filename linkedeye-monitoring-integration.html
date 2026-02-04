@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring & Observability Integration | LinkedEye-FinSpot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #0066cc;
+            --primary-dark: #004c99;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --text-primary: #1a1a1a;
+            --text-secondary: #6c757d;
+            --text-muted: #adb5bd;
+            --border-color: #dee2e6;
+            --bg-light: #f8f9fa;
+            --bg-white: #ffffff;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --prometheus-orange: #e6522c;
+            --grafana-orange: #f79520;
+            --k8s-blue: #326ce5;
+            --nginx-green: #009639;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .top-header {
+            background: linear-gradient(135deg, #0066cc 0%, #004c99 100%);
+            color: white;
+            padding: 12px 0;
+            box-shadow: var(--shadow-md);
+        }
+
+        .top-header-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: var(--bg-white);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .navbar-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 30px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .nav-item {
+            padding: 15px 20px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .nav-item:hover {
+            color: var(--primary-color);
+            background: var(--bg-light);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 25px 30px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .breadcrumb a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Integration Status Banner */
+        .integration-status-banner {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 2px solid #4caf50;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-icon {
+            width: 60px;
+            height: 60px;
+            background: #4caf50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+        }
+
+        .status-content {
+            flex: 1;
+        }
+
+        .status-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #2e7d32;
+            margin-bottom: 5px;
+        }
+
+        .status-text {
+            color: #1b5e20;
+            font-size: 0.95rem;
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .card-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-light);
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        /* Integration Grid */
+        .integration-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .integration-card {
+            background: var(--bg-white);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .integration-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .integration-card.connected {
+            border-color: var(--success-color);
+            background: linear-gradient(to bottom, #ffffff 0%, #f1f8f4 100%);
+        }
+
+        .integration-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .integration-logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .integration-logo.prometheus {
+            background: #e6522c;
+            color: white;
+        }
+
+        .integration-logo.grafana {
+            background: #f79520;
+            color: white;
+        }
+
+        .integration-logo.k8s {
+            background: #326ce5;
+            color: white;
+        }
+
+        .integration-logo.nginx {
+            background: #009639;
+            color: white;
+        }
+
+        .integration-logo.alertmanager {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .integration-logo.node-exporter {
+            background: #37474f;
+            color: white;
+        }
+
+        .integration-info {
+            flex: 1;
+        }
+
+        .integration-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 3px;
+        }
+
+        .integration-status {
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.connected {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-badge.pending {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .integration-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .integration-metrics {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85rem;
+        }
+
+        .metric {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-value {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--text-primary);
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+        }
+
+        /* Alert Rules */
+        .alert-rule {
+            background: var(--bg-light);
+            border-left: 4px solid var(--warning-color);
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+
+        .alert-rule.critical {
+            border-left-color: var(--danger-color);
+        }
+
+        .alert-rule.warning {
+            border-left-color: var(--warning-color);
+        }
+
+        .alert-rule.info {
+            border-left-color: var(--info-color);
+        }
+
+        .alert-rule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .alert-rule-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .alert-rule-severity {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .severity-critical {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .severity-warning {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .alert-rule-query {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            background: white;
+            padding: 8px 10px;
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow-x: auto;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            margin-top: 15px;
+            position: relative;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #404040;
+        }
+
+        .code-title {
+            color: #858585;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .copy-btn {
+            padding: 6px 12px;
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #d4d4d4;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #3d3d3d;
+        }
+
+        .code-line {
+            margin: 3px 0;
+        }
+
+        .code-comment {
+            color: #6a9955;
+        }
+
+        .code-keyword {
+            color: #569cd6;
+        }
+
+        .code-string {
+            color: #ce9178;
+        }
+
+        .code-number {
+            color: #b5cea8;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            color: var(--primary-color);
+        }
+
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Metric Dashboard */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .metric-card.green {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+        }
+
+        .metric-card.orange {
+            background: linear-gradient(135deg, #f79520 0%, #ffb74d 100%);
+        }
+
+        .metric-card.red {
+            background: linear-gradient(135deg, #e6522c 0%, #ff6b6b 100%);
+        }
+
+        .metric-card.blue {
+            background: linear-gradient(135deg, #326ce5 0%, #64b5f6 100%);
+        }
+
+        .metric-card-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .metric-card-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--bg-white);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* Sidebar */
+        .sidebar-section {
+            margin-bottom: 20px;
+        }
+
+        .sidebar-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--text-secondary);
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 20px;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -26px;
+            top: 5px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--bg-white);
+            border: 3px solid var(--success-color);
+        }
+
+        .timeline-content {
+            background: var(--bg-light);
+            padding: 12px;
+            border-radius: 6px;
+        }
+
+        .timeline-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 3px;
+        }
+
+        .timeline-description {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .timeline-time {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .integration-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Header -->
+    <div class="top-header">
+        <div class="top-header-container">
+            <div class="logo-section">
+                <div class="logo-icon">LE</div>
+                <a href="#" class="logo">LinkedEye-FinSpot</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="#" class="nav-item">Dashboard</a>
+            <a href="#" class="nav-item">Incidents</a>
+            <a href="#" class="nav-item active">Monitoring</a>
+            <a href="#" class="nav-item">Analytics</a>
+            <a href="#" class="nav-item">Settings</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <a href="#">Home</a>
+            <span>›</span>
+            <a href="#">Integrations</a>
+            <span>›</span>
+            <span>Monitoring & Observability</span>
+        </div>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Monitoring & Observability Integration</h1>
+            <p class="page-subtitle">Automated incident creation from Prometheus, Grafana, Kubernetes, and monitoring alerts</p>
+        </div>
+
+        <!-- Integration Status Banner -->
+        <div class="integration-status-banner">
+            <div class="status-icon">✓</div>
+            <div class="status-content">
+                <div class="status-title">All Monitoring Integrations Active</div>
+                <div class="status-text">Connected to 6 monitoring services • Receiving real-time alerts • Auto-incident creation enabled</div>
+            </div>
+        </div>
+
+        <!-- Integration Cards -->
+        <div class="integration-grid">
+            <!-- Prometheus -->
+            <div class="integration-card connected">
+                <div class="integration-header">
+                    <div class="integration-logo prometheus">P</div>
+                    <div class="integration-info">
+                        <div class="integration-name">Prometheus</div>
+                        <div class="integration-status">
+                            <span class="status-badge connected">● Connected</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="integration-description">
+                    Metrics monitoring and alerting toolkit for Kubernetes and microservices
+                </div>
+                <div class="integration-metrics">
+                    <div class="metric">
+                        <div class="metric-value">347</div>
+                        <div class="metric-label">Metrics</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">12</div>
+                        <div class="metric-label">Alerts</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">24</div>
+                        <div class="metric-label">Rules</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grafana -->
+            <div class="integration-card connected">
+                <div class="integration-header">
+                    <div class="integration-logo grafana">G</div>
+                    <div class="integration-info">
+                        <div class="integration-name">Grafana</div>
+                        <div class="integration-status">
+                            <span class="status-badge connected">● Connected</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="integration-description">
+                    Analytics and interactive visualization platform with alerting
+                </div>
+                <div class="integration-metrics">
+                    <div class="metric">
+                        <div class="metric-value">18</div>
+                        <div class="metric-label">Dashboards</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">8</div>
+                        <div class="metric-label">Alerts</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">5</div>
+                        <div class="metric-label">Users</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kubernetes -->
+            <div class="integration-card connected">
+                <div class="integration-header">
+                    <div class="integration-logo k8s">K8s</div>
+                    <div class="integration-info">
+                        <div class="integration-name">Kubernetes</div>
+                        <div class="integration-status">
+                            <span class="status-badge connected">● Connected</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="integration-description">
+                    Container orchestration platform events and cluster monitoring
+                </div>
+                <div class="integration-metrics">
+                    <div class="metric">
+                        <div class="metric-value">3</div>
+                        <div class="metric-label">Clusters</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">87</div>
+                        <div class="metric-label">Pods</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">15</div>
+                        <div class="metric-label">Services</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NGINX -->
+            <div class="integration-card connected">
+                <div class="integration-header">
+                    <div class="integration-logo nginx">N</div>
+                    <div class="integration-info">
+                        <div class="integration-name">NGINX</div>
+                        <div class="integration-status">
+                            <span class="status-badge connected">● Connected</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="integration-description">
+                    Web server and reverse proxy monitoring with error tracking
+                </div>
+                <div class="integration-metrics">
+                    <div class="metric">
+                        <div class="metric-value">6</div>
+                        <div class="metric-label">Servers</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">99.8%</div>
+                        <div class="metric-label">Uptime</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">5.2k</div>
+                        <div class="metric-label">Req/sec</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alertmanager -->
+            <div class="integration-card connected">
+                <div class="integration-header">
+                    <div class="integration-logo alertmanager">A</div>
+                    <div class="integration-info">
+                        <div class="integration-name">Alertmanager</div>
+                        <div class="integration-status">
+                            <span class="status-badge connected">● Connected</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="integration-description">
+                    Handles alerts from Prometheus with deduplication and routing
+                </div>
+                <div class="integration-metrics">
+                    <div class="metric">
+                        <div class="metric-value">156</div>
+                        <div class="metric-label">Alerts</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">8</div>
+                        <div class="metric-label">Routes</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">4</div>
+                        <div class="metric-label">Receivers</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Node Exporter -->
+            <div class="integration-card connected">
+                <div class="integration-header">
+                    <div class="integration-logo node-exporter">NE</div>
+                    <div class="integration-info">
+                        <div class="integration-name">Node Exporter</div>
+                        <div class="integration-status">
+                            <span class="status-badge connected">● Connected</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="integration-description">
+                    Hardware and OS metrics for Prometheus from Linux systems
+                </div>
+                <div class="integration-metrics">
+                    <div class="metric">
+                        <div class="metric-value">24</div>
+                        <div class="metric-label">Nodes</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">278</div>
+                        <div class="metric-label">Metrics</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">15s</div>
+                        <div class="metric-label">Interval</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Main Content -->
+            <div>
+                <!-- Real-time Metrics Dashboard -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>📊</span>
+                        Real-Time Metrics Dashboard
+                    </div>
+                    <div class="card-body">
+                        <div class="metric-grid">
+                            <div class="metric-card green">
+                                <div class="metric-card-value">99.9%</div>
+                                <div class="metric-card-label">System Uptime</div>
+                            </div>
+                            <div class="metric-card blue">
+                                <div class="metric-card-value">1,247</div>
+                                <div class="metric-card-label">Active Pods</div>
+                            </div>
+                            <div class="metric-card orange">
+                                <div class="metric-card-value">12</div>
+                                <div class="metric-card-label">Active Alerts</div>
+                            </div>
+                            <div class="metric-card red">
+                                <div class="metric-card-value">3</div>
+                                <div class="metric-card-label">Critical Issues</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Alert Rules -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>🚨</span>
+                        Active Prometheus Alert Rules
+                    </div>
+                    <div class="card-body">
+                        <div class="alert-rule critical">
+                            <div class="alert-rule-header">
+                                <div class="alert-rule-name">High Pod CPU Usage</div>
+                                <span class="alert-rule-severity severity-critical">Critical</span>
+                            </div>
+                            <div class="alert-rule-query">
+                                (sum(rate(container_cpu_usage_seconds_total[5m])) by (pod) / sum(container_spec_cpu_quota) by (pod)) > 0.9
+                            </div>
+                        </div>
+
+                        <div class="alert-rule critical">
+                            <div class="alert-rule-header">
+                                <div class="alert-rule-name">Pod Memory Pressure</div>
+                                <span class="alert-rule-severity severity-critical">Critical</span>
+                            </div>
+                            <div class="alert-rule-query">
+                                (container_memory_working_set_bytes / container_spec_memory_limit_bytes) > 0.85
+                            </div>
+                        </div>
+
+                        <div class="alert-rule warning">
+                            <div class="alert-rule-header">
+                                <div class="alert-rule-name">High Error Rate</div>
+                                <span class="alert-rule-severity severity-warning">Warning</span>
+                            </div>
+                            <div class="alert-rule-query">
+                                rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+                            </div>
+                        </div>
+
+                        <div class="alert-rule warning">
+                            <div class="alert-rule-header">
+                                <div class="alert-rule-name">NGINX High Response Time</div>
+                                <span class="alert-rule-severity severity-warning">Warning</span>
+                            </div>
+                            <div class="alert-rule-query">
+                                histogram_quantile(0.99, rate(nginx_http_request_duration_seconds_bucket[5m])) > 1
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuration Tabs -->
+                <div class="card">
+                    <div class="card-body" style="padding: 0;">
+                        <div class="tabs">
+                            <div class="tab active" onclick="switchTab('prometheus-config')">Prometheus</div>
+                            <div class="tab" onclick="switchTab('alertmanager-config')">Alertmanager</div>
+                            <div class="tab" onclick="switchTab('grafana-config')">Grafana</div>
+                            <div class="tab" onclick="switchTab('k8s-config')">Kubernetes</div>
+                        </div>
+
+                        <div style="padding: 25px;">
+                            <!-- Prometheus Config -->
+                            <div id="prometheus-config" class="tab-content active">
+                                <h3 style="margin-bottom: 15px;">Prometheus Configuration</h3>
+                                <p style="color: var(--text-secondary); margin-bottom: 15px;">
+                                    Configure Prometheus to send alerts to LinkedEye-FinSpot incident management system
+                                </p>
+
+                                <div class="code-block">
+                                    <div class="code-header">
+                                        <span class="code-title">prometheus-rules.yml</span>
+                                        <button class="copy-btn" onclick="copyCode('prom-rules')">Copy</button>
+                                    </div>
+                                    <div id="prom-rules">
+<span class="code-keyword">groups</span>:
+  - <span class="code-keyword">name</span>: <span class="code-string">linkedeye_incidents</span>
+    <span class="code-keyword">interval</span>: <span class="code-number">30s</span>
+    <span class="code-keyword">rules</span>:
+      - <span class="code-keyword">alert</span>: <span class="code-string">HighPodCPUUsage</span>
+        <span class="code-keyword">expr</span>: |
+          (sum(rate(container_cpu_usage_seconds_total[5m])) by (pod)
+          / sum(container_spec_cpu_quota) by (pod)) > 0.9
+        <span class="code-keyword">for</span>: <span class="code-number">5m</span>
+        <span class="code-keyword">labels</span>:
+          <span class="code-keyword">severity</span>: <span class="code-string">critical</span>
+          <span class="code-keyword">category</span>: <span class="code-string">Infrastructure</span>
+        <span class="code-keyword">annotations</span>:
+          <span class="code-keyword">summary</span>: <span class="code-string">"High CPU usage on {{ $labels.pod }}"</span>
+          <span class="code-keyword">description</span>: <span class="code-string">"Pod {{ $labels.pod }} CPU > 90%"</span>
+          <span class="code-keyword">incident_priority</span>: <span class="code-string">"Critical"</span>
+          <span class="code-keyword">incident_category</span>: <span class="code-string">"Infrastructure"</span></div>
+                                </div>
+
+                                <div class="code-block">
+                                    <div class="code-header">
+                                        <span class="code-title">Webhook Integration</span>
+                                        <button class="copy-btn" onclick="copyCode('prom-webhook')">Copy</button>
+                                    </div>
+                                    <div id="prom-webhook">
+<span class="code-comment"># Add to alertmanager.yml</span>
+<span class="code-keyword">receivers</span>:
+  - <span class="code-keyword">name</span>: <span class="code-string">linkedeye-finspot</span>
+    <span class="code-keyword">webhook_configs</span>:
+      - <span class="code-keyword">url</span>: <span class="code-string">'https://linkedeye-finspot.com/api/alerts/prometheus'</span>
+        <span class="code-keyword">send_resolved</span>: <span class="code-number">true</span>
+        <span class="code-keyword">http_config</span>:
+          <span class="code-keyword">bearer_token</span>: <span class="code-string">'YOUR_API_TOKEN'</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Alertmanager Config -->
+                            <div id="alertmanager-config" class="tab-content">
+                                <h3 style="margin-bottom: 15px;">Alertmanager Configuration</h3>
+                                <p style="color: var(--text-secondary); margin-bottom: 15px;">
+                                    Route alerts from Alertmanager to create incidents automatically
+                                </p>
+
+                                <div class="code-block">
+                                    <div class="code-header">
+                                        <span class="code-title">alertmanager.yml</span>
+                                        <button class="copy-btn" onclick="copyCode('am-config')">Copy</button>
+                                    </div>
+                                    <div id="am-config">
+<span class="code-keyword">global</span>:
+  <span class="code-keyword">resolve_timeout</span>: <span class="code-number">5m</span>
+
+<span class="code-keyword">route</span>:
+  <span class="code-keyword">group_by</span>: [<span class="code-string">'alertname'</span>, <span class="code-string">'cluster'</span>, <span class="code-string">'service'</span>]
+  <span class="code-keyword">group_wait</span>: <span class="code-number">10s</span>
+  <span class="code-keyword">group_interval</span>: <span class="code-number">10s</span>
+  <span class="code-keyword">repeat_interval</span>: <span class="code-number">12h</span>
+  <span class="code-keyword">receiver</span>: <span class="code-string">'linkedeye-finspot'</span>
+
+  <span class="code-keyword">routes</span>:
+    - <span class="code-keyword">match</span>:
+        <span class="code-keyword">severity</span>: <span class="code-string">critical</span>
+      <span class="code-keyword">receiver</span>: <span class="code-string">linkedeye-critical</span>
+      <span class="code-keyword">continue</span>: <span class="code-number">true</span>
+
+<span class="code-keyword">receivers</span>:
+  - <span class="code-keyword">name</span>: <span class="code-string">'linkedeye-finspot'</span>
+    <span class="code-keyword">webhook_configs</span>:
+      - <span class="code-keyword">url</span>: <span class="code-string">'https://linkedeye-finspot.com/api/alerts'</span>
+        <span class="code-keyword">send_resolved</span>: <span class="code-number">true</span>
+
+  - <span class="code-keyword">name</span>: <span class="code-string">'linkedeye-critical'</span>
+    <span class="code-keyword">webhook_configs</span>:
+      - <span class="code-keyword">url</span>: <span class="code-string">'https://linkedeye-finspot.com/api/alerts/critical'</span>
+        <span class="code-keyword">send_resolved</span>: <span class="code-number">true</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Grafana Config -->
+                            <div id="grafana-config" class="tab-content">
+                                <h3 style="margin-bottom: 15px;">Grafana Alert Integration</h3>
+                                <p style="color: var(--text-secondary); margin-bottom: 15px;">
+                                    Configure Grafana to send dashboard alerts to LinkedEye-FinSpot
+                                </p>
+
+                                <div class="code-block">
+                                    <div class="code-header">
+                                        <span class="code-title">Grafana Notification Channel</span>
+                                        <button class="copy-btn" onclick="copyCode('grafana-notif')">Copy</button>
+                                    </div>
+                                    <div id="grafana-notif">
+<span class="code-comment"># Add via Grafana UI or API</span>
+{
+  <span class="code-string">"name"</span>: <span class="code-string">"LinkedEye-FinSpot"</span>,
+  <span class="code-string">"type"</span>: <span class="code-string">"webhook"</span>,
+  <span class="code-string">"isDefault"</span>: <span class="code-number">true</span>,
+  <span class="code-string">"settings"</span>: {
+    <span class="code-string">"url"</span>: <span class="code-string">"https://linkedeye-finspot.com/api/alerts/grafana"</span>,
+    <span class="code-string">"httpMethod"</span>: <span class="code-string">"POST"</span>,
+    <span class="code-string">"username"</span>: <span class="code-string">""</span>,
+    <span class="code-string">"password"</span>: <span class="code-string">""</span>
+  },
+  <span class="code-string">"secureSettings"</span>: {
+    <span class="code-string">"authorization"</span>: <span class="code-string">"Bearer YOUR_API_TOKEN"</span>
+  }
+}</div>
+                                </div>
+                            </div>
+
+                            <!-- Kubernetes Config -->
+                            <div id="k8s-config" class="tab-content">
+                                <h3 style="margin-bottom: 15px;">Kubernetes Events Integration</h3>
+                                <p style="color: var(--text-secondary); margin-bottom: 15px;">
+                                    Monitor Kubernetes events and create incidents for pod failures, crashes, and errors
+                                </p>
+
+                                <div class="code-block">
+                                    <div class="code-header">
+                                        <span class="code-title">k8s-event-exporter.yaml</span>
+                                        <button class="copy-btn" onclick="copyCode('k8s-events')">Copy</button>
+                                    </div>
+                                    <div id="k8s-events">
+<span class="code-keyword">apiVersion</span>: <span class="code-string">v1</span>
+<span class="code-keyword">kind</span>: <span class="code-string">ConfigMap</span>
+<span class="code-keyword">metadata</span>:
+  <span class="code-keyword">name</span>: <span class="code-string">event-exporter-cfg</span>
+  <span class="code-keyword">namespace</span>: <span class="code-string">monitoring</span>
+<span class="code-keyword">data</span>:
+  <span class="code-keyword">config.yaml</span>: |
+    <span class="code-keyword">route</span>:
+      <span class="code-keyword">routes</span>:
+        - <span class="code-keyword">match</span>:
+            - <span class="code-keyword">receiver</span>: <span class="code-string">"linkedeye"</span>
+              <span class="code-keyword">type</span>: <span class="code-string">"Warning"</span>
+        - <span class="code-keyword">match</span>:
+            - <span class="code-keyword">receiver</span>: <span class="code-string">"linkedeye-critical"</span>
+              <span class="code-keyword">reason</span>: <span class="code-string">"Failed|BackOff|Error"</span>
+
+    <span class="code-keyword">receivers</span>:
+      - <span class="code-keyword">name</span>: <span class="code-string">"linkedeye"</span>
+        <span class="code-keyword">webhook</span>:
+          <span class="code-keyword">endpoint</span>: <span class="code-string">"https://linkedeye-finspot.com/api/k8s/events"</span>
+          <span class="code-keyword">headers</span>:
+            <span class="code-keyword">Authorization</span>: <span class="code-string">"Bearer YOUR_TOKEN"</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div>
+                <!-- Integration Health -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>💚</span>
+                        Integration Health
+                    </div>
+                    <div class="card-body">
+                        <div class="sidebar-section">
+                            <div class="info-item">
+                                <span class="info-label">Prometheus</span>
+                                <span class="info-value" style="color: var(--success-color);">Healthy</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Grafana</span>
+                                <span class="info-value" style="color: var(--success-color);">Healthy</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Kubernetes</span>
+                                <span class="info-value" style="color: var(--success-color);">Healthy</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">NGINX</span>
+                                <span class="info-value" style="color: var(--success-color);">Healthy</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Alertmanager</span>
+                                <span class="info-value" style="color: var(--success-color);">Healthy</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Node Exporter</span>
+                                <span class="info-value" style="color: var(--success-color);">Healthy</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Alerts -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>🔔</span>
+                        Recent Alerts
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">Pod CPU High</div>
+                                    <div class="timeline-description">api-gateway-7f9d8 CPU > 90%</div>
+                                    <div class="timeline-time">2 minutes ago</div>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">Memory Pressure</div>
+                                    <div class="timeline-description">Worker node memory > 85%</div>
+                                    <div class="timeline-time">15 minutes ago</div>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">NGINX 5xx Errors</div>
+                                    <div class="timeline-description">Error rate > 5%</div>
+                                    <div class="timeline-time">1 hour ago</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>📊</span>
+                        Auto-Created Incidents
+                    </div>
+                    <div class="card-body">
+                        <div class="sidebar-section">
+                            <div class="info-item">
+                                <span class="info-label">Today</span>
+                                <span class="info-value">24</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">This Week</span>
+                                <span class="info-value">156</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">This Month</span>
+                                <span class="info-value">687</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Auto-Resolved</span>
+                                <span class="info-value">542</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>⚡</span>
+                        Quick Actions
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary btn-block" style="margin-bottom: 10px;">
+                            <span>🔄</span> Sync Integrations
+                        </button>
+                        <button class="btn btn-secondary btn-block" style="margin-bottom: 10px;">
+                            <span>⚙️</span> Configure Rules
+                        </button>
+                        <button class="btn btn-secondary btn-block">
+                            <span>📊</span> View Dashboards
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function copyCode(elementId) {
+            const code = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Code copied to clipboard!');
+            });
+        }
+
+        // Simulate real-time metrics updates
+        setInterval(() => {
+            const metricValues = document.querySelectorAll('.metric-value');
+            metricValues.forEach(element => {
+                element.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    element.style.transform = 'scale(1)';
+                }, 200);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

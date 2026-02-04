@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedEye-FinSpot | Enterprise Incident Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 60px;
+        }
+
+        .logo {
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .title {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.9;
+        }
+
+        .pages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .page-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .page-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .page-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #0066cc 0%, #004c99 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .page-description {
+            color: #6c757d;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .page-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            background: #e3f2fd;
+            color: #0066cc;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .page-badge.new {
+            background: #e8f5e9;
+            color: #28a745;
+        }
+
+        .page-badge.featured {
+            background: #fff3e0;
+            color: #ff9800;
+        }
+
+        .section-title {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 25px;
+            color: white;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .feature-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .feature-text {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 60px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">LE</div>
+            <h1 class="title">LinkedEye-FinSpot</h1>
+            <p class="subtitle">Enterprise-Grade Incident Management Platform</p>
+        </div>
+
+        <!-- Authentication Pages -->
+        <h2 class="section-title">🔐 Authentication</h2>
+        <div class="pages-grid">
+            <a href="linkedeye-signin.html" class="page-card">
+                <div class="page-icon">🔑</div>
+                <h3 class="page-title">Sign In</h3>
+                <p class="page-description">
+                    Professional login page with social authentication, password recovery, and remember me functionality.
+                </p>
+                <span class="page-badge">Authentication</span>
+            </a>
+
+            <a href="linkedeye-signup.html" class="page-card">
+                <div class="page-icon">📝</div>
+                <h3 class="page-title">Sign Up</h3>
+                <p class="page-description">
+                    User registration with password strength validation, terms acceptance, and email verification.
+                </p>
+                <span class="page-badge">Registration</span>
+            </a>
+        </div>
+
+        <!-- Main Application Pages -->
+        <h2 class="section-title">📊 Application Pages</h2>
+        <div class="pages-grid">
+            <a href="linkedeye-modern-dashboard.html" class="page-card">
+                <div class="page-icon">✨</div>
+                <h3 class="page-title">Modern Dashboard</h3>
+                <p class="page-description">
+                    Latest design with vibrant gradient colors, modern card layouts, professional shadows, and rich visual elements. Enhanced spacing and beautiful UI.
+                </p>
+                <span class="page-badge new">New</span>
+                <span class="page-badge featured">Featured</span>
+                <span class="page-badge">Modern Design</span>
+            </a>
+
+            <a href="linkedeye-enhanced-dashboard.html" class="page-card">
+                <div class="page-icon">🎨</div>
+                <h3 class="page-title">Enhanced Dashboard</h3>
+                <p class="page-description">
+                    Improved dashboard with better spacing, professional box design, consistent padding, and clean ServiceNow-inspired layout.
+                </p>
+                <span class="page-badge">Enhanced</span>
+            </a>
+
+            <a href="linkedeye-finspot-dashboard.html" class="page-card">
+                <div class="page-icon">📈</div>
+                <h3 class="page-title">Dashboard</h3>
+                <p class="page-description">
+                    Comprehensive dashboard with statistics, charts, filters, recent incidents, and real-time activity tracking.
+                </p>
+                <span class="page-badge">Main</span>
+            </a>
+
+            <a href="linkedeye-incident-detail.html" class="page-card">
+                <div class="page-icon">🎫</div>
+                <h3 class="page-title">Incident Detail</h3>
+                <p class="page-description">
+                    Full incident management page with edit mode, comments, work notes, activity timeline, and attachments.
+                </p>
+                <span class="page-badge featured">Featured</span>
+                <span class="page-badge">ServiceNow-Style</span>
+            </a>
+
+            <a href="linkedeye-devops-incident.html" class="page-card">
+                <div class="page-icon">🔗</div>
+                <h3 class="page-title">DevOps Integration</h3>
+                <p class="page-description">
+                    Create incidents from CI/CD pipelines with auto-detection, code samples for Jenkins, GitHub Actions, and API integration.
+                </p>
+                <span class="page-badge new">New</span>
+                <span class="page-badge">DevOps</span>
+            </a>
+
+            <a href="linkedeye-monitoring-integration.html" class="page-card">
+                <div class="page-icon">📡</div>
+                <h3 class="page-title">Monitoring & Observability</h3>
+                <p class="page-description">
+                    Prometheus, Grafana, Kubernetes, Alertmanager, NGINX, and Node Exporter integration with real-time alert rules and auto-incident creation.
+                </p>
+                <span class="page-badge new">New</span>
+                <span class="page-badge featured">Featured</span>
+                <span class="page-badge">Monitoring</span>
+            </a>
+
+            <a href="linkedeye-stackstorm-integration.html" class="page-card">
+                <div class="page-icon">🤖</div>
+                <h3 class="page-title">StackStorm Automation</h3>
+                <p class="page-description">
+                    Event-driven automation platform with auto-remediation workflows, self-healing infrastructure, and intelligent orchestration for incident response.
+                </p>
+                <span class="page-badge new">New</span>
+                <span class="page-badge featured">Featured</span>
+                <span class="page-badge">Automation</span>
+            </a>
+        </div>
+
+        <!-- Change Management Module -->
+        <h2 class="section-title">🔄 Change Management</h2>
+        <div class="pages-grid">
+            <a href="linkedeye-change-management.html" class="page-card">
+                <div class="page-icon">📋</div>
+                <h3 class="page-title">Change Management Dashboard</h3>
+                <p class="page-description">
+                    Complete change management system with approval workflows, change calendar, and tracking for all infrastructure changes including network devices, servers, and applications.
+                </p>
+                <span class="page-badge new">New</span>
+                <span class="page-badge featured">Featured</span>
+                <span class="page-badge">Change Control</span>
+            </a>
+
+            <a href="linkedeye-change-detail.html" class="page-card">
+                <div class="page-icon">📝</div>
+                <h3 class="page-title">Change Request Detail</h3>
+                <p class="page-description">
+                    Detailed change request page with approval workflow, implementation plan, rollback procedures, configuration code, and activity tracking for network device changes.
+                </p>
+                <span class="page-badge new">New</span>
+                <span class="page-badge">Workflow</span>
+            </a>
+
+            <a href="linkedeye-network-devices.html" class="page-card">
+                <div class="page-icon">🌐</div>
+                <h3 class="page-title">Network Device Management</h3>
+                <p class="page-description">
+                    Visual network topology with device inventory management. Track routers, switches, firewalls, load balancers, and all network infrastructure with change history.
+                </p>
+                <span class="page-badge new">New</span>
+                <span class="page-badge featured">Featured</span>
+                <span class="page-badge">Network</span>
+            </a>
+        </div>
+
+        <!-- Reference Dashboards -->
+        <h2 class="section-title">🎨 Reference Designs</h2>
+        <div class="pages-grid">
+            <a href="reference-dashboard.html" class="page-card">
+                <div class="page-icon">🖼️</div>
+                <h3 class="page-title">Reference Dashboard</h3>
+                <p class="page-description">
+                    Original reference dashboard design with comprehensive incident management features and professional styling.
+                </p>
+                <span class="page-badge">Reference</span>
+            </a>
+        </div>
+
+        <!-- Features -->
+        <h2 class="section-title">✨ Platform Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Real-Time Tracking</div>
+                <div class="feature-text">Monitor and resolve incidents in real-time with instant notifications</div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <div class="feature-title">Advanced Analytics</div>
+                <div class="feature-text">Comprehensive reporting and analytics dashboards</div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔔</div>
+                <div class="feature-title">Smart Notifications</div>
+                <div class="feature-text">Automated alerts via email, Slack, and PagerDuty</div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <div class="feature-title">Enterprise Security</div>
+                <div class="feature-text">Bank-grade security with role-based access control</div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔗</div>
+                <div class="feature-title">DevOps Integration</div>
+                <div class="feature-text">Seamless integration with Jenkins, GitHub, GitLab</div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <div class="feature-title">Mobile Responsive</div>
+                <div class="feature-text">Works perfectly on desktop, tablet, and mobile devices</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>&copy; 2025 LinkedEye-FinSpot. All rights reserved.</p>
+            <p>Enterprise Incident Management Platform</p>
+        </div>
+    </div>
+</body>
+</html>

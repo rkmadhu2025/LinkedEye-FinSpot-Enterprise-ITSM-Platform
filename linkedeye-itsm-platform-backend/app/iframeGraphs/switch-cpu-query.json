@@ -1,0 +1,4 @@
+{
+  "huawei--Cpu-scale-in-Percentage": "(hwEntityCpuUsage{ entPhysicalIndex = '67108873', instance = '__FILTER__'})",
+  "dell--Cpu-scale-in-Percentage": "(hrProcessorLoad{ instance = '__FILTER__'})"
+}

@@ -1,0 +1,164 @@
+---
+# Certificate Management Configuration for LinkedEye ITSM Platform
+# This configuration handles TLS certificate renewal and management
+
+# ClusterIssuer for Let's Encrypt production
+# Only use this if you want cert-manager auto-renewal instead of wildcard cert
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: admin@finspot.in
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      # HTTP-01 solver for domain validation
+      - http01:
+          ingress:
+            class: nginx
+        selector:
+          dnsZones:
+            - "finspot.in"
+
+---
+# ClusterIssuer for Let's Encrypt staging (for testing)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    email: admin@finspot.in
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+
+---
+# Certificate renewal check CronJob
+# Monitors certificate expiration and triggers renewal
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: certificate-renewal-check
+  namespace: incident-linkedeye-itsm
+spec:
+  schedule: "0 6 * * *"  # Run daily at 6 AM UTC
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: certificate-checker
+          containers:
+            - name: cert-checker
+              image: bitnami/kubectl:latest
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  echo "Checking certificate expiration..."
+
+                  # Check the wildcard certificate
+                  CERT_SECRET="finspot-wildcard-tls"
+                  NAMESPACE="incident-linkedeye-itsm"
+
+                  # Get certificate expiration
+                  CERT_DATA=$(kubectl get secret $CERT_SECRET -n $NAMESPACE -o jsonpath='{.data.tls\.crt}' 2>/dev/null)
+
+                  if [ -z "$CERT_DATA" ]; then
+                    echo "WARNING: Certificate secret $CERT_SECRET not found!"
+                    exit 1
+                  fi
+
+                  # Decode and check expiration
+                  EXPIRY=$(echo "$CERT_DATA" | base64 -d | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+
+                  if [ -z "$EXPIRY" ]; then
+                    echo "WARNING: Could not read certificate expiration"
+                    exit 1
+                  fi
+
+                  EXPIRY_EPOCH=$(date -d "$EXPIRY" +%s 2>/dev/null || date -j -f "%b %d %H:%M:%S %Y %Z" "$EXPIRY" +%s 2>/dev/null)
+                  NOW_EPOCH=$(date +%s)
+                  DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
+
+                  echo "Certificate expires: $EXPIRY"
+                  echo "Days until expiration: $DAYS_LEFT"
+
+                  if [ $DAYS_LEFT -lt 30 ]; then
+                    echo "WARNING: Certificate expires in less than 30 days!"
+                    # Here you could trigger an alert or notification
+                    # kubectl create job --from=cronjob/certificate-renewal-notify cert-notify-$(date +%s) -n $NAMESPACE
+                    exit 1
+                  fi
+
+                  echo "Certificate is healthy"
+                  exit 0
+          restartPolicy: OnFailure
+
+---
+# ServiceAccount for certificate checker
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: certificate-checker
+  namespace: incident-linkedeye-itsm
+
+---
+# Role for reading secrets
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: certificate-reader
+  namespace: incident-linkedeye-itsm
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+
+---
+# RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: certificate-checker-binding
+  namespace: incident-linkedeye-itsm
+subjects:
+  - kind: ServiceAccount
+    name: certificate-checker
+    namespace: incident-linkedeye-itsm
+roleRef:
+  kind: Role
+  name: certificate-reader
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# If you want to enable cert-manager auto-renewal for specific services,
+# add these annotations to your ingress:
+#
+#   cert-manager.io/cluster-issuer: "letsencrypt-prod"
+#
+# And create a Certificate resource like this:
+
+# Example Certificate for auto-renewal (optional - use instead of wildcard)
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: linkedeye-certificate
+#   namespace: incident-linkedeye-itsm
+# spec:
+#   secretName: linkedeye-tls
+#   issuerRef:
+#     name: letsencrypt-prod
+#     kind: ClusterIssuer
+#   dnsNames:
+#     - fs-le-dev-inc.finspot.in
+#     - fs-le-dev-inc-api.finspot.in
+#   # Use renewBefore to renew early
+#   renewBefore: 720h  # 30 days before expiration

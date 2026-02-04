@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlertManager Webhook Configuration - Finspot LinkedEye</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+
+        h1 {
+            color: #1976D2;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 2.8em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+
+        h2 {
+            color: #1976D2;
+            margin-top: 40px;
+            margin-bottom: 25px;
+            border-bottom: 4px solid #2196F3;
+            padding-bottom: 12px;
+        }
+
+        h3 {
+            color: #424242;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        .banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .banner h3 {
+            color: white;
+            margin-top: 0;
+        }
+
+        .webhook-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .webhook-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            background: #fafafa;
+            transition: all 0.3s ease;
+        }
+
+        .webhook-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #2196F3;
+        }
+
+        .webhook-card.network {
+            border-left: 5px solid #2196F3;
+        }
+
+        .webhook-card.hardware {
+            border-left: 5px solid #FF9800;
+        }
+
+        .webhook-card.server {
+            border-left: 5px solid #4CAF50;
+        }
+
+        .webhook-card.connectivity {
+            border-left: 5px solid #9C27B0;
+        }
+
+        .webhook-card h4 {
+            color: #1976D2;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .webhook-card .category {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .category.network { background: #E3F2FD; color: #1976D2; }
+        .category.hardware { background: #FFF3E0; color: #E65100; }
+        .category.server { background: #E8F5E9; color: #2E7D32; }
+        .category.connectivity { background: #F3E5F5; color: #7B1FA2; }
+
+        .code-block {
+            background: #263238;
+            color: #aed581;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .code-block .comment { color: #78909c; }
+        .code-block .key { color: #80cbc4; }
+        .code-block .value { color: #ffab91; }
+        .code-block .string { color: #c3e88d; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background: #2196F3;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .alert-box {
+            background: #FFF3E0;
+            border-left: 5px solid #FF9800;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .alert-box.info {
+            background: #E3F2FD;
+            border-left-color: #2196F3;
+        }
+
+        .alert-box.success {
+            background: #E8F5E9;
+            border-left-color: #4CAF50;
+        }
+
+        .flow-diagram {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 25px 0;
+            border: 2px solid #2196F3;
+        }
+
+        .flow-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .flow-node {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            min-width: 150px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+        }
+
+        .flow-node.source {
+            background: linear-gradient(135deg, #E85D4C 0%, #D63447 100%);
+            color: white;
+        }
+
+        .flow-node.alertmanager {
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            color: white;
+        }
+
+        .flow-node.webhook {
+            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+            color: white;
+        }
+
+        .flow-node.action {
+            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+            color: white;
+        }
+
+        .flow-arrow {
+            font-size: 2em;
+            color: #1976D2;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📡 AlertManager Webhook Configuration</h1>
+        <p class="subtitle">Finspot LinkedEye Platform - Complete Alert Routing Guide</p>
+
+        <div class="banner">
+            <h3>🎯 Alert Routing Architecture</h3>
+            <p><strong>Total Webhook Receivers: 13</strong></p>
+            <ul style="margin-top: 15px;">
+                <li><strong>Network Devices:</strong> 7 receivers (Cisco, Dell, Huawei, Aruba, Arista, FortiGate, Routers)</li>
+                <li><strong>Physical Servers:</strong> 3 receivers (iLO, iDRAC, Generic Hardware)</li>
+                <li><strong>Operating Systems:</strong> 2 receivers (Windows, Virtual NICs)</li>
+                <li><strong>Connectivity:</strong> 1 receiver (Ping/Blackbox probes)</li>
+            </ul>
+        </div>
+
+        <h2>📊 Webhook Receivers Overview</h2>
+
+        <h3>🌐 Network Device Receivers (7 receivers)</h3>
+        <div class="webhook-grid">
+            <div class="webhook-card network">
+                <h4>1. snmpwebhook</h4>
+                <span class="category network">Cisco Switches</span>
+                <p><strong>Target:</strong> Generic SNMP-enabled switches</p>
+                <p><strong>Alert Types:</strong></p>
+                <ul>
+                    <li>Interface down/up</li>
+                    <li>High CRC errors</li>
+                    <li>Bandwidth saturation</li>
+                    <li>VLAN configuration issues</li>
+                    <li>STP topology changes</li>
+                </ul>
+                <p><strong>Label Matcher:</strong> <code>device_type="switch", vendor="cisco"</code></p>
+            </div>
+
+            <div class="webhook-card network">
+                <h4>2. fortigatewebhook</h4>
+                <span class="category network">Firewalls</span>
+                <p><strong>Target:</strong> FortiGate firewall appliances</p>
+                <p><strong>Alert Types:</strong></p>
+                <ul>
+                    <li>Session table exhaustion</li>
+                    <li>VPN tunnel down</li>
+                    <li>Threat detection</li>
+                    <li>High CPU/memory usage</li>
+                    <li>IPS signature updates</li>
+                </ul>
+                <p><strong>Label Matcher:</strong> <code>device_type="firewall", vendor="fortinet"</code></p>
+            </div>
+
+            <div class="webhook-card network">
+                <h4>3. routerwebhook</h4>
+                <span class="category network">Routers</span>
+                <p><strong>Target:</strong> Cisco/Juniper routers</p>
+                <p><strong>Alert Types:</strong></p>
+                <ul>
+                    <li>BGP peer down</li>
+                    <li>OSPF neighbor loss</li>
+                    <li>High packet loss</li>
+                    <li>Routing table full</li>
+                    <li>QoS policy violations</li>
+                </ul>
+                <p><strong>Label Matcher:</strong> <code>device_type="router"</code></p>
+            </div>
+
+            <div class="webhook-card network">
+                <h4>4. huaweiwebhook</h4>
+                <span class="category network">Huawei Switches</span>
+                <p><strong>Target:</strong> Huawei networking equipment</p>
+                <p><strong>Alert Types:</strong></p>
+                <ul>
+                    <li>Port status changes</li>
+                    <li>Link aggregation issues</li>
+                    <li>Temperature warnings</li>
+                    <li>Power supply alerts</li>
+                </ul>
+                <p><strong>Label Matcher:</strong> <code>vendor="huawei"</code></p>
+            </div>
+
+            <div class="webhook-card network">
+                <h4>5. arubawebhook</h4>
+                <span class="category network">Aruba Switches</span>
+                <p><strong>Target:</strong> Aruba switching infrastructure</p>
+                <p><strong>Alert Types:</strong></p>
+                <ul>
+                    <li>PoE power budget exceeded</li>
+                    <li>Port authentication failures</li>
+                    <li>Stack member down</li>
+                    <li>Interface errors</li>
+                </ul>
+                <p><strong>Label Matcher:</strong> <code>vendor="aruba"</code></p>
+            </div>
+
+            <div class="webhook-card network">
+                <h4>6. aristawebhook</h4>
+                <span class="category network">Arista Switches</span>
+                <p><strong>Target:</strong> Arista high-performance switches</p>
+                <p><strong>Alert Types:</strong></p>
+                <ul>
+                    <li>MLAG peer issues</li>
+                    <li>VXLAN tunnel status</li>
+                    <li>Hardware health</li>
+                    <li>BGP EVPN alerts</li>
+                </ul>
+                <p><strong>Label Matcher:</strong> <code>vendor="arista"</code></p>
+            </div>
+
+            <div class="webhook-card network">
+                <h4>7. dellwebhook</h4>
+                <span class="category network">Dell Switches</span>
+                <p><strong>Target:</strong> Dell networking switches</p>
+                <p><strong>Alert Types:</strong></p>
+                <ul>
+                    <li>Port failure</li>
+                    <li>Temperature threshold</li>
+                    <li>Fan status</li>
+                    <li>Firmware alerts</li>
+                </ul>
+                <p><strong>Label Matcher:</strong> <code>vendor="dell", device_type="switch"</code></p>
+            </div>
+        </div>
+
+        <h3>🖥️ Physical Server Hardware Receivers (3 receivers)</h3>
+        <div class="webhook-grid">
+            <div class="webhook-card hardware">
+                <h4>8. ilowebhook</h4>
+                <span class="category hardware">HPE Servers</span>
+                <p><strong>Target:</strong> HPE iLO management controllers</p>
+                <p><strong>Alert Types:</strong></p>
+                <ul>
+                    <li>CPU temperature > 85°C</li>
+                    <li>Fan failure or slow speed</li>
+                    <li>Power supply degraded/failed</li>
+                    <li>Memory errors (ECC)</li>
+                    <li>IML (Integrated Management Log) critical events</li>
+                    <li>RAID controller issues</li>
+                    <li>Server health status degraded</li>
+                </ul>
+                <p><strong>Label Matcher:</strong> <code>device_type="server", vendor="hpe"</code></p>
+                <p><strong>Exporter:</strong> ilo-exporter:9416</p>
+            </div>
+
+            <div class="webhook-card hardware">
+                <h4>9. idracwebhook</h4>
+                <span class="category hardware">Dell Servers</span>
+                <p><strong>Target:</strong> Dell iDRAC management controllers</p>
+                <p><strong>Alert Types:</strong></p>
+                <ul>
+                    <li>System board temperature</li>
+                    <li>CPU thermal trip</li>
+                    <li>RAID degraded/failed</li>
+                    <li>Power supply redundancy lost</li>
+                    <li>Battery backup failing</li>
+                    <li>Intrusion detection</li>
+                    <li>Storage controller errors</li>
+                </ul>
+                <p><strong>Label Matcher:</strong> <code>device_type="server", vendor="dell"</code></p>
+                <p><strong>Exporter:</strong> idrac-exporter:9348</p>
+            </div>
+
+            <div class="webhook-card hardware">
+                <h4>10. hardwarewebhook</h4>
+                <span class="category hardware">Generic Linux Hardware</span>
+                <p><strong>Target:</strong> Linux servers with IPMI/BMC</p>
+                <p><strong>Alert Types:</strong></p>
+                <ul>
+                    <li>Hardware sensor alerts</li>
+                    <li>Disk SMART failures</li>
+                    <li>SEL (System Event Log) errors</li>
+                    <li>Generic IPMI sensor warnings</li>
+                    <li>Chassis intrusion</li>
+                </ul>
+                <p><strong>Label Matcher:</strong> <code>device_type="server", monitor_type="ipmi"</code></p>
+                <p><strong>Exporter:</strong> ipmi-exporter:9290</p>
+            </div>
+        </div>
+
+        <h3>💻 Operating System Receivers (2 receivers)</h3>
+        <div class="webhook-grid">
+            <div class="webhook-card server">
+                <h4>11. windowswebhook</h4>
+                <span class="category server">Windows Servers</span>
+                <p><strong>Target:</strong> Windows Server OS alerts</p>
+                <p><strong>Alert Types:</strong></p>
+                <ul>
+                    <li>Service stopped/failed</li>
+                    <li>Disk space low (< 15%)</li>
+                    <li>High CPU usage (> 90%)</li>
+                    <li>Memory pressure</li>
+                    <li>Event log errors (System/Application)</li>
+                    <li>Windows Update failures</li>
+                    <li>Scheduled task failures</li>
+                </ul>
+                <p><strong>Label Matcher:</strong> <code>os="windows"</code></p>
+                <p><strong>Exporter:</strong> windows-exporter:9182</p>
+            </div>
+
+            <div class="webhook-card server">
+                <h4>12. virtualnicwebhook</h4>
+                <span class="category server">Virtual Machines</span>
+                <p><strong>Target:</strong> VM network interface alerts</p>
+                <p><strong>Alert Types:</strong></p>
+                <ul>
+                    <li>Virtual NIC errors</li>
+                    <li>Dropped packets on vNIC</li>
+                    <li>High bandwidth usage</li>
+                    <li>Network adapter disconnected</li>
+                    <li>vSwitch issues</li>
+                </ul>
+                <p><strong>Label Matcher:</strong> <code>device_type="vm", alert_type="network"</code></p>
+            </div>
+        </div>
+
+        <h3>🔌 Connectivity Receiver (1 receiver)</h3>
+        <div class="webhook-grid">
+            <div class="webhook-card connectivity">
+                <h4>13. pingwebhook</h4>
+                <span class="category connectivity">All Devices</span>
+                <p><strong>Target:</strong> Device reachability monitoring</p>
+                <p><strong>Alert Types:</strong></p>
+                <ul>
+                    <li>Host unreachable (probe_success = 0)</li>
+                    <li>High latency (> 100ms)</li>
+                    <li>Packet loss (> 5%)</li>
+                    <li>DNS resolution failures</li>
+                    <li>TLS certificate expiring</li>
+                    <li>HTTP endpoint down</li>
+                </ul>
+                <p><strong>Label Matcher:</strong> <code>job="blackbox-exporter"</code></p>
+                <p><strong>Exporter:</strong> blackbox-exporter:9115</p>
+            </div>
+        </div>
+
+        <h2>🔄 Alert Flow Diagram</h2>
+        <div class="flow-diagram">
+            <h3 style="text-align: center; margin-bottom: 25px;">Complete Alert Processing Flow</h3>
+            
+            <div class="flow-row">
+                <div class="flow-node source">Prometheus<br/>Alert Rules</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node alertmanager">AlertManager<br/>(3 replicas HA)</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node" style="background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); color: white;">
+                    Route by Labels<br/>(13 routes)
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 25px 0;">
+                <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+            </div>
+
+            <div class="flow-row">
+                <div class="flow-node webhook">snmpwebhook</div>
+                <div class="flow-node webhook">ilowebhook</div>
+                <div class="flow-node webhook">idracwebhook</div>
+                <div class="flow-node webhook">fortigatewebhook</div>
+            </div>
+
+            <div class="flow-row">
+                <div class="flow-node webhook">routerwebhook</div>
+                <div class="flow-node webhook">windowswebhook</div>
+                <div class="flow-node webhook">pingwebhook</div>
+                <div class="flow-node webhook">+ 6 more</div>
+            </div>
+
+            <div style="text-align: center; margin: 25px 0;">
+                <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+            </div>
+
+            <div class="flow-row">
+                <div class="flow-node action">StackStorm<br/>Workflows</div>
+                <div class="flow-node action">Apprise<br/>Notifications</div>
+                <div class="flow-node action">Redmine<br/>Tickets</div>
+            </div>
+        </div>
+
+        <h2>⚙️ AlertManager Configuration</h2>
+
+        <h3>Complete alertmanager.yml Configuration</h3>
+        <div class="code-block">
+<span class="comment"># alertmanager.yml - Finspot LinkedEye Platform</span>
+<span class="key">global:</span>
+  <span class="key">resolve_timeout:</span> <span class="value">5m</span>
+
+<span class="key">route:</span>
+  <span class="key">group_by:</span> [<span class="string">'alertname'</span>, <span class="string">'cluster'</span>, <span class="string">'service'</span>]
+  <span class="key">group_wait:</span> <span class="value">10s</span>
+  <span class="key">group_interval:</span> <span class="value">10s</span>
+  <span class="key">repeat_interval:</span> <span class="value">12h</span>
+  <span class="key">receiver:</span> <span class="string">'default'</span>
+
+  <span class="comment"># Child routes for specific device types</span>
+  <span class="key">routes:</span>
+    <span class="comment"># Network Infrastructure Routes</span>
+    - <span class="key">match:</span>
+        <span class="key">device_type:</span> <span class="string">switch</span>
+        <span class="key">vendor:</span> <span class="string">cisco</span>
+      <span class="key">receiver:</span> <span class="string">snmpwebhook</span>
+      <span class="key">continue:</span> <span class="value">false</span>
+
+    - <span class="key">match:</span>
+        <span class="key">device_type:</span> <span class="string">switch</span>
+        <span class="key">vendor:</span> <span class="string">dell</span>
+      <span class="key">receiver:</span> <span class="string">dellwebhook</span>
+
+    - <span class="key">match:</span>
+        <span class="key">vendor:</span> <span class="string">huawei</span>
+      <span class="key">receiver:</span> <span class="string">huaweiwebhook</span>
+
+    - <span class="key">match:</span>
+        <span class="key">vendor:</span> <span class="string">aruba</span>
+      <span class="key">receiver:</span> <span class="string">arubawebhook</span>
+
+    - <span class="key">match:</span>
+        <span class="key">vendor:</span> <span class="string">arista</span>
+      <span class="key">receiver:</span> <span class="string">aristawebhook</span>
+
+    - <span class="key">match:</span>
+        <span class="key">device_type:</span> <span class="string">firewall</span>
+        <span class="key">vendor:</span> <span class="string">fortinet</span>
+      <span class="key">receiver:</span> <span class="string">fortigatewebhook</span>
+
+    - <span class="key">match:</span>
+        <span class="key">device_type:</span> <span class="string">router</span>
+      <span class="key">receiver:</span> <span class="string">routerwebhook</span>
+
+    <span class="comment"># Physical Server Hardware Routes</span>
+    - <span class="key">match:</span>
+        <span class="key">device_type:</span> <span class="string">server</span>
+        <span class="key">vendor:</span> <span class="string">hpe</span>
+      <span class="key">receiver:</span> <span class="string">ilowebhook</span>
+
+    - <span class="key">match:</span>
+        <span class="key">device_type:</span> <span class="string">server</span>
+        <span class="key">vendor:</span> <span class="string">dell</span>
+      <span class="key">receiver:</span> <span class="string">idracwebhook</span>
+
+    - <span class="key">match:</span>
+        <span class="key">device_type:</span> <span class="string">server</span>
+        <span class="key">monitor_type:</span> <span class="string">ipmi</span>
+      <span class="key">receiver:</span> <span class="string">hardwarewebhook</span>
+
+    <span class="comment"># Operating System Routes</span>
+    - <span class="key">match:</span>
+        <span class="key">os:</span> <span class="string">windows</span>
+      <span class="key">receiver:</span> <span class="string">windowswebhook</span>
+
+    - <span class="key">match:</span>
+        <span class="key">device_type:</span> <span class="string">vm</span>
+        <span class="key">alert_type:</span> <span class="string">network</span>
+      <span class="key">receiver:</span> <span class="string">virtualnicwebhook</span>
+
+    <span class="comment"># Connectivity Monitoring</span>
+    - <span class="key">match:</span>
+        <span class="key">job:</span> <span class="string">blackbox-exporter</span>
+      <span class="key">receiver:</span> <span class="string">pingwebhook</span>
+
+<span class="comment"># Receiver Definitions</span>
+<span class="key">receivers:</span>
+  - <span class="key">name:</span> <span class="string">'default'</span>
+    <span class="key">webhook_configs:</span>
+      - <span class="key">url:</span> <span class="string">'http://apprise-notify:5000/notify'</span>
+        <span class="key">send_resolved:</span> <span class="value">true</span>
+
+  - <span class="key">name:</span> <span class="string">'snmpwebhook'</span>
+    <span class="key">webhook_configs:</span>
+      - <span class="key">url:</span> <span class="string">'http://st2-webhook:8080/webhooks/snmp'</span>
+        <span class="key">send_resolved:</span> <span class="value">true</span>
+
+  - <span class="key">name:</span> <span class="string">'pingwebhook'</span>
+    <span class="key">webhook_configs:</span>
+      - <span class="key">url:</span> <span class="string">'http://st2-webhook:8080/webhooks/ping'</span>
+        <span class="key">send_resolved:</span> <span class="value">true</span>
+
+  - <span class="key">name:</span> <span class="string">'virtualnicwebhook'</span>
+    <span class="key">webhook_configs:</span>
+      - <span class="key">url:</span> <span class="string">'http://st2-webhook:8080/webhooks/virtualnic'</span>
+
+  - <span class="key">name:</span> <span class="string">'hardwarewebhook'</span>
+    <span class="key">webhook_configs:</span>
+      - <span class="key">url:</span> <span class="string">'http://st2-webhook:8080/webhooks/hardware'</span>
+
+  - <span class="key">name:</span> <span class="string">'ilowebhook'</span>
+    <span class="key">webhook_configs:</span>
+      - <span class="key">url:</span> <span class="string">'http://st2-webhook:8080/webhooks/ilo'</span>
+
+  - <span class="key">name:</span> <span class="string">'idracwebhook'</span>
+    <span class="key">webhook_configs:</span>
+      - <span class="key">url:</span> <span class="string">'http://st2-webhook:8080/webhooks/idrac'</span>
+
+  - <span class="key">name:</span> <span class="string">'fortigatewebhook'</span>
+    <span class="key">webhook_configs:</span>
+      - <span class="key">url:</span> <span class="string">'http://st2-webhook:8080/webhooks/fortigate'</span>
+
+  - <span class="key">name:</span> <span class="string">'huaweiwebhook'</span>
+    <span class="key">webhook_configs:</span>
+      - <span class="key">url:</span> <span class="string">'http://st2-webhook:8080/webhooks/huawei'</span>
+
+  - <span class="key">name:</span> <span class="string">'arubawebhook'</span>
+    <span class="key">webhook_configs:</span>
+      - <span class="key">url:</span> <span class="string">'http://st2-webhook:8080/webhooks/aruba'</span>
+
+  - <span class="key">name:</span> <span class="string">'aristawebhook'</span>
+    <span class="key">webhook_configs:</span>
+      - <span class="key">url:</span> <span class="string">'http://st2-webhook:8080/webhooks/arista'</span>
+
+  - <span class="key">name:</span> <span class="string">'dellwebhook'</span>
+    <span class="key">webhook_configs:</span>
+      - <span class="key">url:</span> <span class="string">'http://st2-webhook:8080/webhooks/dellswitch'</span>
+
+  - <span class="key">name:</span> <span class="string">'routerwebhook'</span>
+    <span class="key">webhook_configs:</span>
+      - <span class="key">url:</span> <span class="string">'http://st2-webhook:8080/webhooks/router'</span>
+
+  - <span class="key">name:</span> <span class="string">'windowswebhook'</span>
+    <span class="key">webhook_configs:</span>
+      - <span class="key">url:</span> <span class="string">'http://st2-webhook:8080/webhooks/windows'</span>
+
+<span class="comment"># Inhibition Rules - Prevent alert spam</span>
+<span class="key">inhibit_rules:</span>
+  - <span class="key">source_match:</span>
+      <span class="key">severity:</span> <span class="string">'critical'</span>
+    <span class="key">target_match:</span>
+      <span class="key">severity:</span> <span class="string">'warning'</span>
+    <span class="key">equal:</span> [<span class="string">'alertname'</span>, <span class="string">'instance'</span>]
+        </div>
+
+        <h2>📋 Label Standards for Alerts</h2>
+        <div class="alert-box info">
+            <h3>Required Labels for Proper Routing</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Label Name</th>
+                        <th>Purpose</th>
+                        <th>Example Values</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>device_type</code></td>
+                        <td>Type of device generating alert</td>
+                        <td>switch, router, firewall, server, vm</td>
+                    </tr>
+                    <tr>
+                        <td><code>vendor</code></td>
+                        <td>Device manufacturer</td>
+                        <td>cisco, dell, hpe, fortinet, huawei, aruba, arista</td>
+                    </tr>
+                    <tr>
+                        <td><code>severity</code></td>
+                        <td>Alert severity level</td>
+                        <td>critical, warning, info</td>
+                    </tr>
+                    <tr>
+                        <td><code>job</code></td>
+                        <td>Prometheus job name</td>
+                        <td>snmp-exporter, blackbox-exporter, ilo-exporter</td>
+                    </tr>
+                    <tr>
+                        <td><code>monitor_type</code></td>
+                        <td>Monitoring method</td>
+                        <td>ipmi, snmp, redfish, wmi</td>
+                    </tr>
+                    <tr>
+                        <td><code>os</code></td>
+                        <td>Operating system</td>
+                        <td>windows, linux, esxi</td>
+                    </tr>
+                    <tr>
+                        <td><code>alert_type</code></td>
+                        <td>Category of alert</td>
+                        <td>hardware, network, performance, security</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>🔧 Testing Webhook Receivers</h2>
+
+        <h3>Test AlertManager Webhook Routing</h3>
+        <div class="code-block">
+<span class="comment"># Test iLO webhook</span>
+curl -X POST http://alertmanager.finspot.in:9093/api/v1/alerts \
+  -H "Content-Type: application/json" \
+  -d '[{
+    "labels": {
+      "alertname": "iLOTemperatureHigh",
+      "device_type": "server",
+      "vendor": "hpe",
+      "severity": "critical",
+      "instance": "server01.finspot.in"
+    },
+    "annotations": {
+      "summary": "Server temperature critical",
+      "description": "CPU temperature is 90C on server01"
+    }
+  }]'
+
+<span class="comment"># Test network switch webhook</span>
+curl -X POST http://alertmanager.finspot.in:9093/api/v1/alerts \
+  -H "Content-Type: application/json" \
+  -d '[{
+    "labels": {
+      "alertname": "SwitchPortDown",
+      "device_type": "switch",
+      "vendor": "cisco",
+      "severity": "warning",
+      "instance": "core-switch-01"
+    },
+    "annotations": {
+      "summary": "Interface GigabitEthernet1/0/24 is down"
+    }
+  }]'
+
+<span class="comment"># Verify webhook received by StackStorm</span>
+kubectl logs -n stackstorm deployment/st2-webhook -f
+
+<span class="comment"># Check AlertManager routing</span>
+amtool --alertmanager.url=http://alertmanager.finspot.in:9093 alert query
+        </div>
+
+        <h2>📊 Webhook Statistics & Monitoring</h2>
+        <div class="alert-box success">
+            <h3>Key Metrics to Track</h3>
+            <ul>
+                <li><strong>alertmanager_notifications_total</strong> - Total notifications sent per receiver</li>
+                <li><strong>alertmanager_notifications_failed_total</strong> - Failed webhook deliveries</li>
+                <li><strong>alertmanager_notification_latency_seconds</strong> - Webhook response time</li>
+                <li><strong>alertmanager_alerts_received_total</strong> - Alerts received from Prometheus</li>
+            </ul>
+
+            <h4>Grafana Dashboard Query Examples:</h4>
+            <div class="code-block">
+<span class="comment"># Webhook success rate by receiver</span>
+rate(alertmanager_notifications_total[5m]) - 
+rate(alertmanager_notifications_failed_total[5m])
+
+<span class="comment"># Alert volume by receiver</span>
+sum by (integration) (rate(alertmanager_notifications_total[5m]))
+
+<span class="comment"># Webhook latency P95</span>
+histogram_quantile(0.95, 
+  rate(alertmanager_notification_latency_seconds_bucket[5m])
+)
+            </div>
+        </div>
+
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-top: 40px;">
+            <h2 style="color: white; border: none; margin-top: 0;">✅ Configuration Checklist</h2>
+            <ul style="font-size: 1.1em; line-height: 2;">
+                <li>✓ All 13 webhook receivers configured in alertmanager.yml</li>
+                <li>✓ Label-based routing rules defined</li>
+                <li>✓ StackStorm webhook endpoints configured</li>
+                <li>✓ Alert resolution notifications enabled</li>
+                <li>✓ Inhibition rules prevent duplicate alerts</li>
+                <li>✓ Group_by configured for alert aggregation</li>
+                <li>✓ Repeat_interval set to 12h for non-critical alerts</li>
+                <li>✓ Default receiver configured for unmatched alerts</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

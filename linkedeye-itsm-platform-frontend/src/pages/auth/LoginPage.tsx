@@ -83,7 +83,7 @@ const LoginPage = () => {
             className={`w-full px-4 py-3.5 text-[15px] border-2 rounded-xl transition-all duration-200 outline-none
               ${errors.username
                 ? 'border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-100'
-                : 'border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100'
+                : 'border-slate-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-100'
               }
               placeholder:text-slate-400`}
             {...register('username')}
@@ -107,7 +107,7 @@ const LoginPage = () => {
               className={`w-full px-4 py-3.5 pr-12 text-[15px] border-2 rounded-xl transition-all duration-200 outline-none
                 ${errors.password
                   ? 'border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-100'
-                  : 'border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100'
+                  : 'border-slate-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-100'
                 }
                 placeholder:text-slate-400`}
               {...register('password')}
@@ -132,13 +132,13 @@ const LoginPage = () => {
             <input
               type="checkbox"
               {...register('rememberMe')}
-              className="w-5 h-5 rounded-md border-2 border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+              className="w-5 h-5 rounded-md border-2 border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
             />
             <span className="text-sm text-slate-700">Remember me for 30 days</span>
           </label>
           <Link
             to="/forgot-password"
-            className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-all"
+            className="text-sm font-semibold text-amber-600 hover:text-amber-700 hover:underline transition-all"
           >
             Forgot Password?
           </Link>
@@ -150,8 +150,8 @@ const LoginPage = () => {
           disabled={isLoading}
           className="w-full py-4 px-4 rounded-xl text-white text-base font-semibold flex items-center justify-center gap-2.5 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5"
           style={{
-            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-            boxShadow: isLoading ? 'none' : '0 8px 24px -4px rgba(79, 70, 229, 0.35)',
+            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+            boxShadow: isLoading ? 'none' : '0 8px 24px -4px rgba(245, 158, 11, 0.35)',
           }}
         >
           {isLoading ? (
@@ -202,7 +202,7 @@ const LoginPage = () => {
       {/* Sign Up Link */}
       <p className="text-center text-sm text-slate-500 mb-7">
         Don&apos;t have an account?{' '}
-        <Link to="/register" className="font-semibold text-indigo-600 hover:underline">
+        <Link to="/register" className="font-semibold text-amber-600 hover:underline">
           Request Access
         </Link>
       </p>
@@ -210,23 +210,23 @@ const LoginPage = () => {
       {/* Demo Credentials Box - Only visible in development when env vars are set */}
       {import.meta.env.DEV && import.meta.env.VITE_DEMO_EMAIL && (
         <div
-          className="p-5 rounded-xl border border-indigo-200"
-          style={{ background: 'linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)' }}
+          className="p-5 rounded-xl border border-amber-200"
+          style={{ background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)' }}
         >
-          <h4 className="text-sm font-semibold text-indigo-800 mb-3 flex items-center gap-2">
-            <Info size={16} className="text-indigo-600" />
+          <h4 className="text-sm font-semibold text-amber-800 mb-3 flex items-center gap-2">
+            <Info size={16} className="text-amber-600" />
             Demo Credentials (Dev Only)
           </h4>
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-[13px]">
               <strong className="min-w-[70px] text-slate-700">Email:</strong>
-              <span className="px-2.5 py-1 bg-white/70 rounded-lg font-mono text-indigo-800">
+              <span className="px-2.5 py-1 bg-white/70 rounded-lg font-mono text-amber-800">
                 {import.meta.env.VITE_DEMO_EMAIL}
               </span>
               <button
                 type="button"
                 onClick={() => copyToClipboard(import.meta.env.VITE_DEMO_EMAIL, 'email')}
-                className="ml-auto p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-100 transition-colors"
+                className="ml-auto p-1.5 rounded-lg text-amber-600 hover:bg-amber-100 transition-colors"
                 title="Copy email"
               >
                 {copiedField === 'email' ? (
@@ -238,13 +238,13 @@ const LoginPage = () => {
             </div>
             <div className="flex items-center gap-2 text-[13px]">
               <strong className="min-w-[70px] text-slate-700">Password:</strong>
-              <span className="px-2.5 py-1 bg-white/70 rounded-lg font-mono text-indigo-800">
+              <span className="px-2.5 py-1 bg-white/70 rounded-lg font-mono text-amber-800">
                 {import.meta.env.VITE_DEMO_PASSWORD}
               </span>
               <button
                 type="button"
                 onClick={() => copyToClipboard(import.meta.env.VITE_DEMO_PASSWORD, 'password')}
-                className="ml-auto p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-100 transition-colors"
+                className="ml-auto p-1.5 rounded-lg text-amber-600 hover:bg-amber-100 transition-colors"
                 title="Copy password"
               >
                 {copiedField === 'password' ? (

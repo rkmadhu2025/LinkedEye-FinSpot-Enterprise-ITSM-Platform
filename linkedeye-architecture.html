@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedEye Cluster Architecture - Interactive Flow Diagram</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 20px;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #FF9800;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .service-block {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            background: #fafafa;
+            transition: all 0.3s ease;
+        }
+
+        .service-block:hover {
+            border-color: #2196F3;
+            box-shadow: 0 5px 20px rgba(33, 150, 243, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .service-block.platform { border-left: 5px solid #2196F3; }
+        .service-block.automation { border-left: 5px solid #FF9800; }
+        .service-block.monitoring { border-left: 5px solid #4CAF50; }
+        .service-block.logging { border-left: 5px solid #E91E63; }
+        .service-block.data { border-left: 5px solid #FFC107; }
+
+        .service-block h2 {
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            color: #1976D2;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .service-block h2::before {
+            content: "▶";
+            font-size: 0.8em;
+        }
+
+        .service-item {
+            padding: 10px 15px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 6px;
+            border-left: 3px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .service-item:hover {
+            border-left-color: #2196F3;
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .service-item.active {
+            background: #E3F2FD;
+            border-left-color: #1976D2;
+            font-weight: 600;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .badge-replicas {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+
+        .badge-ha {
+            background: #FFF3E0;
+            color: #E65100;
+        }
+
+        .flow-diagram {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 30px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .flow-diagram h2 {
+            text-align: center;
+            color: #1976D2;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+        }
+
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .flow-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .flow-node {
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-align: center;
+            min-width: 180px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .flow-node:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+        }
+
+        .flow-node.platform-node {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+        }
+
+        .flow-node.automation-node {
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            color: white;
+        }
+
+        .flow-node.monitoring-node {
+            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+            color: white;
+        }
+
+        .flow-node.data-node {
+            background: linear-gradient(135deg, #FFC107 0%, #FFA000 100%);
+            color: white;
+        }
+
+        .flow-node.logging-node {
+            background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%);
+            color: white;
+        }
+
+        .flow-arrow {
+            font-size: 2em;
+            color: #666;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .flow-arrow-down {
+            transform: rotate(90deg);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .stat-card h3 {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            opacity: 0.9;
+            font-size: 0.95em;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 15px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            .architecture-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .flow-row {
+                flex-direction: column;
+            }
+            
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+        }
+
+        .info-panel {
+            background: #E3F2FD;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 5px solid #2196F3;
+        }
+
+        .info-panel h3 {
+            color: #1565C0;
+            margin-bottom: 10px;
+        }
+
+        .info-panel ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-panel li {
+            padding: 5px 0;
+            color: #424242;
+        }
+
+        .info-panel li::before {
+            content: "✓ ";
+            color: #4CAF50;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏗️ LinkedEye Cluster Architecture</h1>
+        <p>Financial Trading Platform - Full Stack Infrastructure Visualization</p>
+    </div>
+
+    <div class="container">
+        <div class="controls">
+            <button class="btn btn-primary" onclick="highlightFlow('alerting')">🔔 Alerting Flow</button>
+            <button class="btn btn-secondary" onclick="highlightFlow('messaging')">📨 Messaging Flow</button>
+            <button class="btn btn-warning" onclick="highlightFlow('logging')">📊 Logging Flow</button>
+            <button class="btn btn-danger" onclick="resetHighlight()">↺ Reset View</button>
+        </div>
+
+        <div class="architecture-grid">
+            <!-- LinkedEye Platform -->
+            <div class="service-block platform" id="platform-block">
+                <h2>LinkedEye Platform</h2>
+                <div class="service-item" data-component="le">
+                    <span>le (Main Backend API)</span>
+                </div>
+                <div class="service-item" data-component="ui">
+                    <span>ui (Frontend UI)</span>
+                </div>
+                <div class="service-item" data-component="dashboard">
+                    <span>dashboard</span>
+                </div>
+                <div class="service-item" data-component="entity">
+                    <span>entity (Topology Engine)</span>
+                </div>
+                <div class="service-item" data-component="monitor">
+                    <span>monitor (Continuous Monitor)</span>
+                </div>
+                <div class="service-item" data-component="bod">
+                    <span>bod (BOD Engine)</span>
+                </div>
+                <div class="service-item" data-component="bod-eod">
+                    <span>bod-eod-le (EOD Engine)</span>
+                </div>
+                <div class="service-item" data-component="issue-tracker">
+                    <span>issue-tracker</span>
+                </div>
+                <div class="service-item" data-component="apprise-notify">
+                    <span>apprise-notify</span>
+                </div>
+                <div class="service-item" data-component="apprise-pod">
+                    <span>apprise-pod</span>
+                </div>
+            </div>
+
+            <!-- StackStorm Automation -->
+            <div class="service-block automation" id="automation-block">
+                <h2>StackStorm Automation</h2>
+                <div class="service-item" data-component="st2api">
+                    <span>st2api</span>
+                </div>
+                <div class="service-item" data-component="st2auth">
+                    <span>st2auth</span>
+                </div>
+                <div class="service-item" data-component="st2web">
+                    <span>st2web</span>
+                </div>
+                <div class="service-item" data-component="st2sensor">
+                    <span>st2sensorcontainer</span>
+                </div>
+                <div class="service-item" data-component="st2rules">
+                    <span>st2rulesengine</span>
+                </div>
+                <div class="service-item" data-component="st2notifier">
+                    <span>st2notifier</span>
+                </div>
+                <div class="service-item" data-component="st2workflow">
+                    <span>st2workflowengine</span>
+                </div>
+                <div class="service-item" data-component="st2timers">
+                    <span>st2timersengine</span>
+                </div>
+                <div class="service-item" data-component="st2scheduler">
+                    <span>st2scheduler</span>
+                    <span class="badge badge-replicas">x2</span>
+                </div>
+                <div class="service-item" data-component="st2client">
+                    <span>st2client</span>
+                </div>
+                <div class="service-item" data-component="st2gc">
+                    <span>st2garbagecollector</span>
+                </div>
+                <div class="service-item" data-component="st2actionrunner">
+                    <span>st2actionrunner</span>
+                    <span class="badge badge-replicas">x4</span>
+                </div>
+            </div>
+
+            <!-- Monitoring Stack -->
+            <div class="service-block monitoring" id="monitoring-block">
+                <h2>Prometheus Monitoring Stack</h2>
+                <div class="service-item" data-component="prometheus">
+                    <span>Prometheus (Single)</span>
+                </div>
+                <div class="service-item" data-component="prometheus-ha">
+                    <span>Prometheus HA</span>
+                    <span class="badge badge-ha">HA</span>
+                </div>
+                <div class="service-item" data-component="grafana">
+                    <span>Grafana (Visualization)</span>
+                    <span class="badge badge-ha">HA</span>
+                </div>
+                <div class="service-item" data-component="alertmanager">
+                    <span>AlertManager</span>
+                    <span class="badge badge-replicas">x3</span>
+                </div>
+                <div class="service-item" data-component="snmp-exporter">
+                    <span>SNMP Exporter</span>
+                </div>
+                <div class="service-item" data-component="blackbox">
+                    <span>Blackbox Exporter</span>
+                </div>
+                <div class="service-item" data-component="ilo-exporter">
+                    <span>iLO Exporter</span>
+                </div>
+                <div class="service-item" data-component="idrac-exporter">
+                    <span>iDRAC Exporter</span>
+                </div>
+                <div class="service-item" data-component="router-exporter">
+                    <span>Router Exporter</span>
+                </div>
+            </div>
+
+            <!-- Logging & Analytics -->
+            <div class="service-block logging" id="logging-block">
+                <h2>Logging & Analytics</h2>
+                <div class="service-item" data-component="loki">
+                    <span>Loki</span>
+                </div>
+                <div class="service-item" data-component="elasticsearch">
+                    <span>analytics-es (Elasticsearch)</span>
+                </div>
+                <div class="service-item" data-component="logstash">
+                    <span>analytics-ls (Logstash)</span>
+                </div>
+            </div>
+
+            <!-- Distributed Tracing -->
+            <div class="service-block logging" id="tracing-block">
+                <h2>Distributed Tracing</h2>
+                <div class="service-item" data-component="jaeger">
+                    <span>Jaeger (APM & Tracing)</span>
+                    <span class="badge badge-ha">Recommended</span>
+                </div>
+                <div class="service-item" data-component="tempo">
+                    <span>Tempo (Alternative)</span>
+                </div>
+                <div class="service-item" data-component="opentelemetry">
+                    <span>OpenTelemetry Collector</span>
+                </div>
+            </div>
+
+            <!-- Data Services -->
+            <div class="service-block data" id="data-block">
+                <h2>Databases & Storage</h2>
+                <div class="service-item" data-component="mysql">
+                    <span>MySQL</span>
+                </div>
+                <div class="service-item" data-component="mysql-exporter">
+                    <span>MySQL Exporter</span>
+                </div>
+                <div class="service-item" data-component="postgres">
+                    <span>Postgres</span>
+                </div>
+                <div class="service-item" data-component="postgres-exporter">
+                    <span>Postgres Exporter</span>
+                </div>
+                <div class="service-item" data-component="mongodb">
+                    <span>MongoDB</span>
+                </div>
+                <div class="service-item" data-component="mongodb-exporter">
+                    <span>MongoDB Exporter</span>
+                </div>
+                <div class="service-item" data-component="redis">
+                    <span>Redis</span>
+                </div>
+                <div class="service-item" data-component="redis-exporter">
+                    <span>Redis Exporter</span>
+                </div>
+                <div class="service-item" data-component="internal-redis">
+                    <span>internal-redis</span>
+                </div>
+            </div>
+
+            <!-- Messaging & Security -->
+            <div class="service-block data" id="messaging-block">
+                <h2>Messaging & Security</h2>
+                <div class="service-item" data-component="rabbitmq">
+                    <span>RabbitMQ Broker</span>
+                </div>
+                <div class="service-item" data-component="vault">
+                    <span>Vault (Secrets Mgmt)</span>
+                </div>
+            </div>
+
+            <!-- Authentication & SSO -->
+            <div class="service-block data" id="auth-block">
+                <h2>Authentication & SSO</h2>
+                <div class="service-item" data-component="keycloak">
+                    <span>Keycloak (SSO/OAuth2)</span>
+                    <span class="badge badge-ha">HA</span>
+                </div>
+                <div class="service-item" data-component="keycloak-postgres">
+                    <span>Keycloak PostgreSQL</span>
+                </div>
+            </div>
+
+            <!-- CI/CD Pipeline -->
+            <div class="service-block automation" id="cicd-block">
+                <h2>CI/CD Pipeline</h2>
+                <div class="service-item" data-component="jenkins">
+                    <span>Jenkins Master</span>
+                </div>
+                <div class="service-item" data-component="jenkins-agents">
+                    <span>Jenkins Agents (Dynamic)</span>
+                    <span class="badge badge-replicas">Auto-scale</span>
+                </div>
+                <div class="service-item" data-component="argocd">
+                    <span>ArgoCD (GitOps CD)</span>
+                    <span class="badge badge-ha">Recommended</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Flow Diagrams -->
+        <div class="flow-diagram">
+            <h2>📊 Critical Data Flows</h2>
+            
+            <h3 style="color: #4CAF50; margin-top: 20px;">Alerting Pipeline Flow</h3>
+            <div class="flow-container">
+                <div class="flow-row">
+                    <div class="flow-node platform-node">Monitor Service</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-node monitoring-node">Prometheus</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-node monitoring-node">AlertManager (x3)</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-node platform-node">Apprise Notify</div>
+                </div>
+            </div>
+
+            <h3 style="color: #FF9800; margin-top: 30px;">Async Messaging Flow</h3>
+            <div class="flow-container">
+                <div class="flow-row">
+                    <div class="flow-node platform-node">LinkedEye Apps</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-node data-node">RabbitMQ</div>
+                    <div class="flow-arrow">←</div>
+                    <div class="flow-node automation-node">ST2 Workflow</div>
+                </div>
+            </div>
+
+            <h3 style="color: #E91E63; margin-top: 30px;">Logging & Analytics Flow</h3>
+            <div class="flow-container">
+                <div class="flow-row">
+                    <div class="flow-node platform-node">Entity Service</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-node logging-node">Elasticsearch</div>
+                    <div class="flow-arrow">←</div>
+                    <div class="flow-node logging-node">Logstash</div>
+                </div>
+            </div>
+
+            <h3 style="color: #2196F3; margin-top: 30px;">State Management Flow</h3>
+            <div class="flow-container">
+                <div class="flow-row">
+                    <div class="flow-node platform-node">Monitor Service</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-node data-node">Redis Cache</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-node platform-node">State Persistence</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>55+</h3>
+                <p>Total Components</p>
+            </div>
+            <div class="stat-card">
+                <h3>8</h3>
+                <p>Hardware Exporters</p>
+            </div>
+            <div class="stat-card">
+                <h3>12</h3>
+                <p>ST2 Services</p>
+            </div>
+            <div class="stat-card">
+                <h3>6</h3>
+                <p>Database Systems</p>
+            </div>
+            <div class="stat-card">
+                <h3>SSO</h3>
+                <p>Keycloak Enabled</p>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #2196F3;"></div>
+                <span>Platform Apps</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FF9800;"></div>
+                <span>Automation</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #4CAF50;"></div>
+                <span>Monitoring</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #E91E63;"></div>
+                <span>Logging</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FFC107;"></div>
+                <span>Data Services</span>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="info-panel">
+            <h3>🎯 Architecture Highlights</h3>
+            <ul>
+                <li><strong>High Availability:</strong> AlertManager with 3 replicas, Prometheus HA configuration</li>
+                <li><strong>Comprehensive Monitoring:</strong> 8 specialized exporters for hardware, network, and application metrics</li>
+                <li><strong>Event-Driven Automation:</strong> Full StackStorm deployment with 4x action runners</li>
+                <li><strong>Observability Stack:</strong> Prometheus, Loki, ELK stack for metrics, logs, and analytics</li>
+                <li><strong>Multi-Database Support:</strong> MySQL, PostgreSQL, MongoDB, Redis for different workloads</li>
+                <li><strong>Secure by Design:</strong> HashiCorp Vault integration for secrets management</li>
+                <li><strong>Financial Trading Ready:</strong> BOD/EOD engines, continuous monitoring for NSE/BSE/NSEFO</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Interactive highlighting functions
+        function highlightFlow(flowType) {
+            resetHighlight();
+            
+            const flows = {
+                'alerting': ['monitor', 'prometheus', 'alertmanager', 'apprise-notify'],
+                'messaging': ['le', 'rabbitmq', 'st2workflow'],
+                'logging': ['entity', 'elasticsearch', 'logstash']
+            };
+            
+            const components = flows[flowType] || [];
+            components.forEach(comp => {
+                const element = document.querySelector(`[data-component="${comp}"]`);
+                if (element) {
+                    element.classList.add('active');
+                }
+            });
+        }
+        
+        function resetHighlight() {
+            document.querySelectorAll('.service-item').forEach(item => {
+                item.classList.remove('active');
+            });
+        }
+
+        // Add click handlers to service items
+        document.querySelectorAll('.service-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const component = this.getAttribute('data-component');
+                alert(`Component: ${component}\n\nClick the flow buttons above to see how this component interacts with others in the system.`);
+            });
+        });
+
+        // Add hover effect to show connections
+        document.querySelectorAll('.service-item').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateX(8px)';
+            });
+            item.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateX(0)';
+            });
+        });
+    </script>
+</body>
+</html>

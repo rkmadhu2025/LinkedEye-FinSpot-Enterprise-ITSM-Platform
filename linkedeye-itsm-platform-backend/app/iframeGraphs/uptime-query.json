@@ -1,0 +1,6 @@
+{
+  "linux--Uptime-in-days": "((time() - node_boot_time_seconds{instance = '__FILTER__:9100'}) / 86400)",
+  "windows--Uptime-in-days": "((time() - windows_system_system_up_time{instance = '__FILTER__:9182'}) / 86400)"
+
+}
+

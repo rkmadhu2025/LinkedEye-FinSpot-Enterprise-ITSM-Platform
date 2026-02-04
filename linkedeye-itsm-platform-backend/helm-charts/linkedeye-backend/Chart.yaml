@@ -1,0 +1,32 @@
+apiVersion: v2
+name: linkedeye-backend
+description: Helm chart for LinkedEye ITSM Platform Backend
+
+# A chart can be either 'application' or 'library'
+type: application
+
+# This is the chart version
+version: 1.0.0
+
+# This is the version number of the application being deployed
+appVersion: 1.0.0
+
+keywords:
+  - linkedeye
+  - itsm
+  - backend
+  - fastapi
+
+home: https://finspot.in
+icon: https://finspot.in/favicon.ico
+
+maintainers:
+  - name: DevOps Team
+    email: devops@finspot.in
+
+dependencies:
+  - name: redis
+    version: "17.x.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
+    alias: redis

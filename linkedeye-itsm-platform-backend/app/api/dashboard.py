@@ -357,24 +357,17 @@ async def get_alert_funnel(
 
         # Stage 1: Total alerts received
         total_alerts = db.query(func.count(MonitoringAlert.id)).filter(
-            and_(
-                MonitoringAlert.is_active == True,
-                MonitoringAlert.starts_at >= start_date
-            )
+            MonitoringAlert.starts_at >= start_date
         ).scalar() or 0
 
         # Stage 2: Deduplicated (unique fingerprints)
         deduplicated = db.query(func.count(func.distinct(MonitoringAlert.fingerprint))).filter(
-            and_(
-                MonitoringAlert.is_active == True,
-                MonitoringAlert.starts_at >= start_date
-            )
+            MonitoringAlert.starts_at >= start_date
         ).scalar() or 0
 
         # Stage 3: Alerts that created incidents
         incidents_created = db.query(func.count(MonitoringAlert.id)).filter(
             and_(
-                MonitoringAlert.is_active == True,
                 MonitoringAlert.starts_at >= start_date,
                 MonitoringAlert.incident_id.isnot(None)
             )
@@ -385,7 +378,6 @@ async def get_alert_funnel(
         if incidents_created > 0:
             resolved_from_alerts = db.query(func.count(func.distinct(MonitoringAlert.incident_id))).filter(
                 and_(
-                    MonitoringAlert.is_active == True,
                     MonitoringAlert.starts_at >= start_date,
                     MonitoringAlert.incident_id.isnot(None)
                 )
@@ -396,7 +388,6 @@ async def get_alert_funnel(
         # Suppressed / Acknowledged (bonus stage)
         acknowledged = db.query(func.count(MonitoringAlert.id)).filter(
             and_(
-                MonitoringAlert.is_active == True,
                 MonitoringAlert.starts_at >= start_date,
                 MonitoringAlert.status == AlertStatus.ACKNOWLEDGED.value
             )
@@ -453,8 +444,11 @@ async def get_team_workload(
                 )
             ).scalar() or 0
 
-            # Count group members for capacity
-            member_count = len(group.members) if hasattr(group, 'members') and group.members else 5
+            # Count group members for capacity - use member_count property or default
+            try:
+                member_count = group.member_count if hasattr(group, 'member_count') else 5
+            except Exception:
+                member_count = 5  # Default if member count fails
 
             # Breakdown by priority
             critical = db.query(func.count(Incident.id)).filter(
