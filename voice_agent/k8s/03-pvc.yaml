@@ -1,0 +1,50 @@
+# =============================================================================
+# PERSISTENTVOLUMECLAIM: Storage for voice-agent
+# Used for logs, uploaded files, or any persistent data
+# For on-prem Kubernetes, ensure a StorageClass is configured
+# Common options: local-path, nfs-client, longhorn, openebs
+# =============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: voice-agent-pvc
+  namespace: voice-agent
+  labels:
+    app.kubernetes.io/name: voice-agent
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    # ReadWriteOnce: Can be mounted as read-write by a single node
+    # Use ReadWriteMany if you need multi-node access (requires NFS or similar)
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  # StorageClass for on-prem Kubernetes
+  # Common options for self-hosted:
+  # - local-path (Rancher local-path-provisioner)
+  # - nfs-client (NFS subdir external provisioner)
+  # - longhorn (Longhorn distributed storage)
+  # - openebs-hostpath (OpenEBS)
+  # Uncomment and set the appropriate StorageClass for your cluster:
+  storageClassName: local-path
+  # If using default StorageClass, comment out the line above
+
+---
+# =============================================================================
+# PERSISTENTVOLUMECLAIM: Shared storage for multi-replica access
+# Use this if replicas need shared access to the same data
+# Requires a StorageClass that supports ReadWriteMany (e.g., NFS)
+# =============================================================================
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: voice-agent-shared-pvc
+#   namespace: voice-agent
+# spec:
+#   accessModes:
+#     - ReadWriteMany
+#   resources:
+#     requests:
+#       storage: 10Gi
+#   storageClassName: nfs-client

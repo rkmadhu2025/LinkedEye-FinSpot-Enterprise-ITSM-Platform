@@ -1,0 +1,16 @@
+# =============================================================================
+# NAMESPACE: voice-agent
+# Creates an isolated namespace for all voice-agent resources
+# Apply first before any other resources
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: voice-agent
+  labels:
+    # Standard Kubernetes labels for resource organization
+    app.kubernetes.io/name: voice-agent
+    app.kubernetes.io/instance: voice-agent-production
+    app.kubernetes.io/component: namespace
+    app.kubernetes.io/part-of: voice-agent
+    environment: production

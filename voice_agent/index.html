@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinSpot Voice Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #121212;
+            color: white;
+            margin: 0;
+        }
+
+        .container {
+            background: #1e1e1e;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        #mic-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            background: #3b82f6;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin: 20px auto;
+        }
+
+        #mic-btn:hover {
+            transform: scale(1.1);
+            background: #2563eb;
+        }
+
+        #mic-btn.active {
+            background: #ef4444;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .status {
+            color: #9ca3af;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            height: 1.2em;
+        }
+
+        .transcript {
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-style: italic;
+            color: #d1d5db;
+            min-height: 40px;
+        }
+
+        h1 {
+            margin: 0;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>FinSpot Voice</h1>
+        <p style="color: #60a5fa;">Conversational Mode: <span id="mode-text">Active</span></p>
+
+        <button id="mic-btn">
+            <svg id="mic-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+            </svg>
+        </button>
+
+        <div id="status" class="status">Click to start conversation</div>
+        <div id="transcript" class="transcript">...</div>
+
+        <div style="margin-top: 20px; font-size: 0.8rem; color: #6b7280;">
+            Bot will auto-listen after speaking
+        </div>
+    </div>
+
+    <script>
+        const micBtn = document.getElementById('mic-btn');
+        const status = document.getElementById('status');
+        const transcript = document.getElementById('transcript');
+        let isConversing = false;
+        let conversationHistory = [];
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true; // Show interim results for faster feedback
+        recognition.maxAlternatives = 1;
+        recognition.lang = 'en-US';
+        recognition.timeout = 3000; // Faster timeout
+
+        function startListening() {
+            try {
+                recognition.start();
+            } catch (e) {
+                console.log("Recognition already started or error:", e);
+            }
+        }
+
+        micBtn.onclick = () => {
+            if (isConversing) {
+                isConversing = false;
+                recognition.stop();
+                status.innerText = "Conversation stopped";
+                micBtn.classList.remove('active');
+            } else {
+                isConversing = true;
+                startListening();
+            }
+        };
+
+        recognition.onstart = () => {
+            micBtn.classList.add('active');
+            status.innerText = "Listening...";
+        };
+
+        recognition.onend = () => {
+            // Only stop visually if we are not in the middle of a thought/speech cycle
+            if (!status.innerText.includes("Thinking") && !status.innerText.includes("Speaking")) {
+                micBtn.classList.remove('active');
+                if (isConversing) {
+                    // It ended naturally without a result? Restart if still in conversation mode
+                    setTimeout(startListening, 500);
+                }
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error("Recognition error:", event.error);
+            if (event.error === 'no-speech') {
+                // No speech detected, restart quickly
+                if (isConversing) setTimeout(startListening, 200);
+            } else if (event.error === 'not-allowed') {
+                status.innerText = "Microphone permission denied";
+                micBtn.classList.remove('active');
+            } else {
+                // Other errors, restart slower
+                if (isConversing) setTimeout(startListening, 1000);
+            }
+        };
+
+        recognition.onresult = async (event) => {
+            // Handle interim results for real-time feedback
+            let finalTranscript = '';
+            let interimTranscript = '';
+
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalTranscript += transcript;
+                } else {
+                    interimTranscript += transcript;
+                }
+            }
+
+            // Show interim results while speaking
+            if (interimTranscript) {
+                transcript.innerText = "You: " + interimTranscript + "...";
+            }
+
+            // Only process when we have a final result
+            if (finalTranscript) {
+                const userText = finalTranscript.trim();
+                transcript.innerText = "You: " + userText;
+                status.innerText = "Thinking...";
+                micBtn.classList.remove('active');
+
+                try {
+                    // Keep track of history for a real conversation
+                    conversationHistory.push({ "role": "user", "content": userText });
+
+                    const response = await fetch('http://localhost:8000/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            text: userText,
+                            history: conversationHistory.slice(-6) // Send last 3 rounds
+                        }),
+                        signal: AbortSignal.timeout(10000) // 10 second timeout
+                    });
+                    const data = await response.json();
+
+                    conversationHistory.push({ "role": "assistant", "content": data.text });
+                    transcript.innerText = "AI: " + data.text;
+                    status.innerText = "Speaking...";
+
+                    const audio = new Audio('http://localhost:8000/tts?text=' + encodeURIComponent(data.text));
+                    audio.play();
+
+                    audio.onended = () => {
+                        if (isConversing) {
+                            status.innerText = "Listening...";
+                            startListening();
+                        } else {
+                            status.innerText = "Ready";
+                        }
+                    };
+                } catch (err) {
+                    status.innerText = "Error! Restarting...";
+                    console.error(err);
+                    if (isConversing) setTimeout(startListening, 2000);
+                }
+            }
+        };
+    </script>
+
+</body>
+
+</html>

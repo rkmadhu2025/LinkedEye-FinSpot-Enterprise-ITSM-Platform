@@ -1,0 +1,183 @@
+# =============================================================================
+# DEPLOYMENT: voice-agent
+# Production-grade deployment with:
+# - 2 replicas for high availability
+# - Resource limits and requests
+# - Health checks (liveness, readiness, startup probes)
+# - Security context
+# - Anti-affinity for pod distribution
+# - Graceful shutdown handling
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voice-agent
+  namespace: voice-agent
+  labels:
+    app.kubernetes.io/name: voice-agent
+    app.kubernetes.io/instance: voice-agent-production
+    app.kubernetes.io/component: app
+    app.kubernetes.io/part-of: voice-agent
+    app.kubernetes.io/version: "latest"
+spec:
+  replicas: 2
+  # Deployment strategy for zero-downtime updates
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1          # Allow 1 extra pod during update
+      maxUnavailable: 0    # Never have fewer than desired replicas
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: voice-agent
+      app.kubernetes.io/instance: voice-agent-production
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: voice-agent
+        app.kubernetes.io/instance: voice-agent-production
+        app.kubernetes.io/component: app
+      annotations:
+        # Force rolling update when configmap/secret changes
+        # Update this value to trigger redeployment
+        rollme: "1"
+    spec:
+      # Use the GitLab registry secret to pull the image
+      imagePullSecrets:
+        - name: gitlab-registry-secret
+
+      # Service account (create one if you need specific RBAC permissions)
+      serviceAccountName: default
+
+      # Security context at pod level
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+
+      # Spread pods across nodes for high availability
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: voice-agent
+                topologyKey: kubernetes.io/hostname
+
+      # Tolerate brief node issues
+      tolerations: []
+
+      # Init container for any pre-startup tasks (optional)
+      # initContainers:
+      #   - name: wait-for-db
+      #     image: busybox:1.36
+      #     command: ['sh', '-c', 'until nc -z postgres-service 5432; do sleep 2; done']
+
+      containers:
+        - name: voice-agent
+          image: registry.gitlab.com/rajkumarmadhu2024/voice_agent/voice_agent:latest
+          imagePullPolicy: Always
+
+          # Container security context
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false  # Set to true if app supports it
+            capabilities:
+              drop:
+                - ALL
+
+          # Container ports
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+
+          # Load environment from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: voice-agent-config
+            - secretRef:
+                name: voice-agent-secrets
+
+          # Additional environment variables (if needed)
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+
+          # Resource requests and limits
+          resources:
+            requests:
+              cpu: "250m"       # 0.25 CPU cores minimum
+              memory: "512Mi"  # 512MB RAM minimum
+            limits:
+              cpu: "1000m"     # 1 CPU core maximum
+              memory: "1Gi"    # 1GB RAM maximum
+
+          # Startup probe - gives app time to start before liveness checks begin
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 30  # 30 * 5s = 150s max startup time
+
+          # Liveness probe - restart container if unhealthy
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Readiness probe - remove from service if not ready
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          # Volume mounts
+          volumeMounts:
+            - name: data-volume
+              mountPath: /var/log/voice-agent
+              subPath: logs
+            - name: data-volume
+              mountPath: /app/data
+              subPath: data
+            - name: tmp-volume
+              mountPath: /tmp
+
+      # Volumes
+      volumes:
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: voice-agent-pvc
+        # Ephemeral volume for /tmp
+        - name: tmp-volume
+          emptyDir: {}
+
+      # Graceful shutdown
+      terminationGracePeriodSeconds: 60
+
+      # DNS configuration
+      dnsPolicy: ClusterFirst

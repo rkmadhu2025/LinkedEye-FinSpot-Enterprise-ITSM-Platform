@@ -161,6 +161,9 @@ from app.models.alert_intelligence import (
 from app.models.chatops import (
     ChatOpsChannel, ChatOpsCommand, ChatOpsMessage,
 )
+from app.models.voice_call import (
+    VoiceCall, VoiceCallLog, VoiceCallStatus, VoiceCallDirection, VoiceCallEventType,
+)
 
 __all__ = [
     "BaseModel",
@@ -305,4 +308,10 @@ __all__ = [
     "ChatOpsChannel",
     "ChatOpsCommand",
     "ChatOpsMessage",
+    # Voice Calls
+    "VoiceCall",
+    "VoiceCallLog",
+    "VoiceCallStatus",
+    "VoiceCallDirection",
+    "VoiceCallEventType",
 ]

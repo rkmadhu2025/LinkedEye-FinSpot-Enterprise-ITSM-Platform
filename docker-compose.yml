@@ -1,0 +1,291 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: itsm_postgres
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-itsm_platform}
+      POSTGRES_USER: ${DATABASE_USER:-itsm_user}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-itsm_password}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-itsm_user} -d ${DATABASE_NAME:-itsm_platform}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - itsm_network
+    restart: unless-stopped
+
+  # Redis for caching and Celery broker
+  redis:
+    image: redis:7-alpine
+    container_name: itsm_redis
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - itsm_network
+    restart: unless-stopped
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./linkedeye-itsm-platform-backend
+      dockerfile: Dockerfile
+    container_name: itsm_backend
+    environment:
+      - DATABASE_URL=postgresql://${DATABASE_USER:-itsm_user}:${DATABASE_PASSWORD:-itsm_password}@db:5432/${DATABASE_NAME:-itsm_platform}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-}@redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-local-jwt-secret-change-me}
+      - DEBUG=${DEBUG:-false}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-}@redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-}@redis:6379/2
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-anthropic/claude-3.5-haiku}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - CLAUDE_MODEL=${CLAUDE_MODEL:-}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-["http://localhost:3000"]}
+      # Twilio Configuration
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER:-}
+      - TWILIO_DEFAULT_NOTIFICATION_PHONE=${TWILIO_DEFAULT_NOTIFICATION_PHONE:-}
+      # Voice Assistant Configuration
+      - VOICE_WEBHOOK_BASE_URL=${VOICE_WEBHOOK_BASE_URL:-}
+      - VOICE_CALL_TIMEOUT=${VOICE_CALL_TIMEOUT:-30}
+      - VOICE_MAX_RETRIES=${VOICE_MAX_RETRIES:-3}
+      - VOICE_RETRY_DELAY=${VOICE_RETRY_DELAY:-300}
+      - VOICE_AUTO_CALL_PRIORITIES=${VOICE_AUTO_CALL_PRIORITIES:-critical,high}
+      # Voice Agent Service Configuration
+      - VOICE_AGENT_ENABLED=true
+      - VOICE_AGENT_URL=http://voice-agent:8001
+      - VOICE_AGENT_SERVICE_TOKEN=${VOICE_AGENT_SERVICE_TOKEN:-shared-secret-token-change-me}
+      - VOICE_AGENT_TIMEOUT=${VOICE_AGENT_TIMEOUT:-30}
+      - VOICE_AGENT_WS_TOKEN_SECRET=${WS_TOKEN_SECRET:-ws-token-secret-change-me}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./linkedeye-itsm-platform-backend/logs:/app/logs
+    networks:
+      - itsm_network
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+
+  # Celery Worker
+  celery_worker:
+    build:
+      context: ./linkedeye-itsm-platform-backend
+      dockerfile: Dockerfile
+    container_name: itsm_celery_worker
+    environment:
+      - DATABASE_URL=postgresql://${DATABASE_USER:-itsm_user}:${DATABASE_PASSWORD:-itsm_password}@db:5432/${DATABASE_NAME:-itsm_platform}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-}@redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-}@redis:6379/2
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-local-jwt-secret-change-me}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    depends_on:
+      - db
+      - redis
+      - backend
+    volumes:
+      - ./linkedeye-itsm-platform-backend/logs:/app/logs
+    networks:
+      - itsm_network
+    restart: unless-stopped
+    command: celery -A app.core.celery_app worker --loglevel=info --concurrency=4 --queues=default,incidents,notifications,reports,sync
+
+  # Celery Beat (Scheduler)
+  celery_beat:
+    build:
+      context: ./linkedeye-itsm-platform-backend
+      dockerfile: Dockerfile
+    container_name: itsm_celery_beat
+    environment:
+      - DATABASE_URL=postgresql://${DATABASE_USER:-itsm_user}:${DATABASE_PASSWORD:-itsm_password}@db:5432/${DATABASE_NAME:-itsm_platform}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-}@redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-}@redis:6379/2
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-local-jwt-secret-change-me}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    depends_on:
+      - db
+      - redis
+      - backend
+    volumes:
+      - ./linkedeye-itsm-platform-backend/logs:/app/logs
+    networks:
+      - itsm_network
+    restart: unless-stopped
+    command: celery -A app.core.celery_app beat --loglevel=info
+
+  # Flower (Celery Monitoring)
+  flower:
+    build:
+      context: ./linkedeye-itsm-platform-backend
+      dockerfile: Dockerfile
+    container_name: itsm_flower
+    environment:
+      - DATABASE_URL=postgresql://${DATABASE_USER:-itsm_user}:${DATABASE_PASSWORD:-itsm_password}@db:5432/${DATABASE_NAME:-itsm_platform}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-}@redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-}@redis:6379/2
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-local-jwt-secret-change-me}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery_worker
+    networks:
+      - itsm_network
+    restart: unless-stopped
+    command: celery -A app.core.celery_app flower --port=5555 --basic-auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin}
+
+  # Frontend (Vite build served by Nginx)
+  frontend:
+    profiles:
+      - prod
+    build:
+      context: ./linkedeye-itsm-platform-frontend
+      dockerfile: Dockerfile
+    container_name: itsm_frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    networks:
+      - itsm_network
+    restart: unless-stopped
+
+  # ----------------------------------------------------------------------
+  # Voice Agent Service (External Microservice)
+  # ----------------------------------------------------------------------
+  voice-agent:
+    build:
+      context: ./voice-agent-service
+      dockerfile: Dockerfile
+    container_name: itsm_voice_agent
+    environment:
+      - PORT=8001
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - ITSM_API_URL=http://backend:8000
+      - VOICE_AGENT_SERVICE_TOKEN=${VOICE_AGENT_SERVICE_TOKEN:-shared-secret-token-change-me}
+      - WS_TOKEN_SECRET=${WS_TOKEN_SECRET:-ws-token-secret-change-me}
+    ports:
+      - "8002:8001"
+    depends_on:
+      - backend
+    networks:
+      - itsm_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ----------------------------------------------------------------------
+  # Development helpers (hot reload)
+  # ----------------------------------------------------------------------
+
+  backend-dev:
+    profiles:
+      - dev
+    build:
+      context: ./linkedeye-itsm-platform-backend
+      dockerfile: Dockerfile
+    container_name: itsm_backend_dev
+    environment:
+      - DATABASE_URL=postgresql://${DATABASE_USER:-itsm_user}:${DATABASE_PASSWORD:-itsm_password}@db:5432/${DATABASE_NAME:-itsm_platform}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-}@redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-local-jwt-secret-change-me}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - DEBUG=true
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-["http://localhost:3000","http://localhost:5173"]}
+      - WATCHFILES_FORCE_POLLING=true
+      # Twilio Configuration
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER:-}
+      - TWILIO_API_KEY_SID=${TWILIO_API_KEY_SID:-}
+      - TWILIO_API_KEY_SECRET=${TWILIO_API_KEY_SECRET:-}
+      - TWILIO_DEFAULT_NOTIFICATION_PHONE=${TWILIO_DEFAULT_NOTIFICATION_PHONE:-}
+      # Voice Assistant Configuration
+      - VOICE_WEBHOOK_BASE_URL=${VOICE_WEBHOOK_BASE_URL:-}
+      - VOICE_CALL_TIMEOUT=${VOICE_CALL_TIMEOUT:-30}
+      - VOICE_MAX_RETRIES=${VOICE_MAX_RETRIES:-3}
+      - VOICE_RETRY_DELAY=${VOICE_RETRY_DELAY:-300}
+      - VOICE_AUTO_CALL_PRIORITIES=${VOICE_AUTO_CALL_PRIORITIES:-critical,high}
+      # AI Provider Configuration
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - CLAUDE_MODEL=${CLAUDE_MODEL:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-anthropic/claude-3.5-haiku}
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app
+    volumes:
+      - ./linkedeye-itsm-platform-backend:/app
+    ports:
+      - "8001:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - itsm_network
+
+  frontend-dev:
+    profiles:
+      - dev
+    image: node:18-alpine
+    working_dir: /app
+    container_name: itsm_frontend_dev
+    command: sh -c "npm install --legacy-peer-deps && npm run dev -- --host 0.0.0.0 --port 3000"
+    environment:
+      - VITE_API_URL=http://localhost:8001/api/v1
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./linkedeye-itsm-platform-frontend:/app
+      - frontend_dev_node_modules:/app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend-dev
+    networks:
+      - itsm_network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  frontend_dev_node_modules:
+    driver: local
+
+networks:
+  itsm_network:
+    driver: bridge

@@ -1,0 +1,21 @@
+# =============================================================================
+# POD DISRUPTION BUDGET: voice-agent
+# Ensures minimum availability during voluntary disruptions
+# (node drains, cluster upgrades, etc.)
+# =============================================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: voice-agent-pdb
+  namespace: voice-agent
+  labels:
+    app.kubernetes.io/name: voice-agent
+    app.kubernetes.io/component: pdb
+spec:
+  # Ensure at least 1 pod is always available
+  minAvailable: 1
+  # Alternative: maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: voice-agent
+      app.kubernetes.io/instance: voice-agent-production

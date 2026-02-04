@@ -21,8 +21,55 @@ from app.models.environment import Environment
 from app.models.client import Client
 from app.api.dependencies import get_current_user, require_agent
 from app.core.logging import get_logger
+from app.core.config import settings
 
 logger = get_logger(__name__)
+
+
+async def trigger_twilio_notification(incident, db: Session):
+    """Trigger SMS and Voice call for new incidents."""
+    try:
+        from app.services.twilio_service import twilio_service
+
+        if not twilio_service.is_configured:
+            logger.info("Twilio not configured, skipping notification")
+            return
+
+        # Get notification phone number
+        # Priority: assigned user's phone > default notification phone
+        notification_phone = settings.twilio_default_notification_phone
+
+        if incident.assigned_to_id:
+            from app.models.user import User
+            assigned_user = db.query(User).filter(User.id == incident.assigned_to_id).first()
+            if assigned_user and hasattr(assigned_user, 'phone') and assigned_user.phone:
+                notification_phone = assigned_user.phone
+
+        if not notification_phone:
+             notification_phone = "9952445795" # Engineer's number fallback
+
+        # Get priority value
+        priority_value = incident.priority.value if hasattr(incident.priority, 'value') else str(incident.priority)
+
+        # Send SMS notification
+        results = await twilio_service.send_incident_notification(
+            to_phone=notification_phone,
+            incident_number=incident.number,
+            incident_title=incident.title,
+            priority=priority_value,
+            category=incident.category,
+            send_sms=True,
+            make_call=True
+        )
+
+        # Log results
+        if results.get("sms") and results["sms"].success:
+            logger.info(f"SMS sent for incident {incident.number}")
+        if results.get("call") and results["call"].success:
+             logger.info(f"Automatic voice call initiated for incident {incident.number}")
+
+    except Exception as e:
+        logger.error(f"Error sending Twilio notification for incident {incident.number}: {e}")
 router = APIRouter(prefix="/incidents", tags=["incidents"])
 
 
@@ -292,9 +339,15 @@ async def create_incident(
         ).filter(Incident.id == new_incident.id).first()
         
         logger.info(f"Incident created: {incident_number} by user {current_user.id}")
-        
+
+        # Trigger Twilio SMS/Call notification (async, non-blocking)
+        try:
+            await trigger_twilio_notification(incident_with_relations, db)
+        except Exception as notif_error:
+            logger.error(f"Twilio notification failed (non-critical): {notif_error}")
+
         return incident_with_relations
-    
+
     except Exception as e:
         db.rollback()
         logger.error(f"Error creating incident: {e}")

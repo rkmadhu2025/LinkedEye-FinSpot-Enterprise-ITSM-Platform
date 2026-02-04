@@ -111,6 +111,7 @@ const AlertGroupDetailPage = lazy(() => import('./pages/alert-intelligence/Alert
 const ChatOpsConfigPage = lazy(() => import('./pages/chatops/ChatOpsConfigPage'));
 const ChatOpsMessagesPage = lazy(() => import('./pages/chatops/ChatOpsMessagesPage'));
 
+
 // Infrastructure Pages (lazy loaded)
 const InfrastructureDashboardPage = lazy(() => import('./pages/infrastructure/InfrastructureDashboardPage'));
 const InfrastructureHostsPage = lazy(() => import('./pages/infrastructure/InfrastructureHostsPage'));
@@ -162,144 +163,145 @@ function App() {
   return (
     <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
-      <Routes>
-        {/* Auth Routes */}
-        <Route element={<AuthLayout />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        </Route>
+        <Routes>
+          {/* Auth Routes */}
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          </Route>
 
-        {/* Protected Routes */}
-        <Route
-          element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          }
-        >
-          {/* Dashboard */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
+          {/* Protected Routes */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            }
+          >
+            {/* Dashboard */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
 
-          {/* Incidents */}
-          <Route path="/incidents" element={<IncidentsListPage />} />
-          <Route path="/incidents/create" element={<IncidentCreatePage />} />
-          <Route path="/incidents/:id" element={<IncidentDetailPage />} />
-          <Route path="/incidents/:id/edit" element={<IncidentEditPage />} />
+            {/* Incidents */}
+            <Route path="/incidents" element={<IncidentsListPage />} />
+            <Route path="/incidents/create" element={<IncidentCreatePage />} />
+            <Route path="/incidents/:id" element={<IncidentDetailPage />} />
+            <Route path="/incidents/:id/edit" element={<IncidentEditPage />} />
 
-          {/* Changes */}
-          <Route path="/changes/dashboard" element={<ChangeDashboardPage />} />
-          <Route path="/changes" element={<ChangesListPage />} />
-          <Route path="/changes/create" element={<ChangeCreatePage />} />
-          <Route path="/changes/calendar" element={<ChangeCalendarPage />} />
-          <Route path="/changes/:id" element={<ChangeDetailPage />} />
+            {/* Changes */}
+            <Route path="/changes/dashboard" element={<ChangeDashboardPage />} />
+            <Route path="/changes" element={<ChangesListPage />} />
+            <Route path="/changes/create" element={<ChangeCreatePage />} />
+            <Route path="/changes/calendar" element={<ChangeCalendarPage />} />
+            <Route path="/changes/:id" element={<ChangeDetailPage />} />
 
-          {/* Problems */}
-          <Route path="/problems" element={<ProblemsListPage />} />
-          <Route path="/problems/create" element={<ProblemCreatePage />} />
-          <Route path="/problems/:id" element={<ProblemDetailPage />} />
-          <Route path="/problems/:id/edit" element={<ProblemEditPage />} />
+            {/* Problems */}
+            <Route path="/problems" element={<ProblemsListPage />} />
+            <Route path="/problems/create" element={<ProblemCreatePage />} />
+            <Route path="/problems/:id" element={<ProblemDetailPage />} />
+            <Route path="/problems/:id/edit" element={<ProblemEditPage />} />
 
-          {/* Assets */}
-          <Route path="/assets" element={<AssetsListPage />} />
-          <Route path="/assets/my" element={<MyAssetsPage />} />
-          <Route path="/assets/create" element={<AssetCreatePage />} />
-          <Route path="/assets/:id" element={<AssetDetailPage />} />
-          <Route path="/assets/:id/edit" element={<AssetDetailPage />} />
+            {/* Assets */}
+            <Route path="/assets" element={<AssetsListPage />} />
+            <Route path="/assets/my" element={<MyAssetsPage />} />
+            <Route path="/assets/create" element={<AssetCreatePage />} />
+            <Route path="/assets/:id" element={<AssetDetailPage />} />
+            <Route path="/assets/:id/edit" element={<AssetDetailPage />} />
 
-          {/* Network */}
-          <Route path="/network/devices" element={<NetworkDevicesPage />} />
-          <Route path="/network/devices/:id" element={<NetworkDeviceDetailPage />} />
-          <Route path="/network/topology" element={<NetworkTopologyPage />} />
+            {/* Network */}
+            <Route path="/network/devices" element={<NetworkDevicesPage />} />
+            <Route path="/network/devices/:id" element={<NetworkDeviceDetailPage />} />
+            <Route path="/network/topology" element={<NetworkTopologyPage />} />
 
-          {/* Infrastructure (Network Flow Architecture) */}
-          <Route path="/infrastructure" element={<InfrastructureDashboardPage />} />
-          <Route path="/infrastructure/hosts" element={<InfrastructureHostsPage />} />
-          <Route path="/infrastructure/hosts/:id" element={<InfrastructureHostDetailPage />} />
-          <Route path="/infrastructure/topology" element={<InfrastructureTopologyPage />} />
-          <Route path="/infrastructure/catalog" element={<DeviceCatalogPage />} />
-          <Route path="/infrastructure/vm-mapping" element={<VMPhysicalMappingPage />} />
-          <Route path="/infrastructure/racks" element={<ServerRackMonitoringPage />} />
-          <Route path="/infrastructure/iframes" element={<IframeCatalogPage />} />
-          <Route path="/infrastructure/iframes/:id" element={<IframeViewerPage />} />
+            {/* Infrastructure (Network Flow Architecture) */}
+            <Route path="/infrastructure" element={<InfrastructureDashboardPage />} />
+            <Route path="/infrastructure/hosts" element={<InfrastructureHostsPage />} />
+            <Route path="/infrastructure/hosts/:id" element={<InfrastructureHostDetailPage />} />
+            <Route path="/infrastructure/topology" element={<InfrastructureTopologyPage />} />
+            <Route path="/infrastructure/catalog" element={<DeviceCatalogPage />} />
+            <Route path="/infrastructure/vm-mapping" element={<VMPhysicalMappingPage />} />
+            <Route path="/infrastructure/racks" element={<ServerRackMonitoringPage />} />
+            <Route path="/infrastructure/iframes" element={<IframeCatalogPage />} />
+            <Route path="/infrastructure/iframes/:id" element={<IframeViewerPage />} />
 
-          {/* Monitoring & Integrations */}
-          <Route path="/monitoring" element={<MonitoringDashboardPage />} />
-          <Route path="/monitoring/visualization" element={<MetricsLogsVisualizationPage />} />
-          <Route path="/integrations" element={<IntegrationsPage />} />
-          <Route path="/integrations/:id" element={<IntegrationDetailPage />} />
-          <Route path="/monitoring/alerts/:id" element={<AlertDetailPage />} />
-          <Route path="/monitoring/logs" element={<LogsPage />} />
+            {/* Monitoring & Integrations */}
+            <Route path="/monitoring" element={<MonitoringDashboardPage />} />
+            <Route path="/monitoring/visualization" element={<MetricsLogsVisualizationPage />} />
+            <Route path="/integrations" element={<IntegrationsPage />} />
+            <Route path="/integrations/:id" element={<IntegrationDetailPage />} />
+            <Route path="/monitoring/alerts/:id" element={<AlertDetailPage />} />
+            <Route path="/monitoring/logs" element={<LogsPage />} />
 
-          {/* Admin (role-guarded) */}
-          <Route path="/users" element={<AdminRoute><UsersPage /></AdminRoute>} />
-          <Route path="/users/:id" element={<AdminRoute><UserDetailPage /></AdminRoute>} />
-          <Route path="/groups" element={<AdminRoute><GroupsPage /></AdminRoute>} />
-          <Route path="/groups/:id" element={<AdminRoute><GroupDetailPage /></AdminRoute>} />
-          <Route path="/roles" element={<AdminRoute><RolesPage /></AdminRoute>} />
-          <Route path="/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
-          <Route path="/admin/clients" element={<AdminRoute><ClientsPage /></AdminRoute>} />
+            {/* Admin (role-guarded) */}
+            <Route path="/users" element={<AdminRoute><UsersPage /></AdminRoute>} />
+            <Route path="/users/:id" element={<AdminRoute><UserDetailPage /></AdminRoute>} />
+            <Route path="/groups" element={<AdminRoute><GroupsPage /></AdminRoute>} />
+            <Route path="/groups/:id" element={<AdminRoute><GroupDetailPage /></AdminRoute>} />
+            <Route path="/roles" element={<AdminRoute><RolesPage /></AdminRoute>} />
+            <Route path="/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
+            <Route path="/admin/clients" element={<AdminRoute><ClientsPage /></AdminRoute>} />
 
-          {/* On-Call Management */}
-          <Route path="/on-call/dashboard" element={<EscalationDashboardPage />} />
-          <Route path="/on-call/schedules" element={<OnCallSchedulesPage />} />
-          <Route path="/on-call/escalation-policies" element={<EscalationPoliciesPage />} />
-          <Route path="/on-call/rotations" element={<OnCallRotationPage />} />
+            {/* On-Call Management */}
+            <Route path="/on-call/dashboard" element={<EscalationDashboardPage />} />
+            <Route path="/on-call/schedules" element={<OnCallSchedulesPage />} />
+            <Route path="/on-call/escalation-policies" element={<EscalationPoliciesPage />} />
+            <Route path="/on-call/rotations" element={<OnCallRotationPage />} />
 
-          {/* Status Pages */}
-          <Route path="/status-pages" element={<StatusPagesListPage />} />
-          <Route path="/status-pages/create" element={<StatusPageEditorPage />} />
-          <Route path="/status-pages/:id/edit" element={<StatusPageEditorPage />} />
+            {/* Status Pages */}
+            <Route path="/status-pages" element={<StatusPagesListPage />} />
+            <Route path="/status-pages/create" element={<StatusPageEditorPage />} />
+            <Route path="/status-pages/:id/edit" element={<StatusPageEditorPage />} />
 
-          {/* Postmortems */}
-          <Route path="/postmortems" element={<PostmortemsListPage />} />
-          <Route path="/postmortems/create" element={<PostmortemEditorPage />} />
-          <Route path="/postmortems/:id" element={<PostmortemDetailPage />} />
-          <Route path="/postmortems/:id/edit" element={<PostmortemEditorPage />} />
+            {/* Postmortems */}
+            <Route path="/postmortems" element={<PostmortemsListPage />} />
+            <Route path="/postmortems/create" element={<PostmortemEditorPage />} />
+            <Route path="/postmortems/:id" element={<PostmortemDetailPage />} />
+            <Route path="/postmortems/:id/edit" element={<PostmortemEditorPage />} />
 
-          {/* Runbooks */}
-          <Route path="/runbooks" element={<RunbooksListPage />} />
-          <Route path="/runbooks/create" element={<RunbookEditorPage />} />
-          <Route path="/runbooks/:id/edit" element={<RunbookEditorPage />} />
-          <Route path="/runbooks/:id/execute" element={<RunbookExecutionPage />} />
+            {/* Runbooks */}
+            <Route path="/runbooks" element={<RunbooksListPage />} />
+            <Route path="/runbooks/create" element={<RunbookEditorPage />} />
+            <Route path="/runbooks/:id/edit" element={<RunbookEditorPage />} />
+            <Route path="/runbooks/:id/execute" element={<RunbookExecutionPage />} />
 
-          {/* Alert Intelligence */}
-          <Route path="/alert-intelligence" element={<AlertIntelligenceDashboard />} />
-          <Route path="/alert-intelligence/groups/:id" element={<AlertGroupDetailPage />} />
+            {/* Alert Intelligence */}
+            <Route path="/alert-intelligence" element={<AlertIntelligenceDashboard />} />
+            <Route path="/alert-intelligence/groups/:id" element={<AlertGroupDetailPage />} />
 
-          {/* ChatOps */}
-          <Route path="/chatops" element={<ChatOpsMessagesPage />} />
-          <Route path="/chatops/config" element={<ChatOpsConfigPage />} />
+            {/* ChatOps */}
+            <Route path="/chatops" element={<ChatOpsMessagesPage />} />
+            <Route path="/chatops/config" element={<ChatOpsConfigPage />} />
 
-          {/* User Profile & Settings */}
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
 
-          {/* Reports */}
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-        </Route>
+            {/* User Profile & Settings */}
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
 
-        {/* Public Status Page (no auth) */}
-        <Route path="/status/:slug" element={<PublicStatusPage />} />
+            {/* Reports */}
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+          </Route>
 
-        {/* 404 */}
-        <Route
-          path="*"
-          element={
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
-              <div className="text-center">
-                <h1 className="text-6xl font-bold text-gray-300">404</h1>
-                <p className="text-xl text-gray-600 mt-4">Page not found</p>
-                <a href="/" className="mt-6 inline-block text-primary-600 hover:text-primary-700">
-                  Go back home
-                </a>
+          {/* Public Status Page (no auth) */}
+          <Route path="/status/:slug" element={<PublicStatusPage />} />
+
+          {/* 404 */}
+          <Route
+            path="*"
+            element={
+              <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="text-center">
+                  <h1 className="text-6xl font-bold text-gray-300">404</h1>
+                  <p className="text-xl text-gray-600 mt-4">Page not found</p>
+                  <a href="/" className="mt-6 inline-block text-primary-600 hover:text-primary-700">
+                    Go back home
+                  </a>
+                </div>
               </div>
-            </div>
-          }
-        />
-      </Routes>
+            }
+          />
+        </Routes>
       </Suspense>
     </ErrorBoundary>
   );

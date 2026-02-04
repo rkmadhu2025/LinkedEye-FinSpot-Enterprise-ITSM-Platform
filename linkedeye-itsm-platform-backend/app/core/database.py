@@ -98,13 +98,81 @@ def init_db():
             Group, NetworkDevice, NetworkTopology, Report, MLModel,
             Recommendation, Anomaly, Setting, AuditLog, Notification,
             IncidentActivity, AlertSuppression, NotificationPreference,
-            NotificationLog, EmailTemplate
+            NotificationLog, EmailTemplate, VoiceCall, VoiceCallLog
         )
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables created successfully")
+
+        # Create default admin user if not exists
+        create_default_admin()
+
     except Exception as e:
         logger.error(f"Error creating database tables: {e}")
         raise
+
+
+def create_default_admin():
+    """Create default admin user if not exists."""
+    try:
+        from app.models.user import User, UserRole, UserStatus
+        from app.core.security import get_password_hash
+
+        db = SessionLocal()
+        try:
+            # Check if admin user exists
+            admin = db.query(User).filter(User.email == "admin@finspot.in").first()
+
+            if not admin:
+                # Create default admin user
+                # Note: password_hash is the field name, role/status are stored as string values
+                admin = User(
+                    email="admin@finspot.in",
+                    password_hash=get_password_hash("Admin@123"),
+                    first_name="Admin",
+                    last_name="User",
+                    role=UserRole.ADMIN.value,
+                    status=UserStatus.ACTIVE.value,
+                    is_active=True,
+                    phone="+919176772077"
+                )
+                db.add(admin)
+                db.commit()
+                logger.info("Default admin user created: admin@finspot.in / Admin@123")
+            else:
+                logger.info("Admin user already exists")
+
+            # Create default environment if not exists
+            create_default_environment(db)
+
+        finally:
+            db.close()
+
+    except Exception as e:
+        logger.error(f"Error creating default admin: {e}")
+
+
+def create_default_environment(db):
+    """Create default environment if not exists."""
+    try:
+        from app.models.environment import Environment
+
+        env = db.query(Environment).filter(Environment.name == "Production").first()
+
+        if not env:
+            environments = [
+                Environment(name="Production", code="production", description="Production environment", environment_type="production", is_active=True),
+                Environment(name="Staging", code="staging", description="Staging environment", environment_type="staging", is_active=True),
+                Environment(name="Development", code="development", description="Development environment", environment_type="development", is_active=True),
+            ]
+            for e in environments:
+                db.add(e)
+            db.commit()
+            logger.info("Default environments created: Production, Staging, Development")
+        else:
+            logger.info("Default environments already exist")
+
+    except Exception as e:
+        logger.error(f"Error creating default environments: {e}")
 
 
 def check_db_connection():

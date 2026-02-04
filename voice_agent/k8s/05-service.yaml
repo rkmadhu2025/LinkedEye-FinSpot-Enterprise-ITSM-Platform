@@ -1,0 +1,49 @@
+# =============================================================================
+# SERVICE: voice-agent-service
+# ClusterIP service for internal cluster communication
+# Exposes the voice-agent deployment to other services and Ingress
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: voice-agent-service
+  namespace: voice-agent
+  labels:
+    app.kubernetes.io/name: voice-agent
+    app.kubernetes.io/component: service
+spec:
+  type: ClusterIP
+  # Session affinity - use if your app requires sticky sessions
+  # sessionAffinity: ClientIP
+  # sessionAffinityConfig:
+  #   clientIP:
+  #     timeoutSeconds: 3600
+  selector:
+    app.kubernetes.io/name: voice-agent
+    app.kubernetes.io/instance: voice-agent-production
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80           # Service port (what other services use)
+      targetPort: http   # Container port name (8000)
+
+---
+# =============================================================================
+# SERVICE: voice-agent-headless (Optional)
+# Headless service for StatefulSet or direct pod DNS access
+# Uncomment if you need direct pod-to-pod communication
+# =============================================================================
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: voice-agent-headless
+#   namespace: voice-agent
+# spec:
+#   type: ClusterIP
+#   clusterIP: None
+#   selector:
+#     app.kubernetes.io/name: voice-agent
+#   ports:
+#     - name: http
+#       port: 8000
+#       targetPort: http

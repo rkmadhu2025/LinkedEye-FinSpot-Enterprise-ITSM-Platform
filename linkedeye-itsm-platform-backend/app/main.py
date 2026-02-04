@@ -54,7 +54,7 @@ from app.api.postmortems import router as postmortems_router
 from app.api.runbooks import router as runbooks_router
 from app.api.alert_intelligence import router as alert_intelligence_router
 from app.api.chatops import router as chatops_router
-
+from app.api.voice_agent import router as voice_agent_router
 
 # Configure logging
 configure_logging()
@@ -265,6 +265,8 @@ app.include_router(postmortems_router, prefix="/api/v1")
 app.include_router(runbooks_router, prefix="/api/v1")
 app.include_router(alert_intelligence_router, prefix="/api/v1")
 app.include_router(chatops_router, prefix="/api/v1")
+app.include_router(chatops_router, prefix="/api/v1")
+app.include_router(voice_agent_router, prefix="/api/v1")
 
 
 # Root endpoint

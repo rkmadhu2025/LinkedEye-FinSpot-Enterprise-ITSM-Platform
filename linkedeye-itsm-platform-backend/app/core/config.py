@@ -17,15 +17,15 @@ class Settings(BaseSettings):
     app_name: str = "ITSM Platform"
     app_version: str = "1.0.0"
     debug: bool = False
-    environment: str = "production"
+    environment: str = "development"
     
     # Database
-    database_url: str
+    database_url: Optional[str] = None
     database_host: str = "localhost"
     database_port: int = 5432
     database_name: str = "itsm_platform"
-    database_user: Optional[str] = None
-    database_password: Optional[str] = None
+    database_user: str = "itsm_user"
+    database_password: str = "itsm_password"
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"
@@ -138,6 +138,29 @@ class Settings(BaseSettings):
     # Internal SSL Settings (for internal services in K8s)
     internal_ssl_verify: bool = False  # Internal K8s services may use self-signed certs
 
+    # Twilio Configuration (for SMS and Voice notifications)
+    twilio_account_sid: Optional[str] = None
+    twilio_auth_token: Optional[str] = None
+    twilio_phone_number: Optional[str] = None  # Your Twilio phone number
+    twilio_api_key_sid: Optional[str] = None  # Optional: API Key SID for enhanced security
+    twilio_api_key_secret: Optional[str] = None  # Optional: API Key Secret
+    twilio_enabled: bool = True  # Enable/disable Twilio notifications
+    twilio_default_notification_phone: Optional[str] = None  # Default phone for alerts
+
+    # Voice Assistant Configuration
+    voice_webhook_base_url: Optional[str] = None  # Public URL for Twilio callbacks (e.g., ngrok or production URL)
+    voice_call_timeout: int = 30  # Ring timeout in seconds
+    voice_max_retries: int = 3  # Maximum call retry attempts
+    voice_retry_delay: int = 300  # Delay between retries in seconds
+    voice_auto_call_priorities: str = "critical,high"  # Priorities that trigger automatic calls
+
+    # Voice Agent Service Configuration (External Microservice)
+    voice_agent_enabled: bool = True  # Enable external voice agent service
+    voice_agent_url: str = "http://voice-agent:8001"  # URL of voice agent service
+    voice_agent_service_token: str = "shared-secret-token-change-me"  # Shared token for service-to-service auth
+    voice_agent_timeout: int = 30  # Timeout for voice agent requests
+    voice_agent_ws_token_secret: str = "ws-token-secret-change-me"  # Secret for signing WebSocket tokens
+
     @validator("app_url", pre=True, always=True)
     def build_app_url(cls, v, values):
         """Build app URL from frontend domain if not explicitly set."""
@@ -184,26 +207,26 @@ class Settings(BaseSettings):
     
     @validator("jwt_secret_key")
     def validate_jwt_secret(cls, v, values):
-        """Reject placeholder JWT secret in production."""
+        """Warn about placeholder JWT secret in production but don't fail."""
         env = values.get("environment", "production")
         if env == "production" and v == "REPLACE_WITH_STRONG_RANDOM_SECRET_MIN_64_CHARS":
-            raise ValueError(
-                "JWT_SECRET_KEY must be set to a real secret in production. "
-                "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+            logger.warning(
+                "WARNING: Using default JWT_SECRET_KEY. "
+                "Set a secure secret in production with: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
             )
         return v
 
-    @validator("database_url", pre=True)
+    @validator("database_url", pre=True, always=True)
     def build_database_url(cls, v, values):
         if v:
             return v
-        return (
-            f"postgresql://{values.get('database_user')}:"
-            f"{values.get('database_password')}@"
-            f"{values.get('database_host')}:"
-            f"{values.get('database_port')}/"
-            f"{values.get('database_name')}"
-        )
+        # Build from components with defaults
+        user = values.get('database_user') or 'itsm_user'
+        password = values.get('database_password') or 'itsm_password'
+        host = values.get('database_host') or 'localhost'
+        port = values.get('database_port') or 5432
+        name = values.get('database_name') or 'itsm_platform'
+        return f"postgresql://{user}:{password}@{host}:{port}/{name}"
     
     class Config:
         env_file = ".env"

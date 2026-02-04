@@ -3,7 +3,7 @@ API dependencies for authentication and authorization.
 """
 from typing import Optional
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyQuery
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import verify_token
@@ -12,16 +12,35 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
+token_query = APIKeyQuery(name="token", auto_error=False)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security),
+    token: Optional[str] = Depends(token_query),
     db: Session = Depends(get_db)
 ) -> User:
     """Get current authenticated user."""
     try:
+        # Get token from header or query param
+        jwt_token = None
+        if credentials:
+            jwt_token = credentials.credentials
+            logger.debug("Token found in Authorization header")
+        elif token:
+            jwt_token = token
+            logger.debug("Token found in 'token' query parameter")
+            
+        if jwt_token is None:
+            logger.warning("No authentication token found in request")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated"
+            )
+            
         # Verify JWT token
-        payload = verify_token(credentials.credentials)
+        payload = verify_token(jwt_token)
         user_id = payload.get("sub")
         
         if user_id is None:
@@ -53,7 +72,7 @@ async def get_current_user(
             )
         
         return user
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -62,6 +81,35 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials"
         )
+
+
+async def get_optional_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security),
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """Get current user if authenticated, otherwise return None.
+
+    Used for endpoints that can work with or without authentication,
+    such as Twilio webhooks.
+    """
+    if credentials is None:
+        return None
+
+    try:
+        payload = verify_token(credentials.credentials)
+        user_id = payload.get("sub")
+
+        if user_id is None:
+            return None
+
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None or not user.is_active:
+            return None
+
+        return user
+    except Exception as e:
+        logger.debug(f"Optional auth failed: {e}")
+        return None
 
 
 async def get_current_active_user(

@@ -1,0 +1,49 @@
+# =============================================================================
+# CONFIGMAP: Application Configuration
+# Non-sensitive environment variables for voice-agent
+# These can be changed without redeploying secrets
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: voice-agent-config
+  namespace: voice-agent
+  labels:
+    app.kubernetes.io/name: voice-agent
+    app.kubernetes.io/component: config
+data:
+  # Application environment
+  APP_ENV: "production"
+  APP_DEBUG: "false"
+  LOG_LEVEL: "INFO"
+
+  # Server configuration
+  APP_HOST: "0.0.0.0"
+  APP_PORT: "8000"
+
+  # Application domain
+  APP_DOMAIN: "voice.madhu.in"
+  APP_URL: "https://voice.madhu.in"
+
+  # CORS settings
+  CORS_ORIGINS: "https://voice.madhu.in"
+  CORS_ALLOW_CREDENTIALS: "true"
+
+  # Worker/thread pool settings
+  WORKERS: "4"
+  THREADS: "2"
+
+  # Timeout settings (seconds)
+  REQUEST_TIMEOUT: "120"
+  KEEPALIVE_TIMEOUT: "65"
+
+  # Feature flags
+  ENABLE_METRICS: "true"
+  ENABLE_HEALTHCHECK: "true"
+
+  # Logging configuration
+  LOG_FORMAT: "json"
+  LOG_PATH: "/var/log/voice-agent"
+
+  # Timezone
+  TZ: "Asia/Kolkata"

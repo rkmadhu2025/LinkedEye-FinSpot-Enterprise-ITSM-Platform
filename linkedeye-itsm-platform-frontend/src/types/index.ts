@@ -38,6 +38,7 @@ export interface User {
   firstName: string;
   lastName: string;
   displayName: string;
+  client_id?: string;
   phone?: string;
   avatarUrl?: string;
   jobTitle?: string;
