@@ -156,3 +156,13 @@ test_marker.txt
 *_FIXES.md
 DEBUG_*.md
 DEPLOYMENT_*.md
+
+# Utility scripts and temporary output files
+check_integrations.py
+update_integration_urls.py
+integrations_output.txt
+old_env.txt
+deployment.yaml
+
+# Duplicate/reference projects
+linkedeyewebproject-main/
