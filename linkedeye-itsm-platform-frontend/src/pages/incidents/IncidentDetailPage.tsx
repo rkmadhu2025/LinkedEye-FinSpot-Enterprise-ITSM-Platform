@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { format, toZonedTime } from 'date-fns-tz';
+import { format } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 import { formatDistanceToNow } from 'date-fns';
 import {
   ArrowLeft,
@@ -42,6 +43,7 @@ import {
   Info,
   Lightbulb,
   ChevronRight,
+  Calendar,
 } from 'lucide-react';
 import {
   PageLoader,
@@ -52,7 +54,9 @@ import {
 } from '@/components/ui';
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
 import { fetchIncidentById, updateIncident, addIncidentComment } from '@/store/slices/incidentsSlice';
+import { fetchUsers, fetchGroups } from '@/store/slices/usersSlice';
 import clsx from 'clsx';
+import toast from 'react-hot-toast';
 
 const IncidentDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -62,6 +66,7 @@ const IncidentDetailPage = () => {
   const { currentIncident: incident, isLoading, isSubmitting } = useAppSelector(
     (state) => state.incidents
   );
+  const { users, groups } = useAppSelector((state) => state.users);
   const { theme } = useAppSelector((state) => state.ui);
   const isDark = theme === 'dark';
 
@@ -69,10 +74,16 @@ const IncidentDetailPage = () => {
   const [comment, setComment] = useState('');
   const [showResolveModal, setShowResolveModal] = useState(false);
   const [resolutionNotes, setResolutionNotes] = useState('');
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showGroupAssignModal, setShowGroupAssignModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedGroupId, setSelectedGroupId] = useState('');
 
   useEffect(() => {
     if (id) {
       dispatch(fetchIncidentById(id));
+      dispatch(fetchUsers({ page: 1, limit: 100 }));
+      dispatch(fetchGroups());
     }
   }, [dispatch, id]);
 
@@ -101,6 +112,42 @@ const IncidentDetailPage = () => {
     );
     setShowResolveModal(false);
     setResolutionNotes('');
+  };
+
+  const handleAssignUser = async () => {
+    if (!id) return;
+    try {
+      const result = await dispatch(updateIncident({ id, data: { assignedTo: selectedUserId || null } }));
+      if (updateIncident.fulfilled.match(result)) {
+        // Re-fetch to get full assignee details
+        await dispatch(fetchIncidentById(id));
+        toast.success(selectedUserId ? 'User assigned successfully' : 'User unassigned');
+      } else {
+        toast.error('Failed to assign user');
+      }
+      setShowAssignModal(false);
+      setSelectedUserId('');
+    } catch {
+      toast.error('Failed to assign user');
+    }
+  };
+
+  const handleAssignGroup = async () => {
+    if (!id) return;
+    try {
+      const result = await dispatch(updateIncident({ id, data: { assignedGroupId: selectedGroupId || null } }));
+      if (updateIncident.fulfilled.match(result)) {
+        // Re-fetch to get full group details
+        await dispatch(fetchIncidentById(id));
+        toast.success(selectedGroupId ? 'Group assigned successfully' : 'Group unassigned');
+      } else {
+        toast.error('Failed to assign group');
+      }
+      setShowGroupAssignModal(false);
+      setSelectedGroupId('');
+    } catch {
+      toast.error('Failed to assign group');
+    }
   };
 
   if (isLoading || !incident) {
@@ -505,24 +552,35 @@ const IncidentDetailPage = () => {
                     Assigned To
                   </p>
                   {incident.assignee ? (
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                        {incident.assignee.firstName?.charAt(0)}{incident.assignee.lastName?.charAt(0)}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                          {incident.assignee.firstName?.charAt(0)}{incident.assignee.lastName?.charAt(0)}
+                        </div>
+                        <div>
+                          <span className="text-sm font-semibold block" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>{incident.assignee.firstName} {incident.assignee.lastName}</span>
+                          {incident.assignee.email && <span className="text-[10px]" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>{incident.assignee.email}</span>}
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-sm font-semibold block" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>{incident.assignee.firstName} {incident.assignee.lastName}</span>
-                        {incident.assignee.email && <span className="text-[10px]" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>{incident.assignee.email}</span>}
-                      </div>
+                      <button
+                        onClick={() => { setSelectedUserId(incident.assignedTo || ''); setShowAssignModal(true); }}
+                        className="px-2.5 py-1 text-[10px] font-semibold bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-md hover:shadow-lg hover:shadow-gray-500/30 transition-all"
+                      >
+                        Change
+                      </button>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
-                          <User size={14} className="text-amber-500" />
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: isDark ? 'rgba(245, 158, 11, 0.15)' : '#fef3c7' }}>
+                          <User size={14} style={{ color: isDark ? '#fbbf24' : '#d97706' }} />
                         </div>
-                        <span className="text-sm font-medium text-amber-600">Unassigned</span>
+                        <span className="text-sm font-medium" style={{ color: isDark ? '#fbbf24' : '#d97706' }}>Unassigned</span>
                       </div>
-                      <button className="px-2.5 py-1 text-[10px] font-semibold bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                      <button
+                        onClick={() => setShowAssignModal(true)}
+                        className="px-2.5 py-1 text-[10px] font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-md hover:shadow-lg hover:shadow-blue-500/30 transition-all"
+                      >
                         Assign
                       </button>
                     </div>
@@ -530,30 +588,41 @@ const IncidentDetailPage = () => {
                 </div>
 
                 {/* Assignment Group */}
-                <div className="p-3 rounded-lg transition-all hover:bg-blue-50/50" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc' }}>
+                <div className="p-3 rounded-lg transition-all" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc' }}>
                   <p className="text-[10px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>
                     <Users size={10} />
                     Assignment Group
                   </p>
                   {incident.assignedGroup ? (
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white shadow-sm">
-                        <Users size={14} />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white shadow-sm">
+                          <Users size={14} />
+                        </div>
+                        <div>
+                          <span className="text-sm font-semibold block" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>{incident.assignedGroup.name}</span>
+                          <span className="text-[10px]" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Support Team</span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-sm font-semibold block" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>{incident.assignedGroup.name}</span>
-                        <span className="text-[10px]" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Support Team</span>
-                      </div>
+                      <button
+                        onClick={() => { setSelectedGroupId(incident.assignedGroupId || ''); setShowGroupAssignModal(true); }}
+                        className="px-2.5 py-1 text-[10px] font-semibold bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-md hover:shadow-lg hover:shadow-gray-500/30 transition-all"
+                      >
+                        Change
+                      </button>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center">
-                          <Users size={14} className="text-gray-400" />
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: isDark ? 'rgba(148, 163, 184, 0.1)' : '#f1f5f9' }}>
+                          <Users size={14} style={{ color: isDark ? '#64748b' : '#94a3b8' }} />
                         </div>
                         <span className="text-sm" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Not assigned</span>
                       </div>
-                      <button className="px-2.5 py-1 text-[10px] font-semibold bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                      <button
+                        onClick={() => setShowGroupAssignModal(true)}
+                        className="px-2.5 py-1 text-[10px] font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-md hover:shadow-lg hover:shadow-blue-500/30 transition-all"
+                      >
                         Assign
                       </button>
                     </div>
@@ -655,65 +724,121 @@ const IncidentDetailPage = () => {
               <div className="p-5">
                 {/* Details Tab */}
                 {activeTab === 'details' && (
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-4">Description</h4>
-                    <div className="text-sm text-gray-700 leading-relaxed mb-6">
-                      <p className="mb-3">{incident.description || 'No description provided.'}</p>
-                      {incident.impact && (
-                        <p className="mb-3"><strong>Impact:</strong> {incident.impact}</p>
-                      )}
+                  <div className="space-y-6">
+                    {/* Description Section */}
+                    <div className="rounded-xl overflow-hidden" style={{
+                      background: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff',
+                      border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0'}`
+                    }}>
+                      <div className="px-5 py-3 flex items-center gap-3" style={{
+                        background: isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc',
+                        borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}`
+                      }}>
+                        <FileText size={16} style={{ color: isDark ? '#60a5fa' : '#3b82f6' }} />
+                        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: isDark ? '#94a3b8' : '#64748b' }}>
+                          Description
+                        </span>
+                      </div>
+                      <div className="p-5">
+                        <p className="text-sm leading-relaxed" style={{ color: isDark ? '#e2e8f0' : '#475569' }}>
+                          {incident.description || 'No description provided.'}
+                        </p>
+                        {incident.impact && (
+                          <div className="mt-4 p-3 rounded-lg" style={{ background: isDark ? 'rgba(245, 158, 11, 0.1)' : '#fffbeb', border: `1px solid ${isDark ? 'rgba(245, 158, 11, 0.2)' : '#fde68a'}` }}>
+                            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: isDark ? '#fbbf24' : '#d97706' }}>Impact: </span>
+                            <span className="text-sm" style={{ color: isDark ? '#fde68a' : '#92400e' }}>{incident.impact}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <h4 className="text-sm font-semibold text-gray-900 mb-4">Incident Details</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <InfoItem
-                        label="Assigned To"
-                        value={
-                          incident.assignee ? (
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-semibold">
-                                {incident.assignee.firstName?.charAt(0)}{incident.assignee.lastName?.charAt(0)}
+                    {/* Incident Details - ServiceNow Form Style */}
+                    <div className="rounded-xl overflow-hidden" style={{
+                      background: isDark ? 'rgba(17, 28, 50, 0.95)' : '#ffffff',
+                      border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0'}`
+                    }}>
+                      <SNSectionHeader icon={<Info size={14} />} title="Incident Details" isDark={isDark} subtitle="Core Information" />
+                      <div>
+                        {/* Row 1: Assignment */}
+                        <div className="grid grid-cols-2" style={{ borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e8eb'}` }}>
+                          <SNFormGroup label="Assigned To" value={
+                            incident.assignee ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white text-[10px] font-bold shadow-sm">
+                                  {incident.assignee.firstName?.charAt(0)}{incident.assignee.lastName?.charAt(0)}
+                                </div>
+                                <span>{incident.assignee.firstName} {incident.assignee.lastName}</span>
                               </div>
-                              <span>{incident.assignee.firstName} {incident.assignee.lastName}</span>
-                            </div>
-                          ) : 'Unassigned'
-                        }
-                      />
-                      <InfoItem
-                        label="Assignment Group"
-                        value={incident.assignedGroup?.name || 'Not assigned'}
-                      />
-                      <InfoItem label="Category" value={incident.category || '-'} />
-                      <InfoItem label="Subcategory" value={incident.subcategory || '-'} />
-                      <InfoItem label="Impact" value={incident.impact || '-'} />
-                      <InfoItem label="Urgency" value={incident.urgency || '-'} />
-                      <InfoItem
-                        label="Created"
-                        value={format(toZonedTime(new Date(incident.createdAt), 'Asia/Kolkata'), 'MMM d, yyyy HH:mm', { timeZone: 'Asia/Kolkata' })}
-                      />
-                      <InfoItem
-                        label="Last Updated"
-                        value={format(toZonedTime(new Date(incident.updatedAt), 'Asia/Kolkata'), 'MMM d, yyyy HH:mm', { timeZone: 'Asia/Kolkata' })}
-                      />
-                      <InfoItem
-                        label="Source"
-                        value={
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle size={14} className="text-amber-500" />
-                            <span>{incident.customFields?.auto_created ? 'Auto-created from Alert' : 'Manual'}</span>
-                          </div>
-                        }
-                      />
-                      <InfoItem
-                        label="Affected Host"
-                        value={
-                          <div className="flex items-center gap-2">
-                            <Server size={14} className="text-amber-500" />
-                            <span>{incident.customFields?.labels?.instance || '-'}</span>
-                          </div>
-                        }
-                      />
-                      <InfoItem label="Alert Name" value={incident.customFields?.labels?.alertname || '-'} />
+                            ) : <span style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Unassigned</span>
+                          } isDark={isDark} />
+                          <SNFormGroup label="Assignment Group" value={incident.assignedGroup?.name || <span style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Not assigned</span>} isDark={isDark} />
+                        </div>
+                        {/* Row 2: Classification */}
+                        <div className="grid grid-cols-2" style={{ borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e8eb'}` }}>
+                          <SNFormGroup label="Category" value={incident.category || '-'} isDark={isDark} />
+                          <SNFormGroup label="Subcategory" value={incident.subcategory || '-'} isDark={isDark} />
+                        </div>
+                        {/* Row 3: Priority */}
+                        <div className="grid grid-cols-2" style={{ borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e8eb'}` }}>
+                          <SNFormGroup label="Impact" value={
+                            <span className="px-2.5 py-1 rounded text-xs font-semibold" style={{
+                              background: isDark ? 'rgba(245, 158, 11, 0.15)' : '#fef3c7',
+                              color: isDark ? '#fbbf24' : '#d97706'
+                            }}>{incident.impact || '-'}</span>
+                          } isDark={isDark} />
+                          <SNFormGroup label="Urgency" value={
+                            <span className="px-2.5 py-1 rounded text-xs font-semibold" style={{
+                              background: isDark ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2',
+                              color: isDark ? '#f87171' : '#dc2626'
+                            }}>{incident.urgency || '-'}</span>
+                          } isDark={isDark} />
+                        </div>
+                        {/* Row 4: Timestamps */}
+                        <div className="grid grid-cols-2" style={{ borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e8eb'}` }}>
+                          <SNFormGroup label="Created" value={
+                            <span className="flex items-center gap-2">
+                              <Calendar size={14} style={{ color: isDark ? '#60a5fa' : '#3b82f6' }} />
+                              {format(toZonedTime(new Date(incident.createdAt), 'Asia/Kolkata'), 'MMM d, yyyy HH:mm', { timeZone: 'Asia/Kolkata' })}
+                            </span>
+                          } isDark={isDark} />
+                          <SNFormGroup label="Last Updated" value={
+                            <span className="flex items-center gap-2">
+                              <Clock size={14} style={{ color: isDark ? '#10b981' : '#059669' }} />
+                              {format(toZonedTime(new Date(incident.updatedAt), 'Asia/Kolkata'), 'MMM d, yyyy HH:mm', { timeZone: 'Asia/Kolkata' })}
+                            </span>
+                          } isDark={isDark} />
+                        </div>
+                        {/* Row 5: Source Info */}
+                        <div className="grid grid-cols-2" style={{ borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e8eb'}` }}>
+                          <SNFormGroup label="Source" value={
+                            <span className="flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full ${incident.customFields?.auto_created ? 'bg-amber-500 animate-pulse' : 'bg-blue-500'}`} />
+                              {incident.customFields?.auto_created ? 'Auto-created from Alert' : 'Manual'}
+                            </span>
+                          } isDark={isDark} />
+                          <SNFormGroup label="Alert Name" value={
+                            incident.customFields?.labels?.alertname ? (
+                              <code className="text-xs px-2 py-1 rounded" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9', fontFamily: 'monospace' }}>
+                                {incident.customFields?.labels?.alertname}
+                              </code>
+                            ) : '-'
+                          } isDark={isDark} />
+                        </div>
+                        {/* Row 6: Affected Infrastructure */}
+                        <div className="grid grid-cols-2">
+                          <SNFormGroup label="Affected Host" value={
+                            incident.customFields?.labels?.instance ? (
+                              <span className="flex items-center gap-2">
+                                <Server size={14} style={{ color: isDark ? '#f59e0b' : '#d97706' }} />
+                                <code className="text-xs px-2 py-1 rounded font-mono" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9' }}>
+                                  {incident.customFields?.labels?.instance}
+                                </code>
+                              </span>
+                            ) : '-'
+                          } isDark={isDark} />
+                          <SNFormGroup label="Environment" value={incident.environment || incident.customFields?.environment || '-'} isDark={isDark} />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1298,52 +1423,120 @@ const IncidentDetailPage = () => {
                 {/* Work Notes Tab */}
                 {activeTab === 'worknotes' && (
                   <div>
-                    <div className="mb-5">
+                    {/* Work Notes Input Section */}
+                    <div className="mb-6 p-5 rounded-xl border" style={{
+                      background: isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc',
+                      borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0'
+                    }}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <MessageSquare size={16} style={{ color: isDark ? '#60a5fa' : '#3b82f6' }} />
+                        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: isDark ? '#94a3b8' : '#64748b' }}>
+                          Add Work Note
+                        </span>
+                      </div>
                       <textarea
-                        placeholder="Add a work note... Describe investigation progress, findings, or next steps."
+                        placeholder="Describe investigation progress, findings, or next steps..."
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        className="w-full p-3.5 border border-gray-200 rounded-lg text-sm resize-y min-h-[100px] focus:outline-none focus:border-amber-500 transition-colors"
+                        className="w-full p-4 rounded-lg text-sm resize-y min-h-[120px] focus:outline-none transition-all"
+                        style={{
+                          background: isDark ? 'rgba(15, 23, 42, 0.8)' : '#ffffff',
+                          border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}`,
+                          color: isDark ? '#f1f5f9' : '#1e293b',
+                        }}
                       />
-                      <div className="flex gap-2 mt-3">
+                      <div className="flex gap-2 mt-4">
                         <button
                           onClick={handleAddComment}
                           disabled={!comment.trim() || isSubmitting}
-                          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg text-xs font-medium flex items-center gap-2 hover:shadow-lg hover:shadow-amber-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-2 hover:shadow-lg hover:shadow-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Send size={14} />
                           Add Note
                         </button>
-                        <button className="px-4 py-2 border border-gray-200 bg-white rounded-lg text-xs font-medium flex items-center gap-2 hover:bg-gray-50 transition-all">
+                        <button
+                          className="px-4 py-2.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-all"
+                          style={{
+                            background: isDark ? 'rgba(255,255,255,0.05)' : '#ffffff',
+                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}`,
+                            color: isDark ? '#94a3b8' : '#64748b',
+                          }}
+                        >
                           <AtSign size={14} />
                           Mention
                         </button>
-                        <button className="px-4 py-2 border border-gray-200 bg-white rounded-lg text-xs font-medium flex items-center gap-2 hover:bg-gray-50 transition-all">
+                        <button
+                          className="px-4 py-2.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-all"
+                          style={{
+                            background: isDark ? 'rgba(255,255,255,0.05)' : '#ffffff',
+                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}`,
+                            color: isDark ? '#94a3b8' : '#64748b',
+                          }}
+                        >
                           <Paperclip size={14} />
                           Attach
                         </button>
                       </div>
                     </div>
 
+                    {/* Work Notes List */}
                     <div className="space-y-4">
                       {(incident.activities || [])
                         .filter((a) => a.activityType === 'comment')
                         .map((note, index) => (
-                          <div key={note.id || index} className="p-4 bg-gray-50 rounded-lg border-l-[3px] border-amber-500">
-                            <div className="flex justify-between items-center mb-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-semibold">
+                          <div
+                            key={note.id || index}
+                            className="p-4 rounded-xl border-l-4"
+                            style={{
+                              background: isDark ? 'rgba(255,255,255,0.03)' : '#ffffff',
+                              border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0'}`,
+                              borderLeftColor: '#3b82f6',
+                              borderLeftWidth: '4px',
+                            }}
+                          >
+                            <div className="flex justify-between items-center mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold shadow-lg">
                                   {note.user?.firstName?.charAt(0)}{note.user?.lastName?.charAt(0)}
                                 </div>
-                                <span className="font-semibold text-sm">{note.user?.firstName} {note.user?.lastName}</span>
+                                <div>
+                                  <span className="font-semibold text-sm" style={{ color: isDark ? '#f1f5f9' : '#1e293b' }}>
+                                    {note.user?.firstName} {note.user?.lastName}
+                                  </span>
+                                  <span className="text-xs ml-2" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>
+                                    {format(toZonedTime(new Date(note.createdAt), 'Asia/Kolkata'), 'MMM dd, yyyy HH:mm', { timeZone: 'Asia/Kolkata' })}
+                                  </span>
+                                </div>
                               </div>
-                              <span className="text-xs text-gray-500">{format(toZonedTime(new Date(note.createdAt), 'Asia/Kolkata'), 'HH:mm', { timeZone: 'Asia/Kolkata' })}</span>
                             </div>
-                            <p className="text-sm text-gray-700 leading-relaxed">{note.comment}</p>
+                            <p className="text-sm leading-relaxed pl-11" style={{ color: isDark ? '#cbd5e1' : '#475569' }}>
+                              {note.comment}
+                            </p>
                           </div>
                         ))}
+
+                      {/* Empty State */}
                       {(incident.activities || []).filter((a) => a.activityType === 'comment').length === 0 && (
-                        <p className="text-gray-500 text-center py-8">No work notes yet</p>
+                        <div
+                          className="text-center py-12 rounded-xl border"
+                          style={{
+                            background: isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc',
+                            borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0',
+                          }}
+                        >
+                          <div
+                            className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                            style={{ background: isDark ? 'rgba(59, 130, 246, 0.1)' : '#dbeafe' }}
+                          >
+                            <MessageSquare size={28} style={{ color: isDark ? '#60a5fa' : '#3b82f6' }} />
+                          </div>
+                          <h4 className="text-sm font-semibold mb-2" style={{ color: isDark ? '#f1f5f9' : '#1e293b' }}>
+                            No work notes yet
+                          </h4>
+                          <p className="text-xs max-w-xs mx-auto" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>
+                            Document your investigation progress, findings, and next steps to keep your team informed.
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1508,6 +1701,118 @@ const IncidentDetailPage = () => {
             rows={5}
             required
           />
+        </div>
+      </Modal>
+
+      {/* Assign User Modal */}
+      <Modal
+        isOpen={showAssignModal}
+        onClose={() => { setShowAssignModal(false); setSelectedUserId(''); }}
+        title="Assign User"
+        size="md"
+        footer={
+          <>
+            <button
+              onClick={() => { setShowAssignModal(false); setSelectedUserId(''); }}
+              className="px-4 py-2 border border-gray-200 bg-white rounded-lg text-sm font-medium hover:bg-gray-50 transition-all"
+              style={{ color: isDark ? '#0f172a' : undefined }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAssignUser}
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Assigning...' : 'Assign User'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: isDark ? '#f8fafc' : '#374151' }}>
+              Select User
+            </label>
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="w-full px-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              style={{
+                background: isDark ? '#1e293b' : '#ffffff',
+                borderColor: isDark ? '#334155' : '#d1d5db',
+                color: isDark ? '#f8fafc' : '#111827'
+              }}
+            >
+              <option value="">-- Unassigned --</option>
+              {users.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.firstName} {user.lastName} ({user.email})
+                </option>
+              ))}
+            </select>
+            {users.length === 0 && (
+              <p className="mt-2 text-xs" style={{ color: isDark ? '#94a3b8' : '#6b7280' }}>
+                No users available. Please add users in Admin &gt; Users.
+              </p>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Assign Group Modal */}
+      <Modal
+        isOpen={showGroupAssignModal}
+        onClose={() => { setShowGroupAssignModal(false); setSelectedGroupId(''); }}
+        title="Assign Group"
+        size="md"
+        footer={
+          <>
+            <button
+              onClick={() => { setShowGroupAssignModal(false); setSelectedGroupId(''); }}
+              className="px-4 py-2 border border-gray-200 bg-white rounded-lg text-sm font-medium hover:bg-gray-50 transition-all"
+              style={{ color: isDark ? '#0f172a' : undefined }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAssignGroup}
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Assigning...' : 'Assign Group'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: isDark ? '#f8fafc' : '#374151' }}>
+              Select Group
+            </label>
+            <select
+              value={selectedGroupId}
+              onChange={(e) => setSelectedGroupId(e.target.value)}
+              className="w-full px-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+              style={{
+                background: isDark ? '#1e293b' : '#ffffff',
+                borderColor: isDark ? '#334155' : '#d1d5db',
+                color: isDark ? '#f8fafc' : '#111827'
+              }}
+            >
+              <option value="">-- No Group --</option>
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+            {groups.length === 0 && (
+              <p className="mt-2 text-xs" style={{ color: isDark ? '#94a3b8' : '#6b7280' }}>
+                No groups available. Please add groups in Admin &gt; Groups.
+              </p>
+            )}
+          </div>
         </div>
       </Modal>
     </div>

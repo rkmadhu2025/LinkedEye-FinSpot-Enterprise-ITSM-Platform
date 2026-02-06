@@ -43,8 +43,8 @@ import {
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
 import { fetchChanges, setFilters } from '@/store/slices/changesSlice';
 import { ChangeRequest, ChangeFilters, ChangeStatus, ChangeType, ChangeRisk } from '@/types';
-import { format, toZonedTime } from 'date-fns-tz';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 import clsx from 'clsx';
 
 const ChangesListPage = () => {
