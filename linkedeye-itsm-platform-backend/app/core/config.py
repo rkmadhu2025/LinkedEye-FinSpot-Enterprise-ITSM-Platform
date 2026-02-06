@@ -88,6 +88,14 @@ class Settings(BaseSettings):
     aws_ses_access_key: Optional[str] = None
     aws_ses_secret_key: Optional[str] = None
 
+    # Twilio Configuration (SMS & Voice)
+    twilio_enabled: bool = True
+    twilio_account_sid: Optional[str] = None
+    twilio_auth_token: Optional[str] = None
+    twilio_from_number: Optional[str] = None
+    twilio_api_key_sid: Optional[str] = None
+    twilio_api_key_secret: Optional[str] = None
+
     # Notification Settings
     notification_batch_size: int = 100
     notification_retry_attempts: int = 3

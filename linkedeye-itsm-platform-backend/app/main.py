@@ -54,6 +54,7 @@ from app.api.postmortems import router as postmortems_router
 from app.api.runbooks import router as runbooks_router
 from app.api.alert_intelligence import router as alert_intelligence_router
 from app.api.chatops import router as chatops_router
+from app.api.sms import router as sms_router
 
 
 # Configure logging
@@ -85,7 +86,24 @@ async def lifespan(app: FastAPI):
             logger.error("Redis connection failed")
     except Exception as e:
         logger.error(f"Redis connection failed: {e}")
-    
+
+    # Initialize Twilio service
+    try:
+        from app.services.twilio_service import twilio_service
+        if settings.twilio_enabled and settings.twilio_account_sid:
+            twilio_service.initialize(
+                account_sid=settings.twilio_account_sid,
+                auth_token=settings.twilio_auth_token,
+                from_number=settings.twilio_from_number,
+                api_key_sid=settings.twilio_api_key_sid,
+                api_key_secret=settings.twilio_api_key_secret
+            )
+            logger.info("Twilio service initialized")
+        else:
+            logger.info("Twilio service disabled or not configured")
+    except Exception as e:
+        logger.error(f"Twilio initialization failed: {e}")
+
     yield
     
     # Shutdown
@@ -265,6 +283,7 @@ app.include_router(postmortems_router, prefix="/api/v1")
 app.include_router(runbooks_router, prefix="/api/v1")
 app.include_router(alert_intelligence_router, prefix="/api/v1")
 app.include_router(chatops_router, prefix="/api/v1")
+app.include_router(sms_router, prefix="/api/v1")
 
 
 # Root endpoint
