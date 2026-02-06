@@ -19,7 +19,7 @@ spec:
       - name: gitlab-registry-auth
       containers:
       - name: frontend
-        image: registry.gitlab.com/rajkumar.finspot/finspot-le-dev/linkedeye-frontend:v1.0.3
+        image: registry.gitlab.com/rajkumar.finspot/finspot-le-dev/linkedeye-frontend:v1.0.4-sms
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
