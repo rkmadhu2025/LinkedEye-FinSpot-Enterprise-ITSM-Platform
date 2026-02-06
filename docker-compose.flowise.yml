@@ -1,0 +1,360 @@
+# Flowise AI - Docker Compose Configuration for LinkedEye ITSM Integration
+#
+# This configuration deploys Flowise with PostgreSQL and Redis for production use.
+# It includes integration points with the existing LinkedEye ITSM platform.
+#
+# Usage:
+#   docker-compose -f docker-compose.flowise.yml up -d
+#
+# Access:
+#   Flowise UI: http://localhost:3000
+#   Default credentials: admin / Change_Me_In_Production_123!
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # Flowise AI Application
+  # =============================================================================
+  flowise:
+    image: flowiseai/flowise:latest
+    container_name: linkedeye-flowise
+    restart: always
+    environment:
+      # Server Configuration
+      - PORT=3000
+      - HOST=0.0.0.0
+      - NODE_ENV=production
+
+      # Authentication (CHANGE IN PRODUCTION!)
+      - FLOWISE_USERNAME=admin
+      - FLOWISE_PASSWORD=Change_Me_In_Production_123!
+
+      # Database Configuration (PostgreSQL)
+      - DATABASE_TYPE=postgres
+      - DATABASE_HOST=flowise-postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=flowise
+      - DATABASE_USER=flowise_user
+      - DATABASE_PASSWORD=flowise_secure_password_change_me
+
+      # Storage Paths
+      - APIKEY_PATH=/root/.flowise
+      - SECRETKEY_PATH=/root/.flowise
+      - LOG_PATH=/root/.flowise/logs
+
+      # Logging
+      - LOG_LEVEL=info
+      - LOG_COLORS=true
+
+      # LLM Provider API Keys (Add your keys)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+
+      # Ollama Integration (Local LLM)
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+
+      # LinkedEye ITSM Integration
+      - LINKEDEYE_API_URL=http://linkedeye-backend.incident-linkedeye-itsm.svc.cluster.local:8000
+      - LINKEDEYE_API_KEY=${LINKEDEYE_API_KEY:-}
+
+      # Redis (Session Memory)
+      - REDIS_URL=redis://flowise-redis:6379
+
+      # Vector Database - Qdrant
+      - QDRANT_URL=http://flowise-qdrant:6333
+
+      # LangSmith (Observability) - Optional
+      - LANGCHAIN_TRACING_V2=true
+      - LANGCHAIN_API_KEY=${LANGSMITH_API_KEY:-}
+      - LANGCHAIN_PROJECT=linkedeye-flowise
+      - LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+
+      # Rate Limiting
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_MAX=100
+      - RATE_LIMIT_WINDOW_MS=60000
+
+      # File Upload
+      - FILE_UPLOAD_ENABLED=true
+      - FILE_UPLOAD_MAX_SIZE=10485760
+
+      # CORS (adjust for your frontend domain)
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8080,https://itsm.finspot.in
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - flowise_data:/root/.flowise
+      - ./flowise-uploads:/root/.flowise/uploads
+
+    depends_on:
+      flowise-postgres:
+        condition: service_healthy
+      flowise-redis:
+        condition: service_healthy
+      flowise-qdrant:
+        condition: service_started
+
+    networks:
+      - flowise-network
+      - linkedeye-network
+
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/v1/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # =============================================================================
+  # PostgreSQL Database
+  # =============================================================================
+  flowise-postgres:
+    image: postgres:15-alpine
+    container_name: flowise-postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=flowise
+      - POSTGRES_USER=flowise_user
+      - POSTGRES_PASSWORD=flowise_secure_password_change_me
+      - PGDATA=/var/lib/postgresql/data/pgdata
+
+    volumes:
+      - flowise_postgres_data:/var/lib/postgresql/data
+
+    ports:
+      - "5433:5432"  # Exposed on 5433 to avoid conflict with LinkedEye DB
+
+    networks:
+      - flowise-network
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flowise_user -d flowise"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =============================================================================
+  # Redis (Session Memory & Caching)
+  # =============================================================================
+  flowise-redis:
+    image: redis:7-alpine
+    container_name: flowise-redis
+    restart: always
+    command: >
+      redis-server
+      --maxmemory 2gb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+      --requirepass redis_password_change_me
+
+    volumes:
+      - flowise_redis_data:/data
+
+    ports:
+      - "6380:6379"  # Exposed on 6380 to avoid conflict
+
+    networks:
+      - flowise-network
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # =============================================================================
+  # Qdrant Vector Database
+  # =============================================================================
+  flowise-qdrant:
+    image: qdrant/qdrant:latest
+    container_name: flowise-qdrant
+    restart: always
+
+    volumes:
+      - flowise_qdrant_data:/qdrant/storage
+
+    ports:
+      - "6333:6333"  # HTTP API
+      - "6334:6334"  # gRPC
+
+    networks:
+      - flowise-network
+
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+
+  # =============================================================================
+  # Optional: pgAdmin for Database Management
+  # =============================================================================
+  flowise-pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: flowise-pgadmin
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@flowise.local
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+      - PGADMIN_CONFIG_SERVER_MODE=False
+
+    ports:
+      - "5050:80"
+
+    volumes:
+      - flowise_pgadmin_data:/var/lib/pgadmin
+
+    networks:
+      - flowise-network
+
+    depends_on:
+      - flowise-postgres
+
+    profiles:
+      - tools  # Only start with: docker-compose --profile tools up
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  flowise_data:
+    driver: local
+  flowise_postgres_data:
+    driver: local
+  flowise_redis_data:
+    driver: local
+  flowise_qdrant_data:
+    driver: local
+  flowise_pgadmin_data:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  flowise-network:
+    driver: bridge
+  linkedeye-network:
+    external: true  # Connect to existing LinkedEye network
+    name: linkedeye-itsm-network
+
+# =============================================================================
+# DEPLOYMENT INSTRUCTIONS
+# =============================================================================
+#
+# 1. Prerequisites:
+#    - Docker 20.10+
+#    - Docker Compose 2.0+
+#    - 4GB+ RAM available
+#    - 20GB+ disk space
+#
+# 2. Configuration:
+#    Create .env file with your API keys:
+#
+#    OPENAI_API_KEY=sk-...
+#    ANTHROPIC_API_KEY=sk-ant-...
+#    LANGSMITH_API_KEY=ls-...
+#    LINKEDEYE_API_KEY=your-key
+#
+# 3. Start Services:
+#    docker-compose -f docker-compose.flowise.yml up -d
+#
+# 4. Check Status:
+#    docker-compose -f docker-compose.flowise.yml ps
+#    docker-compose -f docker-compose.flowise.yml logs -f flowise
+#
+# 5. Access Flowise:
+#    http://localhost:3000
+#    Username: admin
+#    Password: Change_Me_In_Production_123!
+#
+# 6. Access Qdrant Dashboard:
+#    http://localhost:6333/dashboard
+#
+# 7. Access pgAdmin (with --profile tools):
+#    docker-compose -f docker-compose.flowise.yml --profile tools up -d
+#    http://localhost:5050
+#
+# 8. Stop Services:
+#    docker-compose -f docker-compose.flowise.yml down
+#
+# 9. Remove Everything (including volumes):
+#    docker-compose -f docker-compose.flowise.yml down -v
+#
+# =============================================================================
+# KUBERNETES DEPLOYMENT
+# =============================================================================
+#
+# To deploy to Kubernetes cluster:
+#
+# 1. Create namespace:
+#    kubectl create namespace flowise
+#
+# 2. Create secrets:
+#    kubectl create secret generic flowise-secrets -n flowise \
+#      --from-literal=FLOWISE_PASSWORD='Change_Me_In_Production_123!' \
+#      --from-literal=DATABASE_PASSWORD='flowise_secure_password_change_me' \
+#      --from-literal=REDIS_PASSWORD='redis_password_change_me' \
+#      --from-literal=OPENAI_API_KEY='sk-...' \
+#      --from-literal=ANTHROPIC_API_KEY='sk-ant-...' \
+#      --from-literal=LINKEDEYE_API_KEY='your-key'
+#
+# 3. Apply Kubernetes manifests:
+#    kubectl apply -f k8s/flowise-deployment.yaml
+#
+# 4. Check deployment:
+#    kubectl get pods -n flowise
+#    kubectl logs -n flowise -l app=flowise -f
+#
+# =============================================================================
+# PRODUCTION CHECKLIST
+# =============================================================================
+#
+# Before deploying to production:
+#
+# [ ] Change all default passwords
+# [ ] Set strong FLOWISE_PASSWORD (12+ chars)
+# [ ] Configure SSL/TLS (use NGINX or Traefik reverse proxy)
+# [ ] Enable authentication on Qdrant
+# [ ] Set up backup strategy for PostgreSQL and Qdrant
+# [ ] Configure log aggregation (ELK, Grafana Loki)
+# [ ] Set up monitoring (Prometheus + Grafana)
+# [ ] Configure rate limiting appropriately
+# [ ] Restrict CORS_ORIGINS to your domains only
+# [ ] Set up alerts for errors and high resource usage
+# [ ] Document API keys and rotation schedule
+# [ ] Train team on Flowise operations
+# [ ] Create runbook for incident response
+#
+# =============================================================================
+# TROUBLESHOOTING
+# =============================================================================
+#
+# 1. Flowise won't start:
+#    - Check logs: docker-compose logs flowise
+#    - Verify database connection: docker-compose logs flowise-postgres
+#    - Ensure ports are not in use: netstat -an | grep 3000
+#
+# 2. Can't connect to Ollama:
+#    - On Windows: Use host.docker.internal:11434
+#    - On Linux: Use host IP address
+#    - Test: curl http://host.docker.internal:11434/api/tags
+#
+# 3. Vector store errors:
+#    - Check Qdrant: http://localhost:6333/dashboard
+#    - Verify collection exists
+#    - Check dimensions match embeddings
+#
+# 4. Out of memory:
+#    - Increase Redis maxmemory
+#    - Scale up Docker resources
+#    - Reduce batch sizes in ingestion
+#
+# 5. Slow performance:
+#    - Check Redis cache hit rate
+#    - Optimize vector search parameters (top_k, score_threshold)
+#    - Use smaller embedding models
+#    - Enable streaming responses
+#
+# =============================================================================

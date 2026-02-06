@@ -55,6 +55,7 @@ from app.api.runbooks import router as runbooks_router
 from app.api.alert_intelligence import router as alert_intelligence_router
 from app.api.chatops import router as chatops_router
 from app.api.sms import router as sms_router
+from app.api.ai_assistant import router as ai_assistant_router
 
 
 # Configure logging
@@ -284,6 +285,7 @@ app.include_router(runbooks_router, prefix="/api/v1")
 app.include_router(alert_intelligence_router, prefix="/api/v1")
 app.include_router(chatops_router, prefix="/api/v1")
 app.include_router(sms_router, prefix="/api/v1")
+app.include_router(ai_assistant_router, prefix="/api/v1")
 
 
 # Root endpoint

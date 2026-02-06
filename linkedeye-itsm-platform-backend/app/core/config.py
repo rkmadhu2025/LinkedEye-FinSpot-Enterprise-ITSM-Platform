@@ -96,6 +96,17 @@ class Settings(BaseSettings):
     twilio_api_key_sid: Optional[str] = None
     twilio_api_key_secret: Optional[str] = None
 
+    # Flowise AI Configuration
+    flowise_url: Optional[str] = "http://localhost:3000"
+    flowise_api_key: Optional[str] = None
+    flowise_enabled: bool = False
+
+    # Flowise Chatflow IDs (configure after deploying chatflows)
+    flowise_chatflow_incident_classifier: Optional[str] = None
+    flowise_chatflow_rag_assistant: Optional[str] = None
+    flowise_chatflow_on_call_agent: Optional[str] = None
+    flowise_chatflow_postmortem_gen: Optional[str] = None
+
     # Notification Settings
     notification_batch_size: int = 100
     notification_retry_attempts: int = 3
