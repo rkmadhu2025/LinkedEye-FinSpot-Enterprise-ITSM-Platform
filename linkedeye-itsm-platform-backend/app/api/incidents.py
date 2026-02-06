@@ -87,12 +87,13 @@ class ClientInfo(BaseModel):
 class UserInfo(BaseModel):
     id: UUID
     email: str
-    firstName: str
-    lastName: str
+    firstName: str = Field(validation_alias="first_name", serialization_alias="firstName")
+    lastName: str = Field(validation_alias="last_name", serialization_alias="lastName")
     role: Optional[str] = None
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 class IncidentResponse(BaseModel):

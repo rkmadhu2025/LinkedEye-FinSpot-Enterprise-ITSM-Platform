@@ -49,6 +49,10 @@ SSL/
 *.crt
 *.p12
 
+# Kubernetes Secrets (sensitive)
+*-secret.yaml
+!*-secret.yaml.example
+
 # Logs
 logs/
 *.log

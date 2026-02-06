@@ -209,6 +209,11 @@ async def create_schedule(
 ):
     """Create a new on-call schedule. All authenticated users can create."""
     try:
+        if schedule_data.user_id:
+            user = db.query(User).filter(User.id == schedule_data.user_id).first()
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+
         new_schedule = OnCallSchedule(
             group_id=schedule_data.group_id,
             user_id=schedule_data.user_id,
@@ -224,6 +229,8 @@ async def create_schedule(
 
         logger.info(f"Schedule created: {new_schedule.id} by user {current_user.id}")
         return new_schedule
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         logger.error(f"Error creating schedule: {e}")
@@ -508,6 +515,11 @@ async def add_schedule_member(
     if existing:
         raise HTTPException(status_code=409, detail="User already a member of this schedule")
 
+    # Verify user exists
+    user = db.query(User).filter(User.id == data.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
     member = OnCallScheduleMember(
         schedule_id=schedule_id,
         user_id=data.user_id,
@@ -567,6 +579,30 @@ class GenerateShiftsRequest(BaseModel):
     start_date: datetime
     end_date: datetime
     rotation_days: int = 7
+
+
+@router.get("/shifts", response_model=List[ShiftResponse])
+async def list_all_shifts(
+    schedule_id: Optional[UUID] = Query(None),
+    status_filter: Optional[str] = Query(None, alias="status"),
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """List all shifts across schedules."""
+    query = db.query(OnCallShift)
+    if schedule_id:
+        query = query.filter(OnCallShift.schedule_id == schedule_id)
+    if status_filter:
+        query = query.filter(OnCallShift.status == status_filter)
+    if date_from:
+        query = query.filter(OnCallShift.end_time >= date_from)
+    if date_to:
+        query = query.filter(OnCallShift.start_time <= date_to)
+        
+    shifts = query.order_by(OnCallShift.start_time).limit(200).all()
+    return shifts
 
 
 # ============== Shift Endpoints ==============
@@ -630,6 +666,7 @@ async def get_coverage_gaps(
 # ============== Override Schemas ==============
 
 class OverrideCreate(BaseModel):
+    schedule_id: Optional[UUID] = None
     original_user_id: UUID
     replacement_user_id: Optional[UUID] = None
     start_time: datetime
@@ -662,6 +699,33 @@ class OverrideResponse(BaseModel):
 
 # ============== Override Endpoints ==============
 
+@router.get("/overrides", response_model=List[OverrideResponse])
+async def list_all_overrides(
+    schedule_id: Optional[UUID] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """List all overrides."""
+    query = db.query(OnCallOverride)
+    if schedule_id:
+        query = query.filter(OnCallOverride.schedule_id == schedule_id)
+    overrides = query.order_by(OnCallOverride.start_time.desc()).limit(100).all()
+    return overrides
+
+
+@router.post("/overrides", response_model=OverrideResponse, status_code=201)
+async def create_override_global(
+    data: OverrideCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a schedule override (global)."""
+    if not data.schedule_id:
+        raise HTTPException(status_code=400, detail="Schedule ID required")
+    
+    return await create_override(data.schedule_id, data, current_user, db)
+
+
 @router.get("/schedules/{schedule_id}/overrides", response_model=List[OverrideResponse])
 async def list_overrides(
     schedule_id: UUID,
@@ -686,6 +750,17 @@ async def create_override(
     schedule = db.query(OnCallSchedule).filter(OnCallSchedule.id == schedule_id).first()
     if not schedule:
         raise HTTPException(status_code=404, detail="Schedule not found")
+
+    # Validate Users
+    if data.original_user_id:
+        original = db.query(User).filter(User.id == data.original_user_id).first()
+        if not original:
+            raise HTTPException(status_code=404, detail="Original user not found")
+
+    if data.replacement_user_id:
+        replacement = db.query(User).filter(User.id == data.replacement_user_id).first()
+        if not replacement:
+            raise HTTPException(status_code=404, detail="Replacement user not found")
 
     override = OnCallOverride(
         schedule_id=schedule_id,

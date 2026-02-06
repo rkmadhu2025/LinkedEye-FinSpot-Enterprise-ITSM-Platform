@@ -19,11 +19,13 @@ spec:
       - name: gitlab-registry-auth
       containers:
       - name: backend
-        image: registry.gitlab.com/rajkumar.finspot/finspot-le-dev/linkedeye-backend:v1.0.0
-        imagePullPolicy: IfNotPresent
+        image: registry.gitlab.com/rajkumar.finspot/finspot-le-dev/linkedeye-backend:v1.0.2
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         env:
+        - name: WEB_CONCURRENCY
+          value: "4"
         - name: DATABASE_HOST
           valueFrom:
             configMapKeyRef:
@@ -158,6 +160,35 @@ spec:
             configMapKeyRef:
               name: itsm-backend-config
               key: DEBUG
+        - name: TWILIO_ENABLED
+          value: "true"
+        - name: TWILIO_ACCOUNT_SID
+          valueFrom:
+            secretKeyRef:
+              name: twilio-credentials
+              key: account_sid
+        - name: TWILIO_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: twilio-credentials
+              key: auth_token
+        - name: TWILIO_FROM_NUMBER
+          valueFrom:
+            secretKeyRef:
+              name: twilio-credentials
+              key: from_number
+        - name: TWILIO_API_KEY_SID
+          valueFrom:
+            secretKeyRef:
+              name: twilio-credentials
+              key: api_key_sid
+              optional: true
+        - name: TWILIO_API_KEY_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: twilio-credentials
+              key: api_key_secret
+              optional: true
         resources:
           requests:
             memory: "512Mi"
