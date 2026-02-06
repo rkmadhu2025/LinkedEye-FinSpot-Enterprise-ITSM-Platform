@@ -130,15 +130,33 @@ app.add_middleware(SecurityHeadersMiddleware)
 if settings.rate_limit_enabled:
     app.middleware("http")(rate_limiter)
 
-# Add trusted host middleware for security
+# Add trusted host middleware for security (excluding health checks)
 if not settings.debug:
-    allowed_hosts = getattr(settings, 'allowed_hosts', ["localhost", "127.0.0.1"])
-    if isinstance(allowed_hosts, str):
-        allowed_hosts = [h.strip() for h in allowed_hosts.split(",")]
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=allowed_hosts
-    )
+    from starlette.middleware.base import BaseHTTPMiddleware
+
+    class HealthCheckAwareTrustedHostMiddleware(BaseHTTPMiddleware):
+        """TrustedHostMiddleware that excludes health check endpoints."""
+        async def dispatch(self, request: Request, call_next):
+            # Skip host validation for health check endpoints
+            if request.url.path in ["/health", "/health/detailed", "/api/v1/health"]:
+                return await call_next(request)
+
+            # Apply TrustedHostMiddleware logic for other paths
+            allowed_hosts = getattr(settings, 'allowed_hosts', ["localhost", "127.0.0.1"])
+            if isinstance(allowed_hosts, str):
+                allowed_hosts = [h.strip() for h in allowed_hosts.split(",")]
+
+            host = request.headers.get("host", "").split(":")[0]
+
+            if host not in allowed_hosts:
+                return JSONResponse(
+                    status_code=400,
+                    content={"detail": "Invalid host header"}
+                )
+
+            return await call_next(request)
+
+    app.add_middleware(HealthCheckAwareTrustedHostMiddleware)
 
 
 # Add CORS middleware (must be outer to RateLimit and TrustedHost)
