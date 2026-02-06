@@ -23,6 +23,7 @@ import {
   Eye,
   Phone,
   Activity,
+  MessageSquare,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
@@ -107,6 +108,7 @@ const Sidebar = () => {
       title: 'Operations',
       items: [
         { label: 'On-Call', path: '/on-call/schedules', icon: <Phone size={20} /> },
+        { label: 'SMS & Voice', path: '/communications/sms-voice', icon: <MessageSquare size={20} /> },
         { label: 'Monitoring', path: '/monitoring', icon: <Activity size={20} /> },
       ],
     },

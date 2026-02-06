@@ -111,6 +111,9 @@ const AlertGroupDetailPage = lazy(() => import('./pages/alert-intelligence/Alert
 const ChatOpsConfigPage = lazy(() => import('./pages/chatops/ChatOpsConfigPage'));
 const ChatOpsMessagesPage = lazy(() => import('./pages/chatops/ChatOpsMessagesPage'));
 
+// Communications (lazy loaded)
+const SMSVoicePage = lazy(() => import('./pages/communications/SMSVoicePage'));
+
 // Infrastructure Pages (lazy loaded)
 const InfrastructureDashboardPage = lazy(() => import('./pages/infrastructure/InfrastructureDashboardPage'));
 const InfrastructureHostsPage = lazy(() => import('./pages/infrastructure/InfrastructureHostsPage'));
@@ -271,6 +274,9 @@ function App() {
           {/* ChatOps */}
           <Route path="/chatops" element={<ChatOpsMessagesPage />} />
           <Route path="/chatops/config" element={<ChatOpsConfigPage />} />
+
+          {/* SMS & Voice Communications */}
+          <Route path="/communications/sms-voice" element={<SMSVoicePage />} />
 
           {/* User Profile & Settings */}
           <Route path="/profile" element={<ProfilePage />} />
